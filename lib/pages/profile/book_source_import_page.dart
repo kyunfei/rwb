@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../services/book_source_import_service.dart';
+import '../../services/source_import_failure.dart';
 import '../../services/source_import_logic.dart';
 import '../../services/source_subscribe_service.dart';
 import '../../utils/design_tokens.dart';
@@ -107,9 +108,10 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
         bytes,
         fileExtension: ext,
       );
-      _showResult(importResult);
-    } catch (e) {
-      _showError('文件导入失败: $e');
+      await _showResultAndPop(importResult);
+    } catch (e, st) {
+      debugPrint('文件导入失败: $e\n$st');
+      _showError(describeSourceImportFailure(e));
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
@@ -118,13 +120,15 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   Future<Uint8List> _readFileBytes(String path) async {
     // file_picker 在移动端已返回 bytes，Web 端也返回 bytes
     // 此方法作为后备：从文件路径读取字节（仅原生平台）
-    if (kIsWeb) return Uint8List(0);
+    if (kIsWeb) {
+      throw StateError('当前平台不支持按路径读取文件');
+    }
     try {
       final file = File(path);
       return await file.readAsBytes();
-    } catch (e) {
-      debugPrint('读取文件失败: $e');
-      return Uint8List(0);
+    } catch (e, st) {
+      debugPrint('读取文件失败: $e\n$st');
+      rethrow;
     }
   }
 
@@ -148,40 +152,60 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
       // 先尝试 JSON 格式，失败则按 JS 书源导入
       try {
         result = await service.importText(text);
-      } catch (e) {
+      } catch (e, st) {
         jsonError = e;
+        debugPrint('JSON 书源导入失败，尝试 JS: $e\n$st');
+        // URL / 明确的网络与格式错误不必再走 JS 兜底，避免掩盖真实原因
+        if (e is SourceImportException || looksLikeSubscribeUrl(text.trim())) {
+          rethrow;
+        }
         try {
           result = await service.importJsText(text);
-        } catch (jsError) {
-          throw Exception('JSON导入失败: $jsonError；JS导入失败: $jsError');
+        } catch (jsError, jsSt) {
+          debugPrint('JS 书源导入也失败: $jsError\n$jsSt');
+          // 优先展示更可读的 JSON 侧错误
+          Error.throwWithStackTrace(jsonError, st);
         }
       }
       // 网络 URL 成功导入后记住订阅，便于一键更新
       if (_rememberSubscribe && looksLikeSubscribeUrl(text.trim())) {
         try {
           await SourceSubscribeService().add(text.trim(), importNow: false);
-        } catch (e) {
-          debugPrint('记住订阅地址失败: $e');
+        } catch (e, st) {
+          debugPrint('记住订阅地址失败: $e\n$st');
         }
       }
-      _showResult(result);
-      _hideCurrentSnackBar();
-      if (mounted) Navigator.pop(context, result);
-    } catch (e) {
-      _showError('导入失败: $e');
+      await _showResultAndPop(result);
+    } catch (e, st) {
+      debugPrint('书源导入失败: $e\n$st');
+      _showError(describeSourceImportFailure(e));
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
   }
 
-  void _showResult(BookSourceImportResult result) {
-    final msg =
-        '导入完成：新增 ${result.added}，更新 ${result.updated}，未变 ${result.unchanged}';
-    final messenger = _messenger ?? ScaffoldMessenger.maybeOf(context);
-    messenger?.clearSnackBars();
-    messenger?.showSnackBar(
-      SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+  Future<void> _showResultAndPop(BookSourceImportResult result) async {
+    if (!mounted) return;
+    final total = result.added + result.updated + result.unchanged;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('导入成功'),
+        content: Text(
+          '共处理 $total 条书源\n'
+          '新增 ${result.added} 条\n'
+          '更新 ${result.updated} 条\n'
+          '跳过 ${result.unchanged} 条（本地已是最新）',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('好的'),
+          ),
+        ],
+      ),
     );
+    if (mounted) Navigator.pop(context, result);
   }
 
   void _showError(String msg) {
@@ -237,15 +261,15 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            '输入书源订阅地址（网络链接），将自动下载并导入',
-            style: TextStyle(color: Colors.grey),
+            '三步导入：① 复制一个书源 JSON 链接  ② 粘贴到下方  ③ 点「导入」',
+            style: TextStyle(color: Colors.grey, height: 1.4),
           ),
           const SizedBox(height: DesignTokens.spacingMd),
           TextField(
             controller: _urlController,
             decoration: const InputDecoration(
-              labelText: '书源地址',
-              hintText: 'https://example.com/sources.json',
+              labelText: '书源 JSON 链接',
+              hintText: 'https://示例.com/书源.json',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.link),
             ),
@@ -281,15 +305,18 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('使用说明', style: Theme.of(context).textTheme.titleSmall),
+                  Text('怎么用（看这里）',
+                      style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: DesignTokens.spacingSm),
                   const Text(
-                    '• 支持 Legado 格式的书源 JSON\n'
-                    '• 地址应返回 JSON 数组或单个书源对象\n'
-                    '• 也支持包含 {"sourceUrls": ["url1", ...]} 的订阅格式\n'
-                    '• 重复导入按 bookSourceUrl 去重更新\n'
-                    '• 本地 json/txt/js 文件可用上方「从文件导入」\n'
-                    '• .js 格式的 JS 书源也可使用「JS导入」页',
+                    '• 支持格式：Legado 书源 JSON（单个对象，或书源数组）\n'
+                    '• 链接打开后应直接是 JSON 文本，而不是网页/登录页\n'
+                    '• 也支持 {"sourceUrls":["链接1","链接2"]} 订阅格式\n'
+                    '• 导入成功会提示：新增几条、更新几条、跳过几条\n'
+                    '• 若网络导入失败（尤其是 GitHub 链接），请改用：\n'
+                    '    - 「文本导入」：把 JSON 全文粘贴进来\n'
+                    '    - 「从文件导入」：选择手机里的 .json 文件\n'
+                    '• 重复导入按 bookSourceUrl 去重，不会重复堆很多条',
                     style: TextStyle(fontSize: 13, height: 1.6),
                   ),
                 ],
@@ -445,13 +472,12 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
       final text = utf8.decode(bytes, allowMalformed: true);
 
       final importResult = await BookSourceImportService().importJsText(text);
-      _showResult(importResult);
-      if (mounted) Navigator.pop(context, importResult);
-    } catch (e) {
-      _showError('JS 文件导入失败: $e');
+      await _showResultAndPop(importResult);
+    } catch (e, st) {
+      debugPrint('JS 文件导入失败: $e\n$st');
+      _showError(describeSourceImportFailure(e));
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
   }
-
 }

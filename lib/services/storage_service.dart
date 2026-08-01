@@ -577,7 +577,9 @@ class StorageService {
       try {
         final decoded = jsonDecode(data);
         if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('⚠️ StorageService: bookSource 字符串 JSON 解析失败: $e');
+      }
     }
     debugPrint('⚠️ StorageService: bookSource 数据类型异常: ${data.runtimeType}');
     return null;

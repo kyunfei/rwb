@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/book_source.dart';
 import '../models/rules/book_info_rule.dart';
@@ -9,6 +9,7 @@ import '../models/rules/search_rule.dart';
 import '../models/rules/explore_rule.dart';
 import '../models/rules/toc_rule.dart';
 import '../models/rules/content_rule.dart';
+import 'source_import_failure.dart';
 import 'storage_service.dart';
 
 typedef SourceTextFetcher = Future<String> Function(
@@ -41,7 +42,7 @@ class BookSourceImportService {
   Future<BookSourceImportResult> importText(String text) async {
     final sources = await parseText(text);
     if (sources.isEmpty) {
-      throw const FormatException('未找到有效书源');
+      throw SourceImportException.emptySources();
     }
 
     var added = 0;
@@ -230,7 +231,18 @@ class BookSourceImportService {
       return _parseUrl(trimmed, visitedUrls ?? <String>{});
     }
 
-    final decoded = jsonDecode(trimmed);
+    if (looksLikeHtmlDocument(trimmed) && !looksLikeJsonPayload(trimmed)) {
+      throw SourceImportException.notJson(snippet: trimmed);
+    }
+
+    late final dynamic decoded;
+    try {
+      decoded = jsonDecode(trimmed);
+    } on FormatException catch (e) {
+      debugPrint('书源 JSON 解析失败: $e');
+      throw SourceImportException.notJson(snippet: trimmed);
+    }
+
     return _parseDecoded(decoded, visitedUrls ?? <String>{});
   }
 
@@ -242,6 +254,9 @@ class BookSourceImportService {
         : rawUrl;
     if (!visitedUrls.add(url)) return [];
     final text = await _fetchText(url, withoutUserAgent);
+    if (text.trim().isEmpty) {
+      throw SourceImportException.emptySources();
+    }
     return parseText(text, visitedUrls: visitedUrls);
   }
 
@@ -249,12 +264,23 @@ class BookSourceImportService {
       dynamic decoded, Set<String> visitedUrls) async {
     if (decoded is List) {
       final result = <BookSource>[];
+      var skippedInvalid = 0;
       for (final item in decoded) {
         if (item is Map) {
-          result.add(_sourceFromMap(item));
+          try {
+            result.add(_sourceFromMap(item));
+          } on SourceImportException catch (e) {
+            skippedInvalid++;
+            debugPrint('跳过无效书源条目: ${e.userMessage}');
+          }
         } else if (item is String && _isHttpUrl(item)) {
           result.addAll(await _parseUrl(item, visitedUrls));
         }
+      }
+      if (result.isEmpty && skippedInvalid > 0) {
+        throw SourceImportException.invalidStructure(
+          '数组内 $skippedInvalid 条均缺少 bookSourceUrl 或 bookSourceName',
+        );
       }
       return _deduplicate(result);
     }
@@ -270,7 +296,7 @@ class BookSourceImportService {
       }
       return [_sourceFromMap(decoded)];
     }
-    throw const FormatException('书源必须是 JSON 对象、数组或网络地址');
+    throw SourceImportException.invalidStructure('书源必须是 JSON 对象、数组或网络地址');
   }
 
   BookSource _sourceFromMap(Map<dynamic, dynamic> value) {
@@ -279,7 +305,9 @@ class BookSourceImportService {
     );
     if (source.bookSourceUrl.trim().isEmpty ||
         source.bookSourceName.trim().isEmpty) {
-      throw const FormatException('书源缺少 bookSourceUrl 或 bookSourceName');
+      throw SourceImportException.invalidStructure(
+        '缺少 bookSourceUrl 或 bookSourceName',
+      );
     }
     return source;
   }
@@ -308,15 +336,36 @@ class BookSourceImportService {
       receiveTimeout: const Duration(seconds: 30),
       responseType: ResponseType.plain,
       followRedirects: true,
+      validateStatus: (status) => status != null && status < 600,
     ));
-    final response = await dio.get<String>(
-      url,
-      options: Options(
-        headers: withoutUserAgent ? {'User-Agent': ''} : null,
-        responseType: ResponseType.plain,
-      ),
-    );
-    return response.data ?? '';
+    try {
+      final response = await dio.get<String>(
+        url,
+        options: Options(
+          headers: withoutUserAgent ? {'User-Agent': ''} : null,
+          responseType: ResponseType.plain,
+        ),
+      );
+      final status = response.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        throw SourceImportException.httpStatus(status, url: url);
+      }
+      final data = response.data ?? '';
+      if (data.trim().isNotEmpty &&
+          looksLikeHtmlDocument(data) &&
+          !looksLikeJsonPayload(data)) {
+        throw SourceImportException.notJson(snippet: data);
+      }
+      return data;
+    } on SourceImportException {
+      rethrow;
+    } on DioException catch (e, st) {
+      debugPrint('书源下载 Dio 失败: $e\n$st');
+      throw classifySourceImportError(e);
+    } catch (e, st) {
+      debugPrint('书源下载失败: $e\n$st');
+      throw classifySourceImportError(e);
+    }
   }
 
   /// 从 JS 书源代码中提取 @key 元数据注释

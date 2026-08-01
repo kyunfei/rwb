@@ -57,15 +57,15 @@ Future<void> main() async {
       if (!StorageService.instance.isInitialized) {
         debugPrint('❌ StorageService 初始化失败: ${StorageService.instance.initError}');
       } else {
-        // 一次性注入内置英文书源（仅补缺失 URL，不覆盖用户已有源）
+        // 一次性注入内置书源（仅补缺失 URL，不覆盖用户已有源；v2 含中文示例源）
         try {
           final added =
-              await BuiltinBookSourceService.ensureEnglishSourcesSeeded();
+              await BuiltinBookSourceService.ensureBuiltinSourcesSeeded();
           if (added > 0) {
-            debugPrint('✅ 已注入 $added 个内置英文书源');
+            debugPrint('✅ 已注入 $added 个内置书源');
           }
-        } catch (e) {
-          debugPrint('BuiltinBookSourceService seed error: $e');
+        } catch (e, st) {
+          debugPrint('BuiltinBookSourceService seed error: $e\n$st');
         }
       }
     } catch (e) {

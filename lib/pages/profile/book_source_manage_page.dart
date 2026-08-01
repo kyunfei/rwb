@@ -11,6 +11,7 @@ import '../../models/book_source.dart';
 import '../../providers/discovery_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/book_source_import_service.dart';
+import '../../services/source_import_failure.dart';
 import '../../services/source_import_logic.dart';
 import '../../services/source_subscribe_service.dart';
 import '../../services/storage_service.dart';
@@ -983,20 +984,22 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
         await _loadSources();
         if (!mounted) return;
         _showImportResult(result);
-      } catch (e) {
+      } catch (e, st) {
+        debugPrint('网络导入失败: $e\n$st');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('网络导入失败: $e')),
+          SnackBar(content: Text(describeSourceImportFailure(e))),
         );
       }
     }
   }
 
   void _showImportResult(BookSourceImportResult result) {
+    final total = result.added + result.updated + result.unchanged;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '导入 ${result.sources.length} 个书源：新增 ${result.added}，更新 ${result.updated}，未变 ${result.unchanged}',
+          '导入成功：共 $total 条（新增 ${result.added}，更新 ${result.updated}，跳过 ${result.unchanged}）',
         ),
       ),
     );
