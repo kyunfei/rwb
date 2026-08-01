@@ -1,0 +1,6 @@
+# 本仓库 core.autocrlf=true，checkout 时会把 LF 转成 CRLF；但 Flutter 的
+# 代码生成始终以 LF 重写下列文件，于是每次 pub get / 构建后它们都显示为
+# 「已修改」，实际内容一字未变。固定为 LF，消除这种假脏状态。
+**/GeneratedPluginRegistrant.* eol=lf
+**/generated_plugin_registrant.* eol=lf
+**/generated_plugins.cmake eol=lf
