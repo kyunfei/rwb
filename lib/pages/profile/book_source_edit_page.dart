@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../models/book_source.dart';
 import '../../models/rules/search_rule.dart';
 import '../../models/rules/explore_rule.dart';
@@ -547,38 +546,6 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
     );
   }
 
-  /// 二维码导入书源
-  void _importFromQr() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _QrImportPage(
-          onScanned: (String jsonStr) {
-            try {
-              final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-              final newSource = BookSource.fromJson(json);
-              setState(() {
-                _source = newSource;
-                _initEntities();
-                _updateAllControllers();
-                _hasChanges = true;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('导入成功')),
-              );
-              return true;
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('导入失败: $e')),
-              );
-              return false;
-            }
-          },
-        ),
-      ),
-    );
-  }
-
   /// 登录书源
   void _loginWithSource() {
     final source = _buildSourceFromEntities();
@@ -804,9 +771,6 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
                   case 'variable':
                     _showSourceVariable();
                     break;
-                  case 'qr_import':
-                    _importFromQr();
-                    break;
                   case 'qr_share':
                     _shareSource();
                     break;
@@ -870,12 +834,6 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   height: 48,
                   child: Row(children: [Icon(Icons.settings, size: 18), SizedBox(width: 12), Text('设置源变量')]),
-                ),
-                const PopupMenuItem(
-                  value: 'qr_import',
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  height: 48,
-                  child: Row(children: [Icon(Icons.qr_code_scanner, size: 18), SizedBox(width: 12), Text('二维码导入')]),
                 ),
                 const PopupMenuItem(
                   value: 'qr_share',
@@ -2125,72 +2083,6 @@ class _SourceHelpPageState extends State<_SourceHelpPage> with SingleTickerProvi
                 ),
               ],
             ),
-    );
-  }
-}
-
-/// 二维码导入页面
-class _QrImportPage extends StatefulWidget {
-  final bool Function(String) onScanned;
-
-  const _QrImportPage({required this.onScanned});
-
-  @override
-  State<_QrImportPage> createState() => _QrImportPageState();
-}
-
-class _QrImportPageState extends State<_QrImportPage> {
-  final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
-  );
-  bool _processed = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onDetect(BarcodeCapture capture) {
-    if (_processed) return;
-
-    final barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      final value = barcode.rawValue;
-      if (value != null && value.isNotEmpty) {
-        _processed = true;
-        _controller.stop();
-
-        final success = widget.onScanned(value);
-        if (success && mounted) {
-          Navigator.pop(context);
-        } else {
-          // 如果失败，允许重新扫描
-          _processed = false;
-          _controller.start();
-        }
-        break;
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('扫描二维码'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () => _controller.toggleTorch(),
-            tooltip: '切换闪光灯',
-          ),
-        ],
-      ),
-      body: MobileScanner(
-        controller: _controller,
-        onDetect: _onDetect,
-      ),
     );
   }
 }

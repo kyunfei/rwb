@@ -873,15 +873,6 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.qr_code_scanner),
-              title: const Text('二维码导入'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, AppRoutes.bookSourceImport)
-                    .then((_) => _loadSources());
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.health_and_safety_outlined),
               title: const Text('健康检查'),
               onTap: () {

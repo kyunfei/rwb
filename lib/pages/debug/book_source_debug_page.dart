@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -522,12 +521,6 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
         ),
       ),
       actions: [
-        IconButton(
-          tooltip: '扫描二维码',
-          onPressed: _scanQrCode,
-          icon: const Icon(Icons.qr_code_scanner),
-          color: textColor,
-        ),
         PopupMenuButton<String>(
           icon: Icon(Icons.more_vert, color: textColor),
           tooltip: '更多选项',
@@ -1238,25 +1231,6 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
     );
   }
 
-  /// 扫描二维码
-  void _scanQrCode() async {
-    final result = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => const _QrScannerPage(),
-      ),
-    );
-    
-    if (result != null && result.isNotEmpty && mounted) {
-      // 将扫描结果填入搜索框
-      _searchController.text = result;
-      _searchController.selection = TextSelection.collapsed(offset: result.length);
-      setState(() {
-        _showHelp = true;
-      });
-    }
-  }
-
   void _showHelpDialog() {
     showDialog(
       context: context,
@@ -1813,133 +1787,4 @@ class _ExploreKindItem {
   final String url;
 
   const _ExploreKindItem(this.title, this.url);
-}
-
-/// 二维码扫描页面
-class _QrScannerPage extends StatefulWidget {
-  const _QrScannerPage();
-
-  @override
-  State<_QrScannerPage> createState() => _QrScannerPageState();
-}
-
-class _QrScannerPageState extends State<_QrScannerPage> {
-  final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('扫描二维码', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_off, color: Colors.white),
-            tooltip: '闪光灯',
-            onPressed: () => _controller.toggleTorch(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.cameraswitch, color: Colors.white),
-            tooltip: '切换摄像头',
-            onPressed: () => _controller.switchCamera(),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              final barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                final value = barcode.rawValue;
-                if (value != null && value.isNotEmpty) {
-                  _controller.stop();
-                  Navigator.pop(context, value);
-                  return;
-                }
-              }
-            },
-          ),
-          // 扫描框
-          Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white54, width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const CustomPaint(
-                painter: _ScanCornerPainter(),
-              ),
-            ),
-          ),
-          // 提示文字
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 100,
-            child: Text(
-              '将二维码放入框内自动扫描',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 扫描框四角装饰
-class _ScanCornerPainter extends CustomPainter {
-  const _ScanCornerPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1976D2)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    const cornerLength = 25.0;
-
-    // 左上角
-    canvas.drawLine(const Offset(0, cornerLength), Offset.zero, paint);
-    canvas.drawLine(Offset.zero, const Offset(cornerLength, 0), paint);
-
-    // 右上角
-    canvas.drawLine(Offset(size.width - cornerLength, 0), Offset(size.width, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, cornerLength), paint);
-
-    // 左下角
-    canvas.drawLine(Offset(0, size.height - cornerLength), Offset(0, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(cornerLength, size.height), paint);
-
-    // 右下角
-    canvas.drawLine(Offset(size.width - cornerLength, size.height), Offset(size.width, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height - cornerLength), Offset(size.width, size.height), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

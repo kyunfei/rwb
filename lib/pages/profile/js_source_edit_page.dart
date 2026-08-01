@@ -562,11 +562,6 @@ function nextContentUrl(result) {
     }
   }
 
-  /// 二维码导入（跳转到导入页面）
-  void _importFromQr() {
-    Navigator.pushNamed(context, AppRoutes.bookSourceImport);
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -637,9 +632,6 @@ function nextContentUrl(result) {
                   case 'paste':
                     _pasteFromClipboard();
                     break;
-                  case 'qr':
-                    _importFromQr();
-                    break;
                   case 'clear':
                     _jsController.clear();
                     break;
@@ -685,11 +677,6 @@ function nextContentUrl(result) {
                   value: 'paste',
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Text('粘贴代码'),
-                ),
-                const PopupMenuItem(
-                  value: 'qr',
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Text('二维码导入'),
                 ),
                 const PopupMenuItem(
                   value: 'clear',
