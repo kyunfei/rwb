@@ -254,7 +254,8 @@ class SourceDebugService {
       log('└列表大小:$elementCount');
 
       if (results.isEmpty) {
-        log('︽未获取到书籍', state: DebugState.error.code);
+        log('︽未获取到书籍（规则执行成功但列表为空）',
+            state: DebugState.error.code);
         return;
       }
 

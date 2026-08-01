@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -5,6 +6,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as dom;
 import '../../models/book_source.dart';
 import '../../models/book.dart';
+import '../../models/book_search_exception.dart';
 import '../../models/chapter.dart';
 import '../app_logger.dart';
 import 'analyze_rule.dart';
@@ -731,17 +733,29 @@ class WebBook {
   }
 
   /// 搜索书籍
+  ///
+  /// 成功但无书时返回空列表（真的没这本书 / 列表规则命中 0 条）。
+  /// 网络、站点、规则等失败抛 [BookSearchException]，由上层按源隔离，
+  /// 不再静默 `return []` 伪装成「无结果」。
   Future<List<Map<String, dynamic>>> searchBook(String keyword,
       {int page = 1}) async {
     if (source.searchUrl == null || source.searchUrl!.isEmpty) {
       AppLogger.instance.warn(LogCategory.parse, '搜索地址为空');
-      return [];
+      throw BookSearchException(
+        kind: BookSearchFailureKind.ruleMismatch,
+        message: '搜索地址为空',
+        sourceName: source.bookSourceName,
+      );
     }
 
     final searchRule = source.ruleSearch;
     if (searchRule == null) {
       AppLogger.instance.warn(LogCategory.parse, '搜索规则为空');
-      return [];
+      throw BookSearchException(
+        kind: BookSearchFailureKind.ruleMismatch,
+        message: '搜索规则为空',
+        sourceName: source.bookSourceName,
+      );
     }
 
     // 加载书源 JS 库
@@ -764,16 +778,51 @@ class WebBook {
 
       AppLogger.instance
           .info(LogCategory.network, '搜索响应: ${html.length} chars');
+
+      // statusCode==0：HttpClient 在网络层失败时的约定返回，不是「站点无书」
+      if (response.statusCode == 0) {
+        AppLogger.instance.error(LogCategory.network, '搜索网络失败',
+            detail: 'URL: ${parsed.url}\n状态码: 0');
+        lastSearchHtml = '<!-- 搜索网络失败 -->\n'
+            '<!-- URL: ${parsed.url} -->\n'
+            '<!-- 书源: ${source.bookSourceName} -->';
+        throw BookSearchException(
+          kind: BookSearchFailureKind.network,
+          message: '无法连接书源站点（网络不通或请求被中断）',
+          sourceName: source.bookSourceName,
+          statusCode: 0,
+        );
+      }
+
+      if (!response.isSuccessful) {
+        AppLogger.instance.error(LogCategory.network, '搜索站点报错',
+            detail: 'URL: ${parsed.url}\n状态码: ${response.statusCode}');
+        lastSearchHtml = '<!-- 搜索站点报错 -->\n'
+            '<!-- URL: ${parsed.url} -->\n'
+            '<!-- 状态码: ${response.statusCode} -->\n'
+            '<!-- 书源: ${source.bookSourceName} -->';
+        throw BookSearchException(
+          kind: BookSearchFailureKind.siteError,
+          message: '站点返回 HTTP ${response.statusCode}',
+          sourceName: source.bookSourceName,
+          statusCode: response.statusCode,
+        );
+      }
+
       if (html.isEmpty) {
         AppLogger.instance.error(LogCategory.network, '搜索响应为空',
             detail: 'URL: ${parsed.url}\n状态码: ${response.statusCode}');
-        // 保存诊断信息，方便调试页面查看
         lastSearchHtml = '<!-- 搜索响应为空 -->\n'
             '<!-- URL: ${parsed.url} -->\n'
             '<!-- 状态码: ${response.statusCode} -->\n'
             '<!-- 请求方式: ${parsed.option?.method ?? "GET"} -->\n'
             '<!-- 书源: ${source.bookSourceName} -->';
-        return [];
+        throw BookSearchException(
+          kind: BookSearchFailureKind.network,
+          message: '搜索响应体为空',
+          sourceName: source.bookSourceName,
+          statusCode: response.statusCode,
+        );
       }
 
       // 执行 checkKeyWord JS（校验搜索关键词）
@@ -787,7 +836,11 @@ class WebBook {
               checkResult.isEmpty ||
               checkResult == 'false') {
             debugPrint('❌ 搜索关键词校验失败: $keyword');
-            return [];
+            throw BookSearchException(
+              kind: BookSearchFailureKind.ruleMismatch,
+              message: '关键词校验未通过（checkKeyWord）',
+              sourceName: source.bookSourceName,
+            );
           }
         }
       }
@@ -815,6 +868,14 @@ class WebBook {
         actualBookListRule = actualBookListRule.substring(1);
       }
 
+      if (actualBookListRule.trim().isEmpty) {
+        throw BookSearchException(
+          kind: BookSearchFailureKind.ruleMismatch,
+          message: '搜索列表规则（bookList）为空',
+          sourceName: source.bookSourceName,
+        );
+      }
+
       if (_loggedRuleTags.add('搜索列表')) {
         AppLogger.instance.logParse('搜索列表', actualBookListRule);
       }
@@ -839,6 +900,7 @@ class WebBook {
       }
 
       if (bookElements.isEmpty) {
+        // HTTP 成功且规则执行无异常：视为真的没这本书（或站点空列表）
         AppLogger.instance.warn(LogCategory.parse, '未找到书籍元素');
         return [];
       }
@@ -872,7 +934,7 @@ class WebBook {
         }
       }
 
-      // 调试：如果元素不为空但结果为空，输出详细诊断
+      // 列表有节点但书名全空：规则字段失效，不是「无此书」
       if (bookElements.isNotEmpty && dedupedResults.isEmpty) {
         final diagInfo = '元素数:${bookElements.length}, 但所有元素name为空!\n'
             'name规则: ${searchRule.name ?? ""}\n'
@@ -880,14 +942,34 @@ class WebBook {
             '第一个元素HTML: ${bookElements.first is dom.Element ? (bookElements.first as dom.Element).outerHtml : "${bookElements.first}"}';
         AppLogger.instance.warn(LogCategory.parse, '搜索结果诊断', detail: diagInfo);
         debugPrint('⚠️ $diagInfo');
+        throw BookSearchException(
+          kind: BookSearchFailureKind.ruleMismatch,
+          message: '列表规则命中 ${bookElements.length} 条，但书名规则未解析出结果',
+          sourceName: source.bookSourceName,
+        );
       }
 
       debugPrint('📖 最终结果数量: ${dedupedResults.length}');
       return dedupedResults;
+    } on BookSearchException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      debugPrint('❌ 搜索超时: $e');
+      throw BookSearchException(
+        kind: BookSearchFailureKind.timeout,
+        message: '搜索请求超时',
+        sourceName: source.bookSourceName,
+        cause: e,
+      );
     } catch (e, stackTrace) {
       debugPrint('❌ 搜索失败: $e');
       debugPrint('❌ 堆栈: $stackTrace');
-      return [];
+      throw BookSearchException(
+        kind: BookSearchFailureKind.unknown,
+        message: e.toString(),
+        sourceName: source.bookSourceName,
+        cause: e,
+      );
     }
   }
 
