@@ -24,6 +24,9 @@ typedef StartConnect<T> = Future<ConnectAttempt<T>> Function(
   int port,
 );
 
+/// 把已连上的明文 socket 升级成 TLS。生产环境对接 [SecureSocket.secure]。
+typedef SecureUpgrade = Future<Socket> Function(Socket socket, String host);
+
 /// 将 DNS 结果按 Happy Eyeballs 习惯交错：v6[0], v4[0], v6[1], v4[1]…
 ///
 /// 保证双栈时优先尝试 IPv6，又不会把全部 IPv4 排到所有 IPv6 之后。
@@ -182,6 +185,14 @@ int _defaultPortFor(Uri url) {
 ///
 /// 先完成 DNS，再返回 [ConnectionTask]；HttpClient 取消时会中止尚未胜出的尝试。
 /// 保留对 [proxyHost]/[proxyPort] 的尊重——有代理时竞速的是代理地址，而非源站。
+///
+/// ## TLS 由本函数负责，且只在直连时负责
+/// 设了 `connectionFactory` 后，dart:io 只在「经代理的 https」那一支做
+/// CONNECT 隧道并加密（见 `_ConnectionTarget.connect`）；**直连 https 时它把
+/// 工厂给的 socket 原样当成已加密连接使用**。所以直连必须自己 [SecureUpgrade]，
+/// 否则会往 443 端口发明文请求，表现为连上后立刻被 RST——而一旦本机设了
+/// HTTPS_PROXY，请求走隧道分支就正常，于是这个缺陷在开发机上看不见。
+/// 反过来，有代理时绝不能在这里加密，否则会和隧道的 TLS 叠成两层。
 Future<ConnectionTask<Socket>> happyEyeballsConnectionTask(
   Uri url,
   String? proxyHost,
@@ -189,6 +200,9 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionTask(
   StartConnect<Socket>? startConnect,
   Future<List<InternetAddress>> Function(String host)? lookup,
   Duration stagger = const Duration(milliseconds: 250),
+  SecureUpgrade? secureUpgrade,
+  SecurityContext? securityContext,
+  bool Function(X509Certificate cert)? onBadCertificate,
 }) async {
   final target = resolveConnectTarget(url, proxyHost, proxyPort);
   final lookupFn = lookup ?? InternetAddress.lookup;
@@ -199,6 +213,18 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionTask(
   }
 
   final start = startConnect ?? _defaultStartConnect;
+
+  // 有代理时交给 dart:io 的隧道分支加密，这里只给明文 socket
+  final needsTls =
+      url.isScheme('https') && (proxyHost == null || proxyHost.isEmpty);
+  final upgrade = secureUpgrade ??
+      (Socket socket, String host) => SecureSocket.secure(
+            socket,
+            host: host,
+            context: securityContext,
+            onBadCertificate: onBadCertificate,
+          );
+
   final tracked = <ConnectAttempt<Socket>>[];
   final result = Completer<Socket>();
   var cancelled = false;
@@ -245,8 +271,8 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionTask(
           socket.destroy();
         } catch (_) {}
       },
-    ).then((socket) {
-      if (result.isCompleted) {
+    ).then((socket) async {
+      if (cancelled || result.isCompleted) {
         try {
           socket.destroy();
         } catch (_) {}
@@ -263,7 +289,26 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionTask(
       } catch (_) {
         debugPrint('🌐 HappyEyeballs: ${target.host}:${target.port} connected');
       }
-      result.complete(socket);
+
+      if (!needsTls) {
+        result.complete(socket);
+        return;
+      }
+      try {
+        final secured = await upgrade(socket, url.host);
+        if (cancelled || result.isCompleted) {
+          try {
+            secured.destroy();
+          } catch (_) {}
+          return;
+        }
+        result.complete(secured);
+      } catch (e, st) {
+        try {
+          socket.destroy();
+        } catch (_) {}
+        if (!result.isCompleted) result.completeError(e, st);
+      }
     }, onError: (Object e, StackTrace st) {
       if (!result.isCompleted) {
         result.completeError(e, st);
@@ -283,6 +328,20 @@ StartConnect<Socket> get _defaultStartConnect => (address, port) async {
 };
 
 /// 给已有 [HttpClient] 挂上 Happy Eyeballs 风格的 [HttpClient.connectionFactory]。
-void attachHappyEyeballs(HttpClient client) {
-  client.connectionFactory = happyEyeballsConnectionTask;
+///
+/// [onBadCertificate] 必须由调用方转达：直连 https 的 TLS 在工厂内部完成，
+/// [HttpClient.badCertificateCallback] 管不到这条路径。
+void attachHappyEyeballs(
+  HttpClient client, {
+  SecurityContext? securityContext,
+  bool Function(X509Certificate cert)? onBadCertificate,
+}) {
+  client.connectionFactory = (url, proxyHost, proxyPort) =>
+      happyEyeballsConnectionTask(
+        url,
+        proxyHost,
+        proxyPort,
+        securityContext: securityContext,
+        onBadCertificate: onBadCertificate,
+      );
 }

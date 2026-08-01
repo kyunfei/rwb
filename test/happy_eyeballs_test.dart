@@ -251,4 +251,121 @@ void main() {
       await expectLater(task.socket, throwsA(isA<SocketException>()));
     });
   });
+
+  // 设了 connectionFactory 后，直连 https 的 TLS 就归工厂负责；漏掉会往 443
+  // 发明文并被立刻 RST。开发机若有 HTTPS_PROXY 则走隧道分支、看不出问题，
+  // 所以这一组用回环 socket 钉住责任划分。
+  group('happyEyeballsConnectionTask 的 TLS 责任划分', () {
+    late ServerSocket server;
+    final clientSide = <Socket>[];
+    final serverSide = <Socket>[];
+
+    setUp(() async {
+      server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen(serverSide.add);
+    });
+
+    tearDown(() async {
+      for (final s in [...clientSide, ...serverSide]) {
+        try {
+          s.destroy();
+        } catch (_) {}
+      }
+      clientSide.clear();
+      serverSide.clear();
+      await server.close();
+    });
+
+    Future<Socket> newLoopbackSocket() async {
+      final s = await Socket.connect(InternetAddress.loopbackIPv4, server.port);
+      clientSide.add(s);
+      return s;
+    }
+
+    Future<ConnectAttempt<Socket>> connectLoopback(
+      InternetAddress address,
+      int port,
+    ) async {
+      final socket = await newLoopbackSocket();
+      return ConnectAttempt<Socket>(
+        socket: Future<Socket>.value(socket),
+        cancel: () {},
+      );
+    }
+
+    Future<ConnectionTask<Socket>> taskFor(
+      String url, {
+      String? proxyHost,
+      int? proxyPort,
+      required SecureUpgrade secureUpgrade,
+    }) =>
+        happyEyeballsConnectionTask(
+          Uri.parse(url),
+          proxyHost,
+          proxyPort,
+          stagger: Duration.zero,
+          lookup: (_) async => [InternetAddress.loopbackIPv4],
+          startConnect: connectLoopback,
+          secureUpgrade: secureUpgrade,
+        );
+
+    test('直连 https：交出的必须是升级后的连接', () async {
+      final hosts = <String>[];
+      Socket? upgraded;
+
+      final task = await taskFor(
+        'https://example.test/a',
+        secureUpgrade: (socket, host) async {
+          hosts.add(host);
+          upgraded = await newLoopbackSocket();
+          return upgraded!;
+        },
+      );
+
+      final handed = await task.socket;
+      // host 要是源站域名，SNI 与证书校验都靠它
+      expect(hosts, ['example.test']);
+      expect(identical(handed, upgraded), isTrue);
+    });
+
+    test('经代理的 https：不得在这里加密，否则和隧道叠成两层', () async {
+      var called = false;
+      final task = await taskFor(
+        'https://example.test/a',
+        proxyHost: '127.0.0.1',
+        proxyPort: 8080,
+        secureUpgrade: (socket, host) async {
+          called = true;
+          return socket;
+        },
+      );
+
+      await task.socket;
+      expect(called, isFalse);
+    });
+
+    test('明文 http：不升级', () async {
+      var called = false;
+      final task = await taskFor(
+        'http://example.test/a',
+        secureUpgrade: (socket, host) async {
+          called = true;
+          return socket;
+        },
+      );
+
+      await task.socket;
+      expect(called, isFalse);
+    });
+
+    test('TLS 升级失败：报错而不是交出裸连接', () async {
+      final task = await taskFor(
+        'https://example.test/a',
+        secureUpgrade: (socket, host) async =>
+            throw const HandshakeException('bad cert'),
+      );
+
+      await expectLater(task.socket, throwsA(isA<HandshakeException>()));
+    });
+  });
 }

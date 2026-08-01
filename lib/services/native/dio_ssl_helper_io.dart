@@ -22,7 +22,9 @@ void configureDioSslBypass(Dio dio) {
     adapter.createHttpClient = () {
       final client = HttpClient()
         ..badCertificateCallback = (cert, host, port) => true;
-      attachHappyEyeballs(client);
+      // 直连 https 的 TLS 在 connectionFactory 内部完成，走不到上面那个回调，
+      // 放行策略要单独交给它，否则证书有问题的书源会退回 HandshakeException
+      attachHappyEyeballs(client, onBadCertificate: (cert) => true);
       return client;
     };
   }
