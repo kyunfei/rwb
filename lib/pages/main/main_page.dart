@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../bookshelf/bookshelf_page.dart';
 import '../discovery/discovery_page.dart';
-import '../miniprogram/miniprogram_page.dart';
 import '../profile/profile_page.dart';
 import '../../providers/bookshelf_provider.dart';
 import '../../providers/discovery_provider.dart';
@@ -15,6 +14,11 @@ import '../../providers/app_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../routes/app_routes.dart';
 import '../../services/share_service.dart';
+
+/// 底部 / 侧栏主 Tab 数量：书架、书城、我的。
+/// 旧版曾为 4 Tab（书架/发现/订阅/我的），下标 3 指向「我的」；
+/// 若将来恢复本地持久化，务必经 [_clampTabIndex] 兼容旧值。
+const int _kMainTabCount = 3;
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -37,15 +41,36 @@ class _MainPageState extends State<MainPage> {
   DateTime? _lastBackPressed;
   static const Duration _exitConfirmDuration = Duration(seconds: 2);
 
+  /// 将可能来自旧版 4-Tab 的下标映射到当前 3-Tab 结构。
+  /// 旧：0 书架 / 1 发现 / 2 订阅 / 3 我的
+  /// 新：0 书架 / 1 书城 / 2 我的
+  static int _clampTabIndex(int index) {
+    if (index < 0) return 0;
+    // 旧版「我的」下标 3 → 新下标 2；旧版「订阅」2 已删除，落到书城
+    if (index >= _kMainTabCount) {
+      return index == 3 ? 2 : 1;
+    }
+    return index;
+  }
+
+  void _selectTab(int index) {
+    final next = _clampTabIndex(index);
+    if (_currentIndex != next) {
+      setState(() {
+        _currentIndex = next;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _pages = [
       BookshelfPage(onSwipeToNext: _navigateToDiscovery),
       const DiscoveryPage(),
-      const MiniprogramPage(),
       const ProfilePage(),
     ];
+    _currentIndex = _clampTabIndex(_currentIndex);
     _loadData();
     _requestPermissions();
     _checkSharedText();
@@ -69,9 +94,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _navigateToDiscovery() {
-    setState(() {
-      _currentIndex = 1;
-    });
+    _selectTab(1);
   }
 
   Future<void> _requestPermissions() async {
@@ -357,20 +380,13 @@ class _MainPageState extends State<MainPage> {
                   ),
                   _buildNavItem(
                     1,
-                    Icons.explore_outlined,
-                    Icons.explore,
+                    Icons.storefront_outlined,
+                    Icons.storefront,
                     iconSize,
-                    '发现',
+                    '书城',
                   ),
                   _buildNavItem(
                     2,
-                    Icons.rss_feed_outlined,
-                    Icons.rss_feed,
-                    iconSize,
-                    '订阅',
-                  ),
-                  _buildNavItem(
-                    3,
                     Icons.person_outline,
                     Icons.person,
                     iconSize,
@@ -401,13 +417,7 @@ class _MainPageState extends State<MainPage> {
       child: Tooltip(
         message: label,
         child: GestureDetector(
-          onTap: () {
-            if (_currentIndex != index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            }
-          },
+          onTap: () => _selectTab(index),
           behavior: HitTestBehavior.opaque,
           child: SizedBox(
             height: DesignTokens.bottomBarHeight,
@@ -489,22 +499,14 @@ class _MainPageState extends State<MainPage> {
               Expanded(
                 child: _buildStandardNavItem(
                   1,
-                  Icons.explore_outlined,
-                  Icons.explore,
-                  '发现',
+                  Icons.storefront_outlined,
+                  Icons.storefront,
+                  '书城',
                 ),
               ),
               Expanded(
                 child: _buildStandardNavItem(
                   2,
-                  Icons.rss_feed_outlined,
-                  Icons.rss_feed,
-                  '订阅',
-                ),
-              ),
-              Expanded(
-                child: _buildStandardNavItem(
-                  3,
                   Icons.person_outline,
                   Icons.person,
                   '我的',
@@ -530,13 +532,7 @@ class _MainPageState extends State<MainPage> {
     return Tooltip(
       message: label,
       child: GestureDetector(
-        onTap: () {
-          if (_currentIndex != index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
+        onTap: () => _selectTab(index),
         behavior: HitTestBehavior.opaque,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
@@ -665,7 +661,7 @@ class _MainPageState extends State<MainPage> {
       child: SafeArea(
         child: Column(
           children: [
-            // 头部
+            // 头部（去掉占位用户名/假阅读时长）
             Container(
               padding: const EdgeInsets.all(DesignTokens.spacingXl),
               decoration: BoxDecoration(
@@ -676,29 +672,17 @@ class _MainPageState extends State<MainPage> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: colorScheme.primary,
-                    child: Icon(Icons.person, color: colorScheme.onPrimary),
+                    child: Icon(Icons.menu_book, color: colorScheme.onPrimary),
                   ),
                   const SizedBox(width: DesignTokens.spacingLg),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '用户名',
-                          style: TextStyle(
-                            fontSize: DesignTokens.fontTitle,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        Text(
-                          '今日阅读: 30分钟',
-                          style: TextStyle(
-                            fontSize: DesignTokens.fontBody,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '蛋的神器',
+                      style: TextStyle(
+                        fontSize: DesignTokens.fontTitle,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -710,12 +694,11 @@ class _MainPageState extends State<MainPage> {
                 padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                 children: [
                   _buildSidebarItem(0, Icons.menu_book, '书架'),
-                  _buildSidebarItem(1, Icons.explore, '发现'),
-                  _buildSidebarItem(2, Icons.rss_feed, '订阅'),
-                  _buildSidebarItem(3, Icons.person, '我的'),
+                  _buildSidebarItem(1, Icons.storefront, '书城'),
+                  _buildSidebarItem(2, Icons.person, '我的'),
                   const Divider(),
-                  _buildSidebarItem(4, Icons.settings, '我的设置'),
-                  _buildSidebarItem(5, Icons.info, '关于'),
+                  _buildSidebarItem(3, Icons.settings, '我的设置'),
+                  _buildSidebarItem(4, Icons.info, '关于'),
                 ],
               ),
             ),
@@ -765,7 +748,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   Widget _buildSidebarItem(int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index && index < 4;
+    // 0..2 为主 Tab；3=我的设置（等同「我的」）；4=关于
+    final isSelected = _currentIndex == index && index < _kMainTabCount;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Tooltip(
@@ -788,17 +772,14 @@ class _MainPageState extends State<MainPage> {
         selectedTileColor: colorScheme.secondary.withValues(alpha:0.12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.panelRadius)),
         onTap: () {
-          if (index < 4) {
-            setState(() {
-              _currentIndex = index;
-            });
+          if (index < _kMainTabCount) {
+            _selectTab(index);
+            _closeSidebar();
+          } else if (index == 3) {
+            // 「我的设置」→ 打开「我的」Tab
+            _selectTab(2);
             _closeSidebar();
           } else if (index == 4) {
-            setState(() {
-              _currentIndex = 3;
-            });
-            _closeSidebar();
-          } else if (index == 5) {
             _closeSidebar();
             showAboutDialog(
               context: context,

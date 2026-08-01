@@ -7,12 +7,10 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/discovery_provider.dart';
 import '../../utils/design_tokens.dart';
-import '../../widgets/android_switch.dart';
 import 'book_source_manage_page.dart';
 import '../../providers/reader_provider.dart';
 import '../../widgets/reader/reader_settings_sheet.dart' as real;
 import '../settings/theme_settings_page.dart';
-import '../settings/ai_settings_page.dart';
 import '../../routes/app_routes.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -26,8 +24,6 @@ class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
-  bool _webServiceEnabled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -134,50 +130,6 @@ class _ProfilePageState extends State<ProfilePage>
                       );
                     },
                   ),
-                  _buildSwitchItem(
-                    icon: Icons.public,
-                    title: 'Web服务',
-                    subtitle: '开启后可通过浏览器访问',
-                    value: _webServiceEnabled,
-                    onChanged: (value) {
-                      setState(() => _webServiceEnabled = value);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(value ? 'Web服务已开启' : 'Web服务已关闭'),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                ]),
-
-                // 扩展与 AI
-                _buildCategoryTitle('扩展与 AI'),
-                _buildSection([
-                  _buildListItem(
-                    icon: Icons.extension_outlined,
-                    title: '扩展设置',
-                    subtitle: '管理插件和扩展功能',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('扩展功能开发中，敬请期待'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildListItem(
-                    icon: Icons.psychology_outlined,
-                    title: 'AI 设置',
-                    subtitle: '配置 AI 相关功能',
-                    onTap: () => Navigator.push(
-                      context,
-                      AppPageRoute(
-                        builder: (context) => const AiSettingsPage(),
-                      ),
-                    ),
-                  ),
                 ]),
 
                 // 设置
@@ -234,13 +186,6 @@ class _ProfilePageState extends State<ProfilePage>
                         Navigator.pushNamed(context, AppRoutes.storageManage),
                   ),
                   _buildListItem(
-                    icon: Icons.bug_report_rounded,
-                      title: '崩溃日志',
-                    subtitle: '查看应用崩溃日志与错误报告',
-                    onTap: () =>
-                        Navigator.pushNamed(context, AppRoutes.crashLogs),
-                  ),
-                  _buildListItem(
                     icon: Icons.info_outline_rounded,
                     title: '关于',
                     onTap: _showAboutDialog,
@@ -249,6 +194,18 @@ class _ProfilePageState extends State<ProfilePage>
                     icon: Icons.logout,
                     title: '退出',
                     onTap: () => _showExitConfirm(),
+                  ),
+                ]),
+
+                // 调试入口收到最底部，日常阅读不必抢眼
+                _buildCategoryTitle('调试'),
+                _buildSection([
+                  _buildListItem(
+                    icon: Icons.bug_report_rounded,
+                    title: '崩溃日志',
+                    subtitle: '查看应用崩溃日志与错误报告',
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.crashLogs),
                   ),
                 ]),
 
@@ -353,55 +310,6 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
                 if (trailing != null) trailing,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onChanged(!value),
-        splashColor: Colors.transparent,
-        highlightColor: DesignTokens.highlightColor(context),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: DesignTokens.listItemMinHeight),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: 10),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 1),
-                  child: Icon(icon, color: colorScheme.secondary, size: DesignTokens.listItemIconSize),
-                ),
-                const SizedBox(width: DesignTokens.spacingLg),
-                Expanded(
-                  child: _buildItemText(
-                    title: title,
-                    subtitle: subtitle,
-                    colorScheme: colorScheme,
-                  ),
-                ),
-                const SizedBox(width: DesignTokens.spacingSm),
-                AndroidSwitch(
-                  value: value,
-                  onChanged: onChanged,
-                  accentColor: colorScheme.secondary,
-                  isDark: isDark,
-                ),
               ],
             ),
           ),
@@ -689,19 +597,19 @@ class _ProfilePageState extends State<ProfilePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('📖 书源管理', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('书架', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
-                Text('导入和管理书源，支持JSON格式导入'),
+                Text('管理已添加的书籍，继续上次阅读'),
                 SizedBox(height: 12),
-                Text('🔍 发现', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('书城', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
-                Text('浏览书源提供的发现内容'),
+                Text('浏览书源提供的分类与推荐内容'),
                 SizedBox(height: 12),
-                Text('📱 小程序', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('书源管理', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
-                Text('安装和管理小程序扩展'),
+                Text('导入和管理书源，支持 JSON 格式导入'),
                 SizedBox(height: 12),
-                Text('⚙️ 设置', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('设置', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
                 Text('自定义主题、阅读设置等'),
               ],

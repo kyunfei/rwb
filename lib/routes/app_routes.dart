@@ -6,7 +6,6 @@ import '../models/book_source.dart';
 import '../pages/main/main_page.dart';
 import '../pages/bookshelf/bookshelf_page.dart';
 import '../pages/discovery/discovery_page.dart';
-import '../pages/miniprogram/miniprogram_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../pages/profile/book_source_manage_page.dart';
 import '../pages/profile/book_source_edit_page.dart';
@@ -75,7 +74,6 @@ class AppRoutes {
   static const String main = '/';
   static const String bookshelf = '/bookshelf';
   static const String discovery = '/discovery';
-  static const String miniprogram = '/miniprogram';
   static const String profile = '/profile';
   static const String bookSourceManage = '/book-source-manage';
   static const String bookSourceEdit = '/book-source-edit';
@@ -107,8 +105,6 @@ class AppRoutes {
         return AppPageRoute(builder: (_) => const BookshelfPage());
       case discovery:
         return AppPageRoute(builder: (_) => const DiscoveryPage());
-      case miniprogram:
-        return AppPageRoute(builder: (_) => const MiniprogramPage());
       case profile:
         return AppPageRoute(builder: (_) => const ProfilePage());
       case bookSourceManage:
