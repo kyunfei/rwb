@@ -196,50 +196,34 @@ class HttpClient {
         }
 
         // 降级方案：使用 Dio
-        // 当 charset 为非 UTF-8 时，用 ResponseType.bytes 获取原始字节后手动解码，
-        // 确保 GBK/GB2312/GB18030 等编码正确转换
-        final useBytes = charset != null && charset.trim().toLowerCase() != 'utf-8' && charset.trim().toLowerCase() != 'utf8';
+        // 一律取原始字节自行解码。若交给 Dio 按 plain 处理，它只会按 UTF-8 解，
+        // 未在书源里声明 charset 的 GBK 站点会整篇乱码。
         final options = Options(
           method: method,
           headers: headers,
-          responseType: useBytes ? ResponseType.bytes : ResponseType.plain,
+          responseType: ResponseType.bytes,
           receiveTimeout: readTimeout,
           sendTimeout: connectTimeout,
         );
 
-        if (useBytes) {
-          final response = await _dio.request<List<int>>(
-            url,
-            data: body,
-            options: options,
-          );
-          final rawBytes = response.data ?? <int>[];
-          final bodyStr = CharsetUtils.decodeResponse(
-            Uint8List.fromList(rawBytes), charset);
-          return StrResponse(
-            url: response.realUri.toString(),
-            body: bodyStr,
-            statusCode: response.statusCode ?? 200,
-            headers: response.headers.map.map(
-              (key, value) => MapEntry(key, value.first),
-            ),
-            raw: response,
-          );
-        }
-
-        final response = await _dio.request<String>(
+        final response = await _dio.request<List<int>>(
           url,
           data: body,
           options: options,
         );
+        final rawBytes = Uint8List.fromList(response.data ?? <int>[]);
+        final headerMap = response.headers.map.map(
+          (key, value) => MapEntry(key, value.first),
+        );
 
         return StrResponse(
           url: response.realUri.toString(),
-          body: response.data ?? '',
-          statusCode: response.statusCode ?? 200,
-          headers: response.headers.map.map(
-            (key, value) => MapEntry(key, value.first),
+          body: CharsetUtils.decodeResponse(
+            rawBytes,
+            _resolveCharset(charset, headerMap, rawBytes),
           ),
+          statusCode: response.statusCode ?? 200,
+          headers: headerMap,
           raw: response,
         );
       } on DioException catch (e) {
@@ -257,11 +241,28 @@ class HttpClient {
             'error=${e.error}, statusCode=${e.response?.statusCode}, url=$url';
         debugPrint('❌ HTTP Error: $errDetail');
         if (e.response != null) {
+          // responseType 固定为 bytes，错误响应体也是 List<int>，
+          // 直接 toString() 会得到 "[60, 33, ...]" 而非页面文本
+          final errHeaders = e.response?.headers.map.map(
+                (key, value) => MapEntry(key, value.first),
+              ) ??
+              const <String, String>{};
+          final errData = e.response?.data;
+          final String errBody;
+          if (errData is List<int>) {
+            final errBytes = Uint8List.fromList(errData);
+            errBody = CharsetUtils.decodeResponse(
+              errBytes,
+              _resolveCharset(charset, errHeaders, errBytes),
+            );
+          } else {
+            errBody = errData?.toString() ?? '';
+          }
           return StrResponse(
             url: url,
-            body: e.response?.data?.toString() ?? '',
+            body: errBody,
             statusCode: e.response?.statusCode ?? 500,
-            headers: {},
+            headers: errHeaders,
           );
         }
         // 网络错误（连接超时、DNS解析失败等），返回空响应而不是抛异常
@@ -285,6 +286,32 @@ class HttpClient {
 
     // 理论上不会走到这里（循环内所有路径都有 return），但编译器需要兜底
     return StrResponse(url: url, body: '', statusCode: 0, headers: {});
+  }
+
+  /// 解析响应实际编码，优先级：书源声明 > Content-Type 头 > HTML meta 嗅探 > UTF-8
+  ///
+  /// meta 嗅探只看开头 2KB，并用 latin-1 逐字节还原成字符串再做正则匹配。
+  /// charset 声明本身必然是 ASCII，不会被这层还原破坏，从而避免"为了知道
+  /// 编码先按错误编码解全文"的死循环。
+  static String? _resolveCharset(
+    String? declared,
+    Map<String, String> headers,
+    Uint8List bytes,
+  ) {
+    final fromSource = declared?.trim();
+    if (fromSource != null && fromSource.isNotEmpty) return fromSource;
+
+    final fromHeader = CharsetUtils.detectCharsetFromHeaders(headers)?.trim();
+    if (fromHeader != null && fromHeader.isNotEmpty) return fromHeader;
+
+    if (bytes.isEmpty) return null;
+    final headLen = bytes.length < 2048 ? bytes.length : 2048;
+    final fromHtml =
+        CharsetUtils.detectCharsetFromHtml(latin1.decode(bytes.sublist(0, headLen)))
+            ?.trim();
+    if (fromHtml != null && fromHtml.isNotEmpty) return fromHtml;
+
+    return null;
   }
 
   /// 判断 DioException 是否为可重试的瞬时网络错误

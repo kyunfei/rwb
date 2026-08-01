@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:charset/charset.dart';
 import '../native/js_engine.dart';
 
 /// 编码工具函数库
@@ -71,43 +72,79 @@ class CharsetUtils {
     if (html.isEmpty) return null;
     // 1. HTML5: <meta charset="xxx"> / <meta charset=xxx>
     final metaMatch = RegExp(
-      r"""<meta[^>]+charset\s*=\s*["']?\s*([^"'\s>/]+)""",
+      r"""<meta[^>]+charset\s*=\s*["']?\s*([^"'\s>/;]+)""",
       caseSensitive: false,
     ).firstMatch(html);
-    if (metaMatch == null) return null;
-    final cs = metaMatch.group(1)!.trim();
-    if (cs.isNotEmpty) return cs;
+    if (metaMatch != null) {
+      final cs = metaMatch.group(1)!.trim();
+      if (cs.isNotEmpty) return cs;
+    }
     // 2. HTML4/XHTML: <meta http-equiv="Content-Type" content="text/html; charset=xxx">
+    // 上面的正则未命中时才走这里（原实现在此之前直接 return null，令本分支不可达）
     final httpEquivMatch = RegExp(
       r"""<meta[^>]+http-equiv\s*=\s*["']?\s*Content-Type\s*["']?[^>]+"""
-      r"""content\s*=\s*["'][^"']*charset\s*=\s*([^"'\s>]+)""",
+      r"""content\s*=\s*["'][^"']*charset\s*=\s*([^"'\s>;]+)""",
       caseSensitive: false,
     ).firstMatch(html);
-    if (httpEquivMatch == null) return null;
-    return httpEquivMatch.group(1);
+    if (httpEquivMatch != null) {
+      final cs = httpEquivMatch.group(1)!.trim();
+      if (cs.isNotEmpty) return cs;
+    }
+    return null;
   }
+
+  /// GB 家族编码名。charset 包注册表里的 `gbk` 实例是 `allowMalformed: false`，
+  /// 遇到脏字节会抛异常；书源网页常有残缺字节，故这一族单独用容错实例解码。
+  static const _gbFamily = <String>{
+    'gbk',
+    'gb2312',
+    'gb-2312',
+    'gb_2312',
+    'gb18030',
+    'cp936',
+    'cp-936',
+    'ms936',
+    'windows-936',
+  };
 
   /// 将字节数组按指定字符集解码为字符串
   ///
-  /// Dart 原生支持的编码：utf-8, latin-1, ascii
-  /// 其他编码（GBK/GB2312/GB18030/Big5/Shift_JIS 等）统一回退到 latin-1 解码 + UTF-8 容错
-  /// （latin-1 保证不丢字节，每个字节映射到 U+0000~U+00FF）
+  /// 通过 charset 包的编码注册表支持 GBK/GB2312/GB18030/EUC-JP/EUC-KR/
+  /// Shift_JIS/windows-125x/ISO-8859-x/UTF-16/UTF-32，叠加 dart:convert
+  /// 内置的 utf-8/latin-1/ascii。
   ///
-  /// 真正的非 UTF-8 解码建议走原生通道（Android OkHttp 自动处理）。
+  /// 已知缺口：Big5（charset 2.x 未提供该编码），繁体源会落到 latin-1
+  /// 兜底——不丢字节但显示为乱码。
   static String decodeResponse(Uint8List bytes, String? charset) {
     final cs = charset?.trim().toLowerCase() ?? '';
+    if (cs.isEmpty || cs == 'utf-8' || cs == 'utf8') {
+      return utf8.decode(bytes, allowMalformed: true);
+    }
+    if (cs == 'latin-1' || cs == 'latin1' || cs == 'iso-8859-1') {
+      return latin1.decode(bytes);
+    }
+    if (cs == 'ascii') {
+      // 容错：ascii.decode 遇到高位字节会抛，交给下面的兜底
+      return ascii.decode(bytes, allowInvalid: true);
+    }
+    if (_gbFamily.contains(cs)) {
+      try {
+        return const GbkCodec(allowMalformed: true).decode(bytes);
+      } catch (_) {
+        // 落到下方兜底
+      }
+    }
+    final encoding = Charset.getByName(cs);
+    if (encoding != null) {
+      try {
+        return encoding.decode(bytes);
+      } catch (_) {
+        // 落到下方兜底
+      }
+    }
+    // 注册表未覆盖（如 Big5）或解码失败：latin-1 保证不丢字节，
+    // 调用方可用 detectCharsetFromHtml 二次检测后重新解码
     try {
-      if (cs.isEmpty || cs == 'utf-8' || cs == 'utf8') {
-        return utf8.decode(bytes, allowMalformed: true);
-      }
-      if (cs == 'latin-1' || cs == 'latin1' || cs == 'iso-8859-1') {
-        return latin1.decode(bytes);
-      }
-      if (cs == 'ascii') {
-        return ascii.decode(bytes);
-      }
-      // 不支持的编码（gbk/gb2312/big5 等）：用 latin-1 兜底保证不丢数据
-      // 调用方应在收到响应后，用 detectCharsetFromHtml 二次检测并重新解码
       return latin1.decode(bytes);
     } catch (_) {
       return utf8.decode(bytes, allowMalformed: true);
