@@ -1,10 +1,17 @@
 name: Auto Merge Branches
 
+# 安全说明（2026-08 调整）：
+# 原先监听「除 master 外所有分支」的 push，会把未审阅代码自动合进 master，
+# 并连带触发 build.yml 打包发布。多分支并行开发时风险过高。
+#
+# 现改为仅当推送分支名匹配 auto/** 时才自动合并（显式 opt-in）。
+# 需要恢复「任意特性分支 push 即合 master」时，把 on.push.branches 改回：
+#   - '**'
+#   - '!master'
 on:
   push:
     branches:
-      - '**'           # 监听所有分支的推送
-      - '!master'      # 排除目标分支自身，避免循环
+      - 'auto/**'
 
 permissions:
   contents: write
