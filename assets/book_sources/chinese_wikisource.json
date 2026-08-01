@@ -1,0 +1,40 @@
+{
+  "bookSourceUrl": "https://zh.wikisource.org",
+  "bookSourceName": "中文维基文库",
+  "bookSourceGroup": "中文",
+  "bookSourceType": 0,
+  "enabled": true,
+  "enabledExplore": true,
+  "header": "{\"User-Agent\": \"Mozilla/5.0 (compatible; MR-Reader/1.0)\"}",
+  "bookSourceComment": "内置中文书源：中文维基文库（公有领域）。以英文维基文库源为蓝本改适。本地 fixture 覆盖搜索/目录/正文；另对站点 HTML 做过抽样结构核对（非 App 内端到端联网阅读）。目录优先取分栏列表 class.multicol（中文分章页常见），正文取 class.mw-parser-output。内容以古典文学等公有领域作品为主，不是网文站。",
+  "searchUrl": "https://zh.wikisource.org/w/index.php?search={{key}}&title=Special:Search&ns0=1",
+  "exploreUrl": "小說門戶::https://zh.wikisource.org/wiki/Portal:小說",
+  "ruleSearch": {
+    "bookList": "li.mw-search-result",
+    "name": ".mw-search-result-heading@tag.a@text",
+    "bookUrl": ".mw-search-result-heading@tag.a@href",
+    "intro": ".searchresult@text||.mw-search-result-data@text"
+  },
+  "ruleExplore": {
+    "bookList": "div#mw-content-text@tag.ul@tag.li@tag.a",
+    "name": "text",
+    "bookUrl": "href"
+  },
+  "ruleBookInfo": {
+    "name": "h1#firstHeading@text||h1@text",
+    "author": "#headerContainer@tag.a@text||span.ws-noexport@tag.a@text",
+    "intro": "#mw-content-text@tag.p.0@text",
+    "coverUrl": "#mw-content-text@tag.img@src",
+    "tocUrl": ""
+  },
+  "ruleToc": {
+    "chapterList": "class.multicol@tag.ul@tag.li@tag.a||#mw-content-text@tag.ul@tag.li@tag.a",
+    "chapterName": "text",
+    "chapterUrl": "href"
+  },
+  "ruleContent": {
+    "content": "class.mw-parser-output@html||#mw-content-text@html",
+    "title": "h1#firstHeading@text||h1@text",
+    "replaceRegex": "##class=\"mw-editsection\".*?##\n##\\[edit\\]##\n##\\[编辑\\]##\n##\\[編輯\\]##\n##Jump to navigation.*?Jump to search##\n##跳转到导航.*?跳转到搜索##\n##跳到导航.*?跳到搜索##"
+  }
+}

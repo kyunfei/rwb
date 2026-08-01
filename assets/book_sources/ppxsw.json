@@ -6,7 +6,7 @@
   "enabled": true,
   "enabledExplore": true,
   "header": "{\"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\"}",
-  "bookSourceComment": "皮皮小说网 - 全本完结小说免费阅读",
+  "bookSourceComment": "示例源（非推荐主用）：搜索规则可用，但正文规则已知残缺——ruleContent.content 误写成与 title 相同的 class.chapter-title@text，只能抽出章节标题读不到正文，属预期而非 App 故障。请优先使用内置「中文维基文库」或自行导入可用书源；本源仅作中文示例/结构演示，勿据此排查阅读引擎。",
   "searchUrl": "https://www.ppxsw.co/search.html, {\"method\": \"POST\", \"body\": \"s={{key}}\"}",
   "exploreUrl": "玄幻修真::https://www.ppxsw.co/fenlei/1_1/\n重生穿越::https://www.ppxsw.co/fenlei/2_1/\n都市小说::https://www.ppxsw.co/fenlei/3_1/",
   "ruleSearch": {

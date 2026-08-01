@@ -47,13 +47,16 @@ class StorageBuiltinSourceSeedStore implements BuiltinSourceSeedStore {
 class BuiltinBookSourceService {
   BuiltinBookSourceService._();
 
-  /// v1 仅注入了 3 个英文源；v2 起包含中文示例源 ppxsw。
-  /// 旧用户已置 true 的 v1 不会阻止 v2 补种。
+  /// v1 仅注入了 3 个英文源；v2 起包含中文示例源 ppxsw；
+  /// v3 起包含中文维基文库公有领域源。
+  /// 旧用户已置 true 的较低版本标记不会阻止较高版本补种。
   static const String legacySeededFlagKey = 'builtin_english_sources_seeded_v1';
-  static const String seededFlagKey = 'builtin_sources_seeded_v2';
+  static const String previousSeededFlagKey = 'builtin_sources_seeded_v2';
+  static const String seededFlagKey = 'builtin_sources_seeded_v3';
 
-  /// 内置书源资源路径（含中文示例源与三个公有领域英文源）。
+  /// 内置书源资源路径（中文维基文库、中文示例源与三个公有领域英文源）。
   static const List<String> assetPaths = [
+    'assets/book_sources/chinese_wikisource.json',
     'assets/book_sources/ppxsw.json',
     'assets/book_sources/project_gutenberg.json',
     'assets/book_sources/english_wikisource.json',
