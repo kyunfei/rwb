@@ -1,34 +1,17 @@
-import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../utils/share_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
+
 import '../../providers/app_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/cover_config_service.dart';
 import '../../widgets/android_switch.dart';
-import '../../widgets/common_widgets.dart';
-
-import 'theme/theme_package_config.dart';
-import 'theme/navigation_bar_config.dart';
-import 'theme/top_bar_config.dart';
-import 'theme/theme_manage_page.dart';
-import 'theme/cloud_sync_task_page.dart';
-import 'theme/theme_edit_dialog.dart';
-import 'theme/theme_slider_track_shape.dart';
-import 'theme/navigation_bar_manage_page.dart';
-import 'theme/navigation_bar_edit_dialog.dart';
-import 'theme/top_bar_manage_page.dart';
-import 'theme/top_bar_edit_dialog.dart';
 import 'theme/book_info_manage_page.dart';
 import 'theme/bubble_manage_page.dart';
 import 'theme/cover_config_page.dart';
-import 'theme/cover_collection_manage_page.dart';
-import 'theme/cover_collection_detail_page.dart';
+import 'theme/navigation_bar_manage_page.dart';
+import 'theme/theme_manage_page.dart';
+import 'theme/top_bar_manage_page.dart';
+
 class ThemeSettingsPage extends StatefulWidget {
   const ThemeSettingsPage({super.key});
 
@@ -233,27 +216,4 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
       ),
     );
   }
-}
-
-
-
-
-
-/// 底栏配置类 - 参考 legado-main 的 NavigationBarIconConfig.Config
-
-
-
-// 顶栏包编辑对话框 - 参考 legado-main 的 TopBarManageActivity.buildEditView
-
-// 气泡管理页面
-
-
-
-/// 导航项数据类 - 参考原版 NavigationBarIconConfig.NavItem
-class _NavItem {
-  final String key;
-  final String title;
-  final IconData icon;
-
-  const _NavItem(this.key, this.title, this.icon);
 }
