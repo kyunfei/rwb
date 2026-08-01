@@ -39,5 +39,12 @@ void main() {
       expect(start, greaterThan(0));
       expect(text.substring(start).startsWith('第三句'), isTrue);
     });
+
+    test('findSentenceStartIndex respects English period boundaries', () {
+      const text =
+          'First sentence ends here. Second sentence begins afterward.';
+      final start = ReaderPaginationUtils.findSentenceStartIndex(text, 40);
+      expect(text.substring(start), startsWith('Second sentence'));
+    });
   });
 }
