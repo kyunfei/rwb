@@ -1,6 +1,35 @@
 import 'package:flutter/material.dart';
 import '../utils/design_tokens.dart';
 
+/// AppBar 里的文字按钮。
+///
+/// 主题把 `appBarTheme.backgroundColor` 设成了 `colorScheme.primary`，而
+/// [TextButton] 默认就用 primary 当文字色——两者同色，按钮渲染出来但完全看不见
+/// （AppBar 只给图标注入 IconTheme，管不到 TextButton）。所以这里必须显式取
+/// AppBar 的前景色。
+class AppBarTextButton extends StatelessWidget {
+  const AppBarTextButton({
+    super.key,
+    required this.onPressed,
+    required this.label,
+  });
+
+  final VoidCallback? onPressed;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onPrimary;
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(foregroundColor: fg),
+      child: Text(label),
+    );
+  }
+}
+
 class CommonWidgets {
   static Widget buildLoadingWidget({String? message}) {
     return Center(

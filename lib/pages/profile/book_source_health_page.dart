@@ -7,6 +7,7 @@ import '../../services/source_health_check_service.dart';
 import '../../services/source_health_logic.dart';
 import '../../services/storage_service.dart';
 import '../../utils/design_tokens.dart';
+import '../../widgets/common_widgets.dart';
 
 /// 书源健康检查页：批量真实探测搜索→详情→目录→正文
 class BookSourceHealthPage extends StatefulWidget {
@@ -137,9 +138,9 @@ class _BookSourceHealthPageState extends State<BookSourceHealthPage> {
         title: const Text('书源健康检查'),
         actions: [
           if (_running)
-            TextButton(onPressed: _cancel, child: const Text('取消'))
+            AppBarTextButton(onPressed: _cancel, label: '取消')
           else
-            TextButton(onPressed: _start, child: const Text('开始检测')),
+            AppBarTextButton(onPressed: _start, label: '开始检测'),
           PopupMenuButton<String>(
             onSelected: (v) async {
               switch (v) {

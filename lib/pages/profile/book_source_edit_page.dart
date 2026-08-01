@@ -13,6 +13,7 @@ import '../../services/storage_service.dart';
 import '../../services/cookie_service.dart';
 import '../../services/app_logger.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/common_widgets.dart';
 import '../../widgets/keyboard_assist_toolbar.dart';
 
 /// 编辑字段实体
@@ -2167,9 +2168,9 @@ class _SourceLoginPageState extends State<_SourceLoginPage> {
       appBar: AppBar(
         title: Text('登录 - ${widget.source.bookSourceName}'),
         actions: [
-          TextButton(
+          AppBarTextButton(
             onPressed: _checking ? null : _onCheckLogin,
-            child: const Text('完成'),
+            label: '完成',
           ),
         ],
       ),

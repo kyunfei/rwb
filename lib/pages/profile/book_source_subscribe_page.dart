@@ -5,6 +5,7 @@ import '../../models/source_subscription.dart';
 import '../../services/source_import_logic.dart';
 import '../../services/source_subscribe_service.dart';
 import '../../utils/design_tokens.dart';
+import '../../widgets/common_widgets.dart';
 
 /// 书源订阅管理：记住远程地址，支持单条更新与一键更新全部
 class BookSourceSubscribePage extends StatefulWidget {
@@ -183,9 +184,9 @@ class _BookSourceSubscribePageState extends State<BookSourceSubscribePage> {
       appBar: AppBar(
         title: const Text('书源订阅'),
         actions: [
-          TextButton(
+          AppBarTextButton(
             onPressed: _busy ? null : _updateAll,
-            child: const Text('一键更新全部'),
+            label: '一键更新全部',
           ),
         ],
       ),
