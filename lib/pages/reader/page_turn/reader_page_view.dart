@@ -1,4 +1,4 @@
-import 'dart:async' show Completer, Timer;
+import 'dart:async' show Completer, Timer, unawaited;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
@@ -493,16 +493,18 @@ class ReaderPageViewState extends State<ReaderPageView>
       final direction = _delegate.direction;
       bool syncOk = true;
       try {
-        widget.onPerformPageTurn(direction).then((asyncOk) {
-          if (!mounted) return;
-          if (asyncOk) {
-            widget.onPageTurnCompleted?.call(direction);
-          } else {
-            widget.onPageTurnCancelled?.call();
-          }
-        }).catchError((e) {
-          if (mounted) widget.onPageTurnCancelled?.call();
-        });
+        unawaited(
+          widget.onPerformPageTurn(direction).then((asyncOk) {
+            if (!mounted) return;
+            if (asyncOk) {
+              widget.onPageTurnCompleted?.call(direction);
+            } else {
+              widget.onPageTurnCancelled?.call();
+            }
+          }).catchError((e) {
+            if (mounted) widget.onPageTurnCancelled?.call();
+          }),
+        );
       } catch (e) {
         syncOk = false;
       }
@@ -536,16 +538,18 @@ class ReaderPageViewState extends State<ReaderPageView>
     bool syncOk = true;
     try {
       // 不 await：立即返回，跳页在后台执行
-      widget.onPerformPageTurn(direction).then((asyncOk) {
-        if (!mounted) return;
-        if (asyncOk) {
-          widget.onPageTurnCompleted?.call(direction);
-        } else {
-          widget.onPageTurnCancelled?.call();
-        }
-      }).catchError((e) {
-        if (mounted) widget.onPageTurnCancelled?.call();
-      });
+      unawaited(
+        widget.onPerformPageTurn(direction).then((asyncOk) {
+          if (!mounted) return;
+          if (asyncOk) {
+            widget.onPageTurnCompleted?.call(direction);
+          } else {
+            widget.onPageTurnCancelled?.call();
+          }
+        }).catchError((e) {
+          if (mounted) widget.onPageTurnCancelled?.call();
+        }),
+      );
     } catch (e) {
       syncOk = false;
     }

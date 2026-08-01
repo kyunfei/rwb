@@ -246,7 +246,7 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
       unawaited(NativeChannel.instance.setScreenBrightness(_screenBrightness));
     }
     if (_keepScreenOn) {
-      WakelockPlus.enable();
+      unawaited(WakelockPlus.enable());
     }
   }
 
@@ -622,7 +622,7 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
     }
     // 第二遍：提取图片 URL，add() 会自动过滤 data-parts 里的配对切片
     for (final image in document.querySelectorAll('img, image')) {
-      final addedUrl = add(
+      add(
         image.attributes['src'] ??
             image.attributes['data-src'] ??
             image.attributes['data-original'] ??
@@ -2044,10 +2044,10 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
           );
 
           // 保存到书架
-          StorageService.instance.addToBookshelf(updatedBook.toJson());
-          context.read<BookshelfProvider>().loadBooks();
+          await StorageService.instance.addToBookshelf(updatedBook.toJson());
+          if (!mounted) return;
+          await context.read<BookshelfProvider>().loadBooks();
 
-          // 更新状态并重新加载
           setState(() {
             _book = updatedBook;
             _chapters = chapters;
@@ -2056,7 +2056,7 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
             _currentGlobalIndex = 0;
           });
 
-          _loadChapter();
+          unawaited(_loadChapter());
 
           if (mounted) {
             _showMessage('已切换到 $sourceName');
@@ -2294,7 +2294,7 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
           )
           .whenComplete(() {
             final retryContext = _globalImageKeys[target]?.currentContext;
-            if (retryContext != null) {
+            if (retryContext != null && retryContext.mounted) {
               Scrollable.ensureVisible(
                 retryContext,
                 duration: const Duration(milliseconds: 120),
@@ -2308,7 +2308,7 @@ class _ComicReaderPageState extends State<ComicReaderPage> {
       _scrollController.jumpTo(estimatedOffset);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final retryContext = _globalImageKeys[target]?.currentContext;
-        if (retryContext != null) {
+        if (retryContext != null && retryContext.mounted) {
           Scrollable.ensureVisible(
             retryContext,
             duration: Duration.zero,
@@ -4017,7 +4017,7 @@ class _ChapterListPanelState extends State<_ChapterListPanel> {
                 bookUrl: widget.book!.bookUrl,
                 bookmarkId: bookmark.id,
               );
-              _loadBookmarks();
+              await _loadBookmarks();
             },
             child: const Text('删除'),
           ),
