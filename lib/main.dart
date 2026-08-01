@@ -19,6 +19,8 @@ import 'services/native/js_engine.dart';
 import 'services/storage_service.dart';
 import 'services/source_engine/proxy_service.dart';
 import 'services/cover_config_service.dart';
+import 'services/shelf/shelf_download_queue_service.dart';
+import 'services/shelf/shelf_update_service.dart';
 import 'widgets/themed_background.dart';
 
 Future<void> main() async {
@@ -112,6 +114,8 @@ class DanShenqiApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ExploreShowProvider()),
         ChangeNotifierProvider(create: (_) => ReaderProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider.value(value: ShelfUpdateService.instance),
+        ChangeNotifierProvider.value(value: ShelfDownloadQueueService.instance),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {

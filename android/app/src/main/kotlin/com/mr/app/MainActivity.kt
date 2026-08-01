@@ -13,6 +13,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         NativePlugin.register(flutterEngine, this)
+        TtsNotificationPlugin.register(flutterEngine, this)
 
         // 注册分享文本通道
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.mr.app/share")

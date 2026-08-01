@@ -347,6 +347,11 @@ html {
   margin-bottom: 0;
 }
 
+.tts-hl {
+  background-color: rgba(255, 193, 7, 0.45);
+  border-radius: 2px;
+}
+
 /* 高亮规则 CSS */
 ${generateHighlightCss(provider)}
 
@@ -2324,6 +2329,59 @@ window.readerApi = (function() {
     return prependedChapterCount;
   }
 
+  var lastTtsMark = null;
+  function clearTtsHighlight() {
+    if (lastTtsMark && lastTtsMark.parentNode) {
+      try {
+        var parent = lastTtsMark.parentNode;
+        while (lastTtsMark.firstChild) {
+          parent.insertBefore(lastTtsMark.firstChild, lastTtsMark);
+        }
+        parent.removeChild(lastTtsMark);
+      } catch (e) {
+        console.warn('[reader] clearTtsHighlight:', e);
+      }
+    }
+    lastTtsMark = null;
+  }
+
+  function highlightTtsSentence(text) {
+    clearTtsHighlight();
+    if (!text || !contentA) return false;
+    var query = text.trim();
+    if (query.length > 48) {
+      query = query.substring(0, 48);
+    }
+    var walker = document.createTreeWalker(contentA, NodeFilter.SHOW_TEXT, null);
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      var val = node.nodeValue;
+      if (!val) continue;
+      var found = val.indexOf(query);
+      if (found < 0) continue;
+      try {
+        var range = document.createRange();
+        range.setStart(node, found);
+        range.setEnd(node, Math.min(found + query.length, val.length));
+        var mark = document.createElement('mark');
+        mark.className = 'tts-hl';
+        range.surroundContents(mark);
+        lastTtsMark = mark;
+        mark.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (typeof isScrollMode !== 'undefined' && !isScrollMode && typeof jumpToPage === 'function') {
+          var rect = mark.getBoundingClientRect();
+          if (rect.bottom > window.innerHeight || rect.top < 0) {
+            // 分页模式：按元素位置估算页码由 Dart 侧 jumpToPage 处理
+          }
+        }
+        return true;
+      } catch (e) {
+        console.warn('[reader] highlightTtsSentence:', e);
+      }
+    }
+    return false;
+  }
+
   return {
     init: init,
     getPageCount: getPageCount,
@@ -2348,7 +2406,9 @@ window.readerApi = (function() {
     restoreHighlights: restoreHighlights,
     removeHighlightByText: removeHighlightByText,
     searchText: searchText,
-    scrollToSearchResult: scrollToSearchResult
+    scrollToSearchResult: scrollToSearchResult,
+    highlightTtsSentence: highlightTtsSentence,
+    clearTtsHighlight: clearTtsHighlight
   };
 })();
 ''';

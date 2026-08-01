@@ -417,6 +417,22 @@ class ReaderWebViewController {
     return _toInt(result);
   }
 
+  Future<bool> highlightTtsSentence(String text) async {
+    if (!_isReady || text.trim().isEmpty) return false;
+    final escaped = jsonEncode(text);
+    final result = await _webviewController?.evaluateJavascript(
+      source: 'window.readerApi.highlightTtsSentence($escaped);',
+    );
+    return result == true;
+  }
+
+  Future<void> clearTtsHighlight() async {
+    if (!_isReady) return;
+    await _webviewController?.evaluateJavascript(
+      source: 'window.readerApi.clearTtsHighlight();',
+    );
+  }
+
   /// 设置 JS Handler（在 WebView 创建时调用）
   void setupJavaScriptHandlers(InAppWebViewController controller) {
     controller.addJavaScriptHandler(

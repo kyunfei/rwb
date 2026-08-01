@@ -1,215 +1,92 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 
-/// 阅读器TTS管理器
-/// 管理文字转语音朗读功能
+import '../pages/reader/reader_text_cleaner.dart';
+import 'reader_tts_service.dart';
+
+/// 阅读器 TTS 管理器（委托 [ReaderTtsService]，保留 Provider 侧 API）。
 class ReaderTtsManager {
   ReaderTtsManager();
 
-  final FlutterTts _tts = FlutterTts();
-
-  bool _initialized = false;
-  bool _isSpeaking = false;
-  bool _isPaused = false;
-  int _paragraphIndex = 0;
-  double _rate = 0.5;
-
-  /// 段落列表
-  List<String> _paragraphs = [];
-  // ignore: unused_field
-  String _chapterContent = '';
+  final ReaderTtsService _service = ReaderTtsService();
 
   VoidCallback? _onStateChanged;
   VoidCallback? _onParagraphChanged;
+  ReaderTtsChapterCompleteCallback? _onChapterComplete;
+  ReaderTtsSegmentCallback? _onSegmentChanged;
 
-  bool get isSpeaking => _isSpeaking;
-  bool get isPaused => _isPaused;
-  int get paragraphIndex => _paragraphIndex;
-  int get paragraphCount => _paragraphs.length;
-  double get rate => _rate;
+  bool get isSpeaking => _service.isSpeaking;
+  bool get isPaused => _service.isPaused;
+  int get paragraphIndex => _service.segmentIndex;
+  int get paragraphCount => _service.segmentCount;
+  double get rate => _service.rate;
+  double get pitch => _service.pitch;
+  String? get voiceName => _service.voiceName;
 
-  /// 初始化TTS引擎
+  ReaderTtsSegment? get currentSegment => _service.currentSegment;
+
   Future<void> init({
     double rate = 0.5,
     VoidCallback? onStateChanged,
     VoidCallback? onParagraphChanged,
+    ReaderTtsSegmentCallback? onSegmentChanged,
+    ReaderTtsChapterCompleteCallback? onChapterComplete,
   }) async {
     _onStateChanged = onStateChanged;
     _onParagraphChanged = onParagraphChanged;
-    _rate = rate;
-
-    try {
-      debugPrint('[TTS] init: starting...');
-      
-      // 设置中文语言
-      bool langOk = false;
-      for (final code in ['zh-CN', 'zh', 'cmn', 'zh-Hans']) {
-        final result = await _tts.setLanguage(code);
-        debugPrint('[TTS] setLanguage("$code") returned: $result');
-        if (result == 1) {
-          langOk = true;
-          break;
-        }
-      }
-      if (!langOk) {
-        debugPrint('[TTS] No Chinese language matched. Using default voice.');
-      }
-      
-      // 设置语速
-      final rateResult = await _tts.setSpeechRate(_rate);
-      debugPrint('[TTS] setSpeechRate returned: $rateResult');
-      
-      // 设置完成回调
-      _tts.setCompletionHandler(() {
-        if (_isSpeaking) {
-          nextParagraph();
-        }
-      });
-      
-      _initialized = true;
-      debugPrint('[TTS] init: done');
-    } catch (e, st) {
-      debugPrint('[TTS] init FAILED: $e\n$st');
-    }
+    _onSegmentChanged = onSegmentChanged;
+    _onChapterComplete = onChapterComplete;
+    await _service.ensureInitialized(
+      rate: rate,
+      onStateChanged: () {
+        _onStateChanged?.call();
+        _onParagraphChanged?.call();
+      },
+      onSegmentChanged: (seg) {
+        _onSegmentChanged?.call(seg);
+        _onParagraphChanged?.call();
+      },
+      onChapterComplete: _onChapterComplete,
+    );
   }
 
-  /// 设置当前章节内容
-  void setChapterContent(String content) {
-    _chapterContent = content;
-    _paragraphs = _splitParagraphs(content);
-    _paragraphIndex = 0;
+  void setChapterContent(String content, {int startOffset = 0}) {
+    final plain = ReaderTextCleaner.cleanForTts(content);
+    _service.setChapterPlainText(plain, startOffset: startOffset);
   }
 
-  /// 开始朗读
-  Future<void> start() async {
-    if (!_initialized) return;
-    try {
-      _isSpeaking = true;
-      _isPaused = false;
-      _paragraphIndex = 0;
-      _onStateChanged?.call();
-      await _tts.stop();
-      await _speakCurrent();
-    } catch (e, st) {
-      debugPrint('[TTS] start FAILED: $e\n$st');
-    }
+  Future<void> start({int? fromParagraphIndex}) async {
+    await _service.start(fromSegmentIndex: fromParagraphIndex);
   }
 
-  /// 朗读当前段落
-  Future<void> _speakCurrent() async {
-    if (!_isSpeaking) return;
-    
-    if (_paragraphIndex >= _paragraphs.length) {
-      // 章节结束
-      _paragraphIndex = 0;
-      _onParagraphChanged?.call();
-      _onStateChanged?.call();
-      return;
-    }
-    
-    final text = _paragraphs[_paragraphIndex];
-    debugPrint('[TTS] Speaking paragraph $_paragraphIndex: "${text.length > 30 ? text.substring(0, 30) : text}..."');
-    
-    await _tts.speak(text);
-  }
+  void pause() => _service.pause();
 
-  /// 暂停
-  void pause() {
-    _isPaused = true;
-    _tts.pause();
-    _onStateChanged?.call();
-  }
+  Future<void> resume() async => _service.resume();
 
-  /// 恢复
-  Future<void> resume() async {
-    if (!_isSpeaking) {
-      await start();
-      return;
-    }
-    _isPaused = false;
-    _onStateChanged?.call();
-    await _speakCurrent();
-  }
+  void stop() => _service.stop();
 
-  /// 停止
-  void stop() {
-    _isSpeaking = false;
-    _isPaused = false;
-    _tts.stop();
-    _onStateChanged?.call();
-  }
+  Future<void> nextParagraph() async => _service.nextSegment();
 
-  /// 下一段
-  Future<void> nextParagraph() async {
-    if (_paragraphIndex < _paragraphs.length - 1) {
-      _paragraphIndex++;
-      _onParagraphChanged?.call();
-      await _speakCurrent();
-    } else {
-      // 章节结束
-      _paragraphIndex = 0;
-      _onParagraphChanged?.call();
-      _onStateChanged?.call();
-    }
-  }
+  Future<void> prevParagraph() async => _service.prevSegment();
 
-  /// 上一段
-  Future<void> prevParagraph() async {
-    if (_paragraphIndex > 0) {
-      _paragraphIndex--;
-      _onParagraphChanged?.call();
-      await _tts.stop();
-      await _speakCurrent();
-    }
-  }
+  Future<void> goToParagraph(int index) async => _service.goToSegment(index);
 
-  /// 跳到指定段落
-  Future<void> goToParagraph(int index) async {
-    if (index >= 0 && index < _paragraphs.length) {
-      _paragraphIndex = index;
-      _onParagraphChanged?.call();
-      await _tts.stop();
-      await _speakCurrent();
-    }
-  }
+  Future<void> setRate(double rate) async => _service.setRate(rate);
 
-  /// 设置语速
-  Future<void> setRate(double rate) async {
-    _rate = rate;
-    if (_isSpeaking) {
-      await _tts.setSpeechRate(rate);
-    }
-  }
+  Future<void> setPitch(double pitch) async => _service.setPitch(pitch);
 
-  /// 释放资源
-  void dispose() {
-    try {
-      _tts.stop();
-    } catch (e) {
-      debugPrint('[TTS] stop on dispose failed: $e');
-    }
-    try {
-      _tts.setCompletionHandler(() {});
-    } catch (e) {
-      debugPrint('[TTS] reset completion handler failed: $e');
-    }
-    _onStateChanged = null;
-    _onParagraphChanged = null;
-  }
+  Future<void> setVoice(String? name) async => _service.setVoice(name);
 
-  /// 分割段落
-  static List<String> _splitParagraphs(String content) {
-    return content
-        .split(RegExp(r'\n+'))
-        .where((p) => p.trim().isNotEmpty)
-        .toList();
-  }
+  Future<List<Map<String, String>>> listVoices() => _service.listVoices();
 
-  /// 获取当前段落文本
-  String get currentParagraph {
-    if (_paragraphs.isEmpty || _paragraphIndex >= _paragraphs.length) {
-      return '';
-    }
-    return _paragraphs[_paragraphIndex];
-  }
+  void setSleepTimerMinutes(int minutes) =>
+      _service.setSleepTimerMinutes(minutes);
+
+  void pauseForAudioFocusLoss() => _service.pauseForAudioFocusLoss();
+
+  Future<void> resumeAfterAudioFocusGain() =>
+      _service.resumeAfterAudioFocusGain();
+
+  void dispose() => _service.dispose();
+
+  String get currentParagraph => _service.currentSegment?.text ?? '';
 }

@@ -15,6 +15,9 @@ import '../../services/storage_service.dart';
 import '../../services/cover_config_service.dart';
 import '../../services/image_decode_provider.dart';
 import '../../utils/design_tokens.dart';
+import '../../services/shelf/shelf_update_service.dart';
+import '../../services/shelf/shelf_download_queue_service.dart';
+import '../../services/shelf/shelf_offline_storage.dart';
 
 /// 书架布局类型
 enum BookshelfLayout {
@@ -95,6 +98,8 @@ class _BookshelfPageState extends State<BookshelfPage>
         _scrollToCenterTag(provider.selectedGroupIndex);
       }
     });
+    unawaited(ShelfUpdateService.instance.scheduleDelayedStart());
+    unawaited(ShelfDownloadQueueService.instance.scheduleDelayedStart());
   }
 
   Future<void> _loadBookshelfConfig() async {
@@ -624,10 +629,30 @@ class _BookshelfPageState extends State<BookshelfPage>
   }
 
   Future<void> _refreshAllBooks() async {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('正在更新书籍目录...')));
-    // TODO: 实现更新逻辑
+    final updateService = context.read<ShelfUpdateService>();
+    final provider = context.read<BookshelfProvider>();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('正在更新书籍目录...')),
+    );
+    await updateService.checkAllOnBookshelf();
+    if (!mounted) return;
+    await provider.loadBooks();
+    if (!mounted) return;
+    final progress = updateService.progress;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '目录更新完成：成功 ${progress.completed} 本，失败 ${progress.failed} 本',
+        ),
+        action: progress.failed > 0
+            ? SnackBarAction(
+                label: '查看原因',
+                onPressed: _showUpdateLogDialog,
+              )
+            : null,
+      ),
+    );
   }
 
   void _showRemoteBookDialog() {
@@ -938,6 +963,22 @@ class _BookshelfPageState extends State<BookshelfPage>
                       setDialogState(() => _showWaitUpdate = v);
                     },
                     contentPadding: EdgeInsets.zero,
+                  ),
+                  Consumer<ShelfUpdateService>(
+                    builder: (context, updateService, _) {
+                      return SwitchListTile(
+                        title: const Text('定时自动检测更新'),
+                        subtitle: Text(
+                          '间隔 ${updateService.autoCheckIntervalHours} 小时（冷启动后延迟执行）',
+                        ),
+                        value: updateService.autoCheckEnabled,
+                        onChanged: (v) async {
+                          await updateService.setAutoCheckEnabled(v);
+                          setDialogState(() {});
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    },
                   ),
                   // 显示快速滚动条
                   SwitchListTile(
@@ -1263,21 +1304,134 @@ class _BookshelfPageState extends State<BookshelfPage>
   }
 
   void _showLogDialog() {
+    _showUpdateLogDialog();
+  }
+
+  void _showUpdateLogDialog() {
+    final updateService = context.read<ShelfUpdateService>();
+    final results = updateService.lastBatchResults;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('日志'),
-        content: const SizedBox(
+        title: const Text('目录更新记录'),
+        content: SizedBox(
           width: double.maxFinite,
-          height: 300,
-          child: Center(child: Text('暂无日志')),
+          height: 360,
+          child: results.isEmpty
+              ? const Center(child: Text('暂无最近批量更新记录'))
+              : ListView.builder(
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final item = results[index];
+                    return ListTile(
+                      dense: true,
+                      title: Text(item.bookName),
+                      subtitle: Text(
+                        item.success
+                            ? (item.hasNewChapters
+                                ? '发现 ${item.newChapterCount} 个新章节'
+                                : '无新章节')
+                            : (item.error ?? '失败'),
+                      ),
+                      trailing: Icon(
+                        item.success
+                            ? (item.hasNewChapters
+                                ? Icons.fiber_new
+                                : Icons.check_circle_outline)
+                            : Icons.error_outline,
+                        color: item.success
+                            ? (item.hasNewChapters ? Colors.orange : Colors.green)
+                            : Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  },
+                ),
         ),
         actions: [
+          if (updateService.isRunning)
+            TextButton(
+              onPressed: () {
+                updateService.cancelCurrentBatch();
+              },
+              child: const Text('取消检测'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('关闭'),
           ),
         ],
+      ),
+    );
+  }
+
+  List<Book> _sortBooksForDisplay(List<Book> books) {
+    final updateService = context.read<ShelfUpdateService>();
+    final sorted = List<Book>.from(books);
+    switch (_sort) {
+      case BookshelfSort.byTime:
+        sorted.sort((a, b) {
+          final aTime = a.durChapterTime ?? DateTime(1970);
+          final bTime = b.durChapterTime ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
+        break;
+      case BookshelfSort.byLatest:
+        sorted.sort((a, b) {
+          final aState = updateService.stateFor(a.bookUrl);
+          final bState = updateService.stateFor(b.bookUrl);
+          if (aState.hasNewChapters != bState.hasNewChapters) {
+            return (bState.hasNewChapters ? 1 : 0)
+                .compareTo(aState.hasNewChapters ? 1 : 0);
+          }
+          if (aState.newChapterCount != bState.newChapterCount) {
+            return bState.newChapterCount.compareTo(aState.newChapterCount);
+          }
+          final aTime = a.lastCheckTime ?? DateTime(1970);
+          final bTime = b.lastCheckTime ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
+        break;
+      case BookshelfSort.byName:
+        sorted.sort((a, b) => a.displayName.compareTo(b.displayName));
+        break;
+      case BookshelfSort.byAuthor:
+        sorted.sort((a, b) => a.author.compareTo(b.author));
+        break;
+      case BookshelfSort.byAddTime:
+        sorted.sort((a, b) => b.addedTime.compareTo(a.addedTime));
+        break;
+      case BookshelfSort.byManual:
+        sorted.sort((a, b) {
+          final ao = a.customOrder ?? 999999;
+          final bo = b.customOrder ?? 999999;
+          return ao.compareTo(bo);
+        });
+        break;
+    }
+    final top = sorted.where((b) => b.isTop).toList();
+    final normal = sorted.where((b) => !b.isTop).toList();
+    return [...top, ...normal];
+  }
+
+  Widget? _buildNewChapterBadge(String bookUrl) {
+    final state = context.watch<ShelfUpdateService>().stateFor(bookUrl);
+    if (!_showWaitUpdate || !state.hasNewChapters || state.newChapterCount <= 0) {
+      return null;
+    }
+    return Container(
+      margin: const EdgeInsets.only(left: DesignTokens.spacingSm),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.redAccent,
+        borderRadius: BorderRadius.circular(DesignTokens.panelRadius),
+      ),
+      child: Text(
+        '+${state.newChapterCount}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -1344,7 +1498,9 @@ class _BookshelfPageState extends State<BookshelfPage>
       },
       itemBuilder: (context, pageIndex) {
         // 根据分组索引获取该分组的书籍
-        final groupBooks = provider.getBooksByGroup(groups[pageIndex]);
+        final groupBooks = _sortBooksForDisplay(
+          provider.getBooksByGroup(groups[pageIndex]),
+        );
 
         // 每个分组的书籍列表
         if (groupBooks.isEmpty) {
@@ -1352,7 +1508,7 @@ class _BookshelfPageState extends State<BookshelfPage>
         }
 
         return RefreshIndicator(
-          onRefresh: provider.loadBooks,
+          onRefresh: _refreshAllBooks,
           child: isList
               ? _buildListViewWithBooks(groupBooks, provider)
               : _buildGridViewWithBooks(groupBooks, provider),
@@ -1542,6 +1698,17 @@ class _BookshelfPageState extends State<BookshelfPage>
                 ),
               ),
             ),
+          Builder(
+            builder: (context) {
+              final badge = _buildNewChapterBadge(book.bookUrl);
+              if (badge == null) return const SizedBox.shrink();
+              return Positioned(
+                top: 4,
+                right: _showUnread && book.unreadCount > 0 ? 36 : 4,
+                child: badge,
+              );
+            },
+          ),
           // 本地标签
           if (book.originType == BookOriginType.local)
             Positioned(
@@ -1667,6 +1834,12 @@ class _BookshelfPageState extends State<BookshelfPage>
                               ),
                             ),
                           ),
+                        Builder(
+                          builder: (context) {
+                            final badge = _buildNewChapterBadge(book.bookUrl);
+                            return badge ?? const SizedBox.shrink();
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: DesignTokens.spacingXs),
@@ -1976,12 +2149,26 @@ class _BookshelfPageState extends State<BookshelfPage>
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: 实现批量更新
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('正在更新...')));
+              final ids = provider.selectedBookIds.toList();
+              final updateService = context.read<ShelfUpdateService>();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('正在更新选中书籍...')),
+              );
+              await updateService.checkBooks(ids);
+              if (!mounted) return;
+              await provider.loadBooks();
+              provider.exitBatchMode();
+              if (!mounted) return;
+              final progress = updateService.progress;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '批量更新完成：成功 ${progress.completed}，失败 ${progress.failed}',
+                  ),
+                ),
+              );
             },
             child: const Text('确定'),
           ),
@@ -2163,10 +2350,36 @@ class _BookshelfPageState extends State<BookshelfPage>
     showModalBottomSheet(
       context: context,
       builder: (context) {
+        final updateState = context.watch<ShelfUpdateService>().stateFor(
+          book.bookUrl,
+        );
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (updateState.lastError != null)
+                ListTile(
+                  leading: Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: const Text('上次目录更新失败'),
+                  subtitle: Text(
+                    updateState.lastError!,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ListTile(
+                leading: const Icon(Icons.update),
+                title: const Text('检测本书更新'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await context.read<ShelfUpdateService>().checkBook(book);
+                  if (!mounted) return;
+                  await provider.loadBooks();
+                },
+              ),
               ListTile(
                 leading: Icon(
                   book.isTop ? Icons.push_pin_outlined : Icons.push_pin,
@@ -2638,28 +2851,102 @@ class _BookshelfPageState extends State<BookshelfPage>
     return args;
   }
 
-  void _showCacheExportDialog() {
-    showDialog(
+  Future<void> _showCacheExportDialog() async {
+    final provider = context.read<BookshelfProvider>();
+    final totalBytes = await ShelfOfflineStorage.totalCacheBytes();
+    if (!mounted) return;
+    final onlineBooks = provider.books
+        .where((b) => b.originType == BookOriginType.online)
+        .toList();
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('缓存导出'),
-        content: const Text('缓存导出功能可以导出书籍缓存文件，方便在其他设备使用。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: 实现缓存导出
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('缓存导出功能开发中...')));
-            },
-            child: const Text('确定'),
-          ),
-        ],
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('离线缓存管理'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '总占用：${ShelfOfflineStorage.formatBytes(totalBytes)}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: DesignTokens.spacingSm),
+                  Consumer<ShelfDownloadQueueService>(
+                    builder: (context, queue, _) {
+                      return Row(
+                        children: [
+                          const Text('下载并发'),
+                          Expanded(
+                            child: Slider(
+                              min: 1,
+                              max: 6,
+                              divisions: 5,
+                              value: queue.concurrency.toDouble(),
+                              label: '${queue.concurrency}',
+                              onChanged: (v) {
+                                unawaited(queue.setConcurrency(v.round()));
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: DesignTokens.spacingSm),
+                  SizedBox(
+                    height: 260,
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: onlineBooks.length,
+                      itemBuilder: (context, index) {
+                        final book = onlineBooks[index];
+                        return FutureBuilder<int>(
+                          future: ShelfOfflineStorage.bookCacheBytes(book),
+                          builder: (context, snap) {
+                            final size = snap.data ?? 0;
+                            return ListTile(
+                              dense: true,
+                              title: Text(
+                                book.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                ShelfOfflineStorage.formatBytes(size),
+                              ),
+                              trailing: size > 0
+                                  ? IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () async {
+                                        await ShelfOfflineStorage.clearBookCache(
+                                          book,
+                                        );
+                                        setDialogState(() {});
+                                      },
+                                    )
+                                  : null,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('关闭'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

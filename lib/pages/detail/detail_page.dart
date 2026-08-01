@@ -23,6 +23,10 @@ import '../../widgets/change_source_sheet.dart';
 import '../../services/cover_config_service.dart';
 import '../../widgets/book_edit_sheet.dart';
 import '../../utils/design_tokens.dart';
+import '../../services/shelf/shelf_download_queue_service.dart';
+import '../../services/shelf/shelf_update_service.dart';
+import '../../models/shelf/shelf_download_task.dart';
+import 'shelf_download_tasks_sheet.dart';
 
 const _coverWidth = 110.0;
 const _coverHeight = 160.0;
@@ -98,6 +102,9 @@ class _DetailPageState extends State<DetailPage> {
         }
         chapters = await dataProvider.getChapterList(book);
         if (!mounted) return;
+        if (book.originType == BookOriginType.online) {
+          unawaited(ShelfUpdateService.instance.clearUpdateBadge(book.bookUrl));
+        }
         if (book.totalChapterNum == null && chapters.isNotEmpty) {
           book = book.copyWith(totalChapterNum: chapters.length);
         }
@@ -1281,6 +1288,13 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   void _showDownloadDialog() {
+    if (_book == null || _chapters.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请先加载章节目录')),
+      );
+      return;
+    }
+    final book = _book!;
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -1292,13 +1306,17 @@ class _DetailPageState extends State<DetailPage> {
               title: const Text('下载当前章节'),
               onTap: () {
                 Navigator.pop(context);
+                unawaited(_enqueueDownload(ShelfDownloadRangeMode.custom,
+                    customStart: book.durChapterIndex,
+                    customEnd: book.durChapterIndex));
               },
             ),
             ListTile(
               leading: const Icon(Icons.download_for_offline),
-              title: const Text('下载后续50章'),
+              title: const Text('从当前章往后下载'),
               onTap: () {
                 Navigator.pop(context);
+                unawaited(_enqueueDownload(ShelfDownloadRangeMode.fromCurrent));
               },
             ),
             ListTile(
@@ -1306,10 +1324,124 @@ class _DetailPageState extends State<DetailPage> {
               title: const Text('下载全本'),
               onTap: () {
                 Navigator.pop(context);
+                unawaited(_enqueueDownload(ShelfDownloadRangeMode.all));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_list_numbered),
+              title: const Text('自定义章节区间'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCustomDownloadRangeDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.queue),
+              title: const Text('查看下载任务'),
+              onTap: () {
+                Navigator.pop(context);
+                unawaited(ShelfDownloadTasksSheet.show(context, book));
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _enqueueDownload(
+    ShelfDownloadRangeMode mode, {
+    int? customStart,
+    int? customEnd,
+  }) async {
+    if (_book == null) return;
+    if (_book!.mediaType != MediaType.novel) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前仅支持小说文本批量离线（漫画请使用阅读页单页缓存）')),
+      );
+      return;
+    }
+    final queue = context.read<ShelfDownloadQueueService>();
+    final taskId = await queue.enqueueTask(
+      book: _book!,
+      chapters: _chapters,
+      rangeMode: mode,
+      currentChapterIndex: _book!.durChapterIndex,
+      customStart: customStart,
+      customEnd: customEnd,
+    );
+    if (!mounted) return;
+    if (taskId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法创建下载任务')),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('已加入下载队列'),
+        action: SnackBarAction(
+          label: '查看',
+          onPressed: () {
+            unawaited(ShelfDownloadTasksSheet.show(context, _book!));
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showCustomDownloadRangeDialog() {
+    if (_book == null || _chapters.isEmpty) return;
+    final indices = _chapters.map((c) => c.index).toList();
+    final minI = indices.reduce((a, b) => a < b ? a : b);
+    final maxI = indices.reduce((a, b) => a > b ? a : b);
+    final startCtrl = TextEditingController(text: '$minI');
+    final endCtrl = TextEditingController(text: '$maxI');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('自定义章节区间'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: startCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: '起始章节序号 ($minI-$maxI)',
+              ),
+            ),
+            TextField(
+              controller: endCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: '结束章节序号 ($minI-$maxI)',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final start = int.tryParse(startCtrl.text.trim());
+              final end = int.tryParse(endCtrl.text.trim());
+              unawaited(
+                _enqueueDownload(
+                  ShelfDownloadRangeMode.custom,
+                  customStart: start,
+                  customEnd: end,
+                ),
+              );
+            },
+            child: const Text('开始下载'),
+          ),
+        ],
       ),
     );
   }
