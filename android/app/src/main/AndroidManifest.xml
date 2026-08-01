@@ -17,10 +17,6 @@
         android:maxSdkVersion="28" />
     <!-- Android 13+ 读取媒体图片（封面缓存、WebView图片） -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <!-- Android 13+ 读取媒体视频（视频书源） -->
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-    <!-- Android 13+ 读取媒体音频（有声书源） -->
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
     <!-- Android 11+ 管理所有文件（书源导出、日志导出、书籍下载到公共目录） -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
 
