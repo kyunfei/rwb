@@ -17,6 +17,10 @@ class BookshelfProvider extends ChangeNotifier {
   List<String> _customGroups = []; // 自定义分组
 
   List<Book> get books => _filteredBooks;
+
+  /// 未按分组过滤的完整书架（书城「继续阅读」等跨分组场景使用）
+  List<Book> get allBooks => _books;
+
   String? get currentGroupId => _currentGroupId;
   SortType get sortType => _sortType;
   bool get isGridView => _isGridView;
