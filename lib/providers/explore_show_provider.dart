@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/book_source.dart';
 import '../services/storage_service.dart';
 import '../services/source_engine/source_engine.dart';
+import '../services/source_request_failure.dart';
 
 class ExploreShowProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _books = [];
@@ -26,7 +27,8 @@ class ExploreShowProvider extends ChangeNotifier {
     try {
       final sourceData = StorageService.instance.getBookSource(sourceUrl);
       if (sourceData == null) {
-        _error = '书源不存在';
+        _books = [];
+        _error = '书源不存在，请返回重新选择。';
         _isLoading = false;
         notifyListeners();
         return;
@@ -37,10 +39,12 @@ class ExploreShowProvider extends ChangeNotifier {
       final results = await webBook.exploreBook(exploreUrl);
 
       _books = results;
+      _error = null;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      _error = e.toString();
+      _books = [];
+      _error = describeSourceRequestFailure(e);
       _isLoading = false;
       debugPrint('加载发现内容失败: $e');
       notifyListeners();

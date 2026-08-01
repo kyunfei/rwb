@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import '../../providers/explore_show_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/design_tokens.dart';
+import '../../widgets/common_widgets.dart';
 
 class ExploreShowPage extends StatefulWidget {
   final String sourceUrl;
@@ -56,6 +59,21 @@ class _ExploreShowPageState extends State<ExploreShowPage> {
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
+          }
+
+          final error = provider.error;
+          if (error != null) {
+            return CommonWidgets.buildErrorWidget(
+              context: context,
+              message: error,
+              actionText: '重试',
+              onRetry: () {
+                unawaited(provider.loadExploreBooks(
+                  widget.sourceUrl,
+                  widget.exploreUrl,
+                ));
+              },
+            );
           }
 
           if (provider.books.isEmpty) {

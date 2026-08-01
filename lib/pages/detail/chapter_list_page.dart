@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -16,6 +17,8 @@ import '../../services/chapter_cache_service.dart';
 import '../../services/reader_bookmark_service.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/design_tokens.dart';
+import '../../services/source_request_failure.dart';
+import '../../widgets/common_widgets.dart';
 
 class ChapterListPage extends StatefulWidget {
   final String bookUrl;
@@ -119,7 +122,9 @@ class _ChapterListPageState extends State<ChapterListPage> {
       }
       _loadError = null;
     } catch (e) {
-      _loadError = e.toString();
+      _chapters = [];
+      _filteredChapters = [];
+      _loadError = describeSourceRequestFailure(e);
     }
     if (!mounted) return;
     setState(() {
@@ -270,7 +275,18 @@ class _ChapterListPageState extends State<ChapterListPage> {
     if (!_isLoading && _loadError != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('目录')),
-        body: Center(child: Text('目录加载失败\n$_loadError')),
+        body: CommonWidgets.buildErrorWidget(
+          context: context,
+          message: _loadError!,
+          actionText: '重试',
+          onRetry: () {
+            setState(() {
+              _isLoading = true;
+              _loadError = null;
+            });
+            unawaited(_loadData());
+          },
+        ),
       );
     }
     return Scaffold(
