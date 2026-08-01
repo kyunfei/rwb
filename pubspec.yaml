@@ -34,9 +34,6 @@ dependencies:
   html: ^0.15.4
   xml: ^7.0.1
   
-  # 媒体播放
-  video_player: ^2.8.2
-  
   # 文件/加密/权限
   archive: ^3.4.10
   crypto: ^3.0.3

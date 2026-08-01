@@ -162,28 +162,28 @@ class _BookmarkPageState extends State<BookmarkPage> {
           ),
         ),
         onTap: () {
-          final routeName = switch (book.mediaType) {
-            MediaType.video => AppRoutes.videoPlayer,
-            MediaType.audio => AppRoutes.audioPlayer,
-            MediaType.comic => AppRoutes.comicReader,
-            MediaType.novel => AppRoutes.novelReader,
-          };
-          final args = <String, dynamic>{
-            'bookUrl': book.bookUrl,
-            'bookId': book.bookUrl,
-            'bookData': book,
-            'resumeProgress': false,
-          };
-          switch (book.mediaType) {
-            case MediaType.audio:
-              args['trackId'] = bookmark.chapterIndex.toString();
-            case MediaType.video:
-              args['episodeId'] = bookmark.chapterIndex.toString();
-            case MediaType.comic:
-            case MediaType.novel:
-              args['chapterIndex'] = bookmark.chapterIndex;
+          // 音视频阅读页为空壳已移除；枚举值保留以兼容旧数据
+          if (book.mediaType == MediaType.video ||
+              book.mediaType == MediaType.audio) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('暂不支持音视频阅读')),
+            );
+            return;
           }
-          Navigator.pushNamed(context, routeName, arguments: args);
+          final routeName = book.mediaType == MediaType.comic
+              ? AppRoutes.comicReader
+              : AppRoutes.novelReader;
+          Navigator.pushNamed(
+            context,
+            routeName,
+            arguments: {
+              'bookUrl': book.bookUrl,
+              'bookId': book.bookUrl,
+              'bookData': book,
+              'resumeProgress': false,
+              'chapterIndex': bookmark.chapterIndex,
+            },
+          );
         },
       ),
     );

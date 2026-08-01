@@ -24,8 +24,6 @@ import '../pages/search/search_page.dart';
 import '../pages/detail/detail_page.dart';
 import '../pages/reader/novel_reader_page.dart';
 import '../pages/reader/comic_reader_page.dart';
-import '../pages/player/video_player_page.dart';
-import '../pages/player/audio_player_page.dart';
 import '../pages/explore/explore_show_page.dart';
 import '../pages/debug/book_source_debug_page.dart';
 import '../pages/debug/crash_log_panel.dart';
@@ -95,8 +93,6 @@ class AppRoutes {
   static const String detail = '/detail';
   static const String novelReader = '/novel-reader';
   static const String comicReader = '/comic-reader';
-  static const String videoPlayer = '/video-player';
-  static const String audioPlayer = '/audio-player';
   static const String exploreShow = '/explore-show';
   static const String bookSourceDebug = '/book-source-debug';
   static const String crashLogs = '/crash-logs';
@@ -228,22 +224,6 @@ class AppRoutes {
                 argsMap?['resumeProgress'] == true ||
                 !(argsMap?.containsKey('chapterIndex') ?? false),
             initialBook: initialBook,
-          ),
-        );
-      case videoPlayer:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return AppPageRoute(
-          builder: (_) => VideoPlayerPage(
-            bookId: args?['bookId'] ?? '',
-            episodeId: args?['episodeId'] ?? '',
-          ),
-        );
-      case audioPlayer:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return AppPageRoute(
-          builder: (_) => AudioPlayerPage(
-            bookId: args?['bookId'] ?? '',
-            trackId: args?['trackId'] ?? '',
           ),
         );
       case exploreShow:

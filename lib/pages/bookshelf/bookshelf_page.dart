@@ -2814,11 +2814,25 @@ class _BookshelfPageState extends State<BookshelfPage>
   }
 
   Future<void> _openBook(Book book) async {
+    // 音视频阅读页为空壳，已移除；枚举值仍保留以兼容旧书架数据
+    if (book.mediaType == MediaType.video ||
+        book.mediaType == MediaType.audio) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂不支持音视频阅读')),
+      );
+      return;
+    }
     final route = _readerRouteName(book.mediaType);
     await Navigator.pushNamed(
       context,
       route,
-      arguments: _readerRouteArguments(book),
+      arguments: {
+        'bookUrl': book.bookUrl,
+        'bookId': book.bookUrl,
+        'bookData': book,
+        'resumeProgress': true,
+      },
     );
     if (mounted) {
       await context.read<BookshelfProvider>().loadBooks();
@@ -2827,32 +2841,10 @@ class _BookshelfPageState extends State<BookshelfPage>
 
   String _readerRouteName(MediaType mediaType) {
     return switch (mediaType) {
-      MediaType.video => AppRoutes.videoPlayer,
-      MediaType.audio => AppRoutes.audioPlayer,
       MediaType.comic => AppRoutes.comicReader,
-      MediaType.novel => AppRoutes.novelReader,
+      MediaType.novel || MediaType.video || MediaType.audio =>
+        AppRoutes.novelReader,
     };
-  }
-
-  Map<String, dynamic> _readerRouteArguments(Book book) {
-    final args = <String, dynamic>{
-      'bookUrl': book.bookUrl,
-      'bookId': book.bookUrl,
-      'bookData': book,
-      'resumeProgress': true,
-    };
-    switch (book.mediaType) {
-      case MediaType.audio:
-        args['trackId'] = book.durChapterIndex.toString();
-        break;
-      case MediaType.video:
-        args['episodeId'] = book.durChapterIndex.toString();
-        break;
-      case MediaType.comic:
-      case MediaType.novel:
-        break;
-    }
-    return args;
   }
 
   Future<void> _showCacheExportDialog() async {

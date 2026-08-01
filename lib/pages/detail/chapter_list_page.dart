@@ -232,25 +232,32 @@ class _ChapterListPageState extends State<ChapterListPage> {
     _doOpenChapter(chapter);
   }
 
-  /// 参照 Legado 路由优先级：video → audio → comic → novel
-  String _readerRouteName() {
+  /// comic → comicReader；其余走 novelReader。
+  /// 音视频阅读页为空壳已移除；枚举值保留以兼容旧数据。
+  String? _readerRouteName() {
     final mediaType = _book?.mediaType;
-    if (mediaType == MediaType.video) return AppRoutes.videoPlayer;
-    if (mediaType == MediaType.audio) return AppRoutes.audioPlayer;
+    if (mediaType == MediaType.video || mediaType == MediaType.audio) {
+      return null;
+    }
     if (mediaType == MediaType.comic) return AppRoutes.comicReader;
     return AppRoutes.novelReader;
   }
 
   void _doOpenChapter(Chapter chapter) {
+    final route = _readerRouteName();
+    if (route == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂不支持音视频阅读')),
+      );
+      return;
+    }
     Navigator.pushReplacementNamed(
       context,
-      _readerRouteName(),
+      route,
       arguments: {
         'bookUrl': widget.bookUrl,
         'bookId': widget.bookUrl,
         'chapterIndex': chapter.index,
-        'trackId': chapter.index.toString(),
-        'episodeId': chapter.index.toString(),
         'resumeProgress': false,
         'bookData': _book,
       },
