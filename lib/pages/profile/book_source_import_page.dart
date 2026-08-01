@@ -5,7 +5,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/book_source_import_service.dart';
 import '../../services/source_import_logic.dart';
@@ -13,7 +12,7 @@ import '../../services/source_subscribe_service.dart';
 import '../../utils/design_tokens.dart';
 
 /// 书源导入页面
-/// 支持网络导入、本地文件导入、二维码导入、剪贴板导入
+/// 支持网络导入、本地文件导入、剪贴板文本导入
 class BookSourceImportPage extends StatefulWidget {
   /// 外部传入的初始文本（如其他 App 分享来的 URL 或 JSON）
   final String? initialText;
@@ -37,7 +36,7 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     if (widget.initialText != null && widget.initialText!.isNotEmpty) {
       _textController.text = widget.initialText!;
       // 如果是 URL，填入 URL 标签；否则填入文本标签
@@ -129,15 +128,6 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
     }
   }
 
-  Future<void> _importFromQr() async {
-    final scanned = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (context) => const _QrScannerPage()),
-    );
-    if (scanned == null || scanned.isEmpty) return;
-    await _doImport(scanned);
-  }
-
   Future<void> _importFromClipboard() async {
     final data = await Clipboard.getData('text/plain');
     final text = data?.text;
@@ -217,7 +207,6 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
             Tab(text: '网络导入'),
             Tab(text: '文本导入'),
             Tab(icon: Icon(Icons.code), text: 'JS导入'),
-            Tab(icon: Icon(Icons.qr_code_scanner), text: '二维码'),
           ],
         ),
       ),
@@ -229,7 +218,6 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
               _buildUrlTab(),
               _buildTextTab(),
               _buildJsTab(),
-              _buildQrTab(),
             ],
           ),
           if (_isImporting)
@@ -280,6 +268,12 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
             icon: const Icon(Icons.download),
             label: const Text('导入'),
           ),
+          const SizedBox(height: DesignTokens.spacingMd),
+          OutlinedButton.icon(
+            onPressed: _isImporting ? null : _importFromFile,
+            icon: const Icon(Icons.folder_open),
+            label: const Text('从文件导入'),
+          ),
           const SizedBox(height: DesignTokens.spacingLg),
           Card(
             child: Padding(
@@ -294,7 +288,8 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
                     '• 地址应返回 JSON 数组或单个书源对象\n'
                     '• 也支持包含 {"sourceUrls": ["url1", ...]} 的订阅格式\n'
                     '• 重复导入按 bookSourceUrl 去重更新\n'
-                    '• .js 格式的 JS 书源请使用文本导入',
+                    '• 本地 json/txt/js 文件可用上方「从文件导入」\n'
+                    '• .js 格式的 JS 书源也可使用「JS导入」页',
                     style: TextStyle(fontSize: 13, height: 1.6),
                   ),
                 ],
@@ -459,97 +454,4 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
     }
   }
 
-  Widget _buildQrTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.qr_code_scanner,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: DesignTokens.spacingLg),
-          const Text(
-            '扫描书源二维码导入',
-            style: TextStyle(fontSize: DesignTokens.fontTitle),
-          ),
-          const SizedBox(height: DesignTokens.spacingSm),
-          const Text(
-            '支持包含书源 JSON 或订阅 URL 的二维码',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: DesignTokens.spacingXl),
-          FilledButton.icon(
-            onPressed: _isImporting ? null : _importFromQr,
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('开始扫码'),
-          ),
-          const SizedBox(height: DesignTokens.spacingLg),
-          OutlinedButton.icon(
-            onPressed: _isImporting ? null : _importFromFile,
-            icon: const Icon(Icons.folder_open),
-            label: const Text('从文件导入'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 二维码扫描页面
-class _QrScannerPage extends StatefulWidget {
-  const _QrScannerPage();
-
-  @override
-  State<_QrScannerPage> createState() => _QrScannerPageState();
-}
-
-class _QrScannerPageState extends State<_QrScannerPage> {
-  late MobileScannerController _controller;
-  bool _hasScanned = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = MobileScannerController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('扫描二维码'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () => _controller.toggleTorch(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.cameraswitch),
-            onPressed: () => _controller.switchCamera(),
-          ),
-        ],
-      ),
-      body: MobileScanner(
-        controller: _controller,
-        onDetect: (capture) {
-          if (_hasScanned) return;
-          final barcodes = capture.barcodes;
-          if (barcodes.isEmpty) return;
-          final value = barcodes.first.rawValue;
-          if (value == null || value.isEmpty) return;
-          _hasScanned = true;
-          _controller.stop();
-          Navigator.pop(context, value);
-        },
-      ),
-    );
-  }
 }

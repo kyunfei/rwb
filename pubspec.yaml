@@ -34,9 +34,6 @@ dependencies:
   html: ^0.15.4
   xml: ^7.0.1
   
-  # 媒体播放
-  video_player: ^2.8.2
-  
   # 文件/加密/权限
   archive: ^3.4.10
   crypto: ^3.0.3
@@ -48,8 +45,6 @@ dependencies:
   url_launcher: ^6.2.2
   share_plus: ^7.2.1
   flutter_markdown_plus: ^1.0.1
-  # 二维码扫描
-  mobile_scanner: ^6.0.2
 
   # JS 引擎 - 从 C 源码编译的 QuickJS，通过 dart:ffi 直接调用（替代 flutter_js）
   ffi: ^2.1.0

@@ -1611,11 +1611,13 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// 参照 Legado 路由优先级：video → audio → comic → novel
-  String _readerRouteName() {
+  /// comic → comicReader；其余走 novelReader。
+  /// 音视频阅读页为空壳已移除；枚举值保留以兼容旧数据。
+  String? _readerRouteName() {
     final mediaType = _book?.mediaType;
-    if (mediaType == MediaType.video) return AppRoutes.videoPlayer;
-    if (mediaType == MediaType.audio) return AppRoutes.audioPlayer;
+    if (mediaType == MediaType.video || mediaType == MediaType.audio) {
+      return null;
+    }
     if (mediaType == MediaType.comic) return AppRoutes.comicReader;
     return AppRoutes.novelReader;
   }
@@ -1627,15 +1629,20 @@ class _DetailPageState extends State<DetailPage> {
       ).showSnackBar(const SnackBar(content: Text('目录为空，无法开始阅读')));
       return;
     }
+    final route = _readerRouteName();
+    if (route == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂不支持音视频阅读')),
+      );
+      return;
+    }
     await Navigator.pushNamed(
       context,
-      _readerRouteName(),
+      route,
       arguments: {
         'bookUrl': widget.bookUrl,
         'bookId': widget.bookUrl,
         'chapterIndex': _book?.durChapterIndex ?? 0,
-        'trackId': (_book?.durChapterIndex ?? 0).toString(),
-        'episodeId': (_book?.durChapterIndex ?? 0).toString(),
         'resumeProgress': true,
         'bookData': _book,
       },
