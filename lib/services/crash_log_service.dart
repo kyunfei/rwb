@@ -87,11 +87,20 @@ class CrashLogService {
   /// 并发保护
   bool _isLogging = false;
 
-  /// 会话ID（启动时生成，用于追踪本次会话的多次崩溃）
-  late final String _sessionId;
-
   /// 启动时间
-  late final DateTime _startTime;
+  ///
+  /// 在字段声明处求值而非 init() 里赋值：崩溃记录器必须在 init() 之前
+  /// 就可用，否则启动期崩溃会先触发 LateInitializationError，把真正的
+  /// 错误顶掉——最需要日志的时刻反而拿不到日志。
+  final DateTime _startTime = DateTime.now();
+
+  /// 会话ID（用于追踪本次会话的多次崩溃）
+  ///
+  /// `late final` + 初始化表达式是惰性求值，首次访问时才计算，
+  /// 永不抛 LateInitializationError。
+  late final String _sessionId =
+      '${_startTime.millisecondsSinceEpoch.toRadixString(36)}'
+      '-${_startTime.microsecond}';
 
   /// 软件启动时的总错误计数
   Map<String, int> _errorCounters = {};
@@ -116,8 +125,7 @@ class CrashLogService {
     if (_initialized) return;
     _initialized = true;
 
-    _startTime = DateTime.now();
-    _sessionId = '${_startTime.millisecondsSinceEpoch.toRadixString(36)}-${_startTime.microsecond}';
+    // _startTime / _sessionId 已在字段声明处就绪，此处无需赋值
 
     // 加载错误计数
     await _loadErrorCounters();
