@@ -23,6 +23,7 @@ permissions:
 
 env:
   FLUTTER_CHANNEL: 'stable'
+  FLUTTER_VERSION: '3.44.8'
   JAVA_VERSION: '21'
 
 jobs:
@@ -75,6 +76,37 @@ jobs:
             echo "type=${{ inputs.release_type }}" >> $GITHUB_OUTPUT
           else
             echo "type=dev" >> $GITHUB_OUTPUT
+          fi
+
+  # ===== 静态分析门禁 =====
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # warning/error 一律阻断；lint 提示（info）按存量基线卡数量，只允许减少
+      - name: Analyze
+        env:
+          ANALYZE_BASELINE: '271'
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos 2>&1 | tee analyze.log
+          COUNT=$(grep -cE '^[[:space:]]+(info|warning|error) -' analyze.log || true)
+          echo "当前问题数 ${COUNT} / 基线 ${ANALYZE_BASELINE}"
+          if [ "${COUNT}" -gt "${ANALYZE_BASELINE}" ]; then
+            echo "::error::静态分析问题数由 ${ANALYZE_BASELINE} 升至 ${COUNT}，请先修复新增项"
+            exit 1
           fi
 
   # ===== Android APK 打包 =====
