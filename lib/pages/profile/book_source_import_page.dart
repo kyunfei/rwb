@@ -93,14 +93,23 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   Future<void> _importFromFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json', 'txt', 'js'],
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return;
 
+      final file = result.files.first;
+      final rejectReason = validateSourceFilePick(
+        fileName: file.name,
+        extension: file.extension,
+        sizeBytes: file.size,
+      );
+      if (rejectReason != null) {
+        _showError(rejectReason);
+        return;
+      }
+
       setState(() => _isImporting = true);
 
-      final file = result.files.first;
       final bytes = file.bytes ?? await _readFileBytes(file.path!);
       final ext = file.extension?.toLowerCase() ?? 'json';
 
@@ -460,14 +469,24 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   Future<void> _importFromJsFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['js'],
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return;
 
+      final file = result.files.first;
+      final rejectReason = validateSourceFilePick(
+        fileName: file.name,
+        extension: file.extension,
+        sizeBytes: file.size,
+        allowed: const ['js'],
+      );
+      if (rejectReason != null) {
+        _showError(rejectReason);
+        return;
+      }
+
       setState(() => _isImporting = true);
 
-      final file = result.files.first;
       final bytes = file.bytes ?? await _readFileBytes(file.path!);
       final text = utf8.decode(bytes, allowMalformed: true);
 

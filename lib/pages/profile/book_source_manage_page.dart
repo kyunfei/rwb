@@ -926,15 +926,26 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
   Future<void> _importFromLocal() async {
     try {
       final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['json', 'txt', 'js'],
         withData: true,
       );
       final file = picked?.files.single;
-      final bytes = file?.bytes;
+      if (file == null) return;
+      final rejectReason = validateSourceFilePick(
+        fileName: file.name,
+        extension: file.extension,
+        sizeBytes: file.size,
+      );
+      if (rejectReason != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rejectReason)),
+        );
+        return;
+      }
+      final bytes = file.bytes;
       if (bytes == null) return;
       // 根据文件后缀判定格式
-      final ext = file?.extension?.toLowerCase();
+      final ext = file.extension?.toLowerCase();
       final result = await BookSourceImportService().importBytes(bytes, fileExtension: ext);
       await _loadSources();
       if (!mounted) return;

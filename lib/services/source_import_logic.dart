@@ -92,3 +92,35 @@ bool looksLikeSubscribeUrl(String text) {
       (uri.scheme == 'http' || uri.scheme == 'https') &&
       uri.host.isNotEmpty;
 }
+
+/// 可作为书源导入的文件后缀
+const supportedSourceFileExtensions = <String>['json', 'txt', 'js'];
+
+/// 单个书源文件的大小上限。
+///
+/// 文件选择器故意放开为「任意类型」：Android 上按后缀过滤实际是按 MIME 过滤，
+/// 部分文件管理器会把 .json 置灰导致根本选不中。代价是用户可能误选视频等大
+/// 文件，这里挡一道，避免整份读进内存。
+const maxSourceFileBytes = 20 * 1024 * 1024;
+
+/// 校验用户选中的文件能否当书源导入。
+/// 通过返回 null，否则返回可直接展示给用户的原因。
+String? validateSourceFilePick({
+  required String fileName,
+  required String? extension,
+  required int? sizeBytes,
+  List<String> allowed = supportedSourceFileExtensions,
+}) {
+  final ext = (extension ?? '').toLowerCase();
+  if (!allowed.contains(ext)) {
+    final shown = ext.isEmpty ? '无后缀' : '.$ext';
+    final expected = allowed.map((e) => '.$e').join(' / ');
+    return '不支持的文件类型（$shown）。这里需要 $expected 文件。'
+        '你选的是「$fileName」。';
+  }
+  if (sizeBytes != null && sizeBytes > maxSourceFileBytes) {
+    final mb = (sizeBytes / (1024 * 1024)).toStringAsFixed(1);
+    return '文件太大（$mb MB）。书源文件通常只有几十 KB，请确认选对了文件。';
+  }
+  return null;
+}
