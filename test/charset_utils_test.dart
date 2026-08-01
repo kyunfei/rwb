@@ -49,10 +49,10 @@ void main() {
     });
 
     test('未覆盖的编码回退到 latin-1 且不丢字节', () {
-      // Big5 是已知缺口：charset 2.x 无该编码实现
+      // 选用确实无注册实现的编码名；Big5 已由内置表覆盖，不再充当「缺口」样例
       final bytes = Uint8List.fromList([0xA4, 0x40, 0xA4, 0x47]);
 
-      final out = CharsetUtils.decodeResponse(bytes, 'Big5');
+      final out = CharsetUtils.decodeResponse(bytes, 'x-unknown-charset-xyz');
       expect(out.codeUnits.length, bytes.length,
           reason: 'latin-1 兜底必须逐字节保留，供调用方二次检测');
     });
