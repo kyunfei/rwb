@@ -32,5 +32,31 @@ www.example.com
       expect(out.contains('   '), isFalse);
       expect(out.split('\n').length, lessThanOrEqualTo(2));
     });
+
+    test('keeps English narrative that merely mentions a URL', () {
+      const raw = '''
+She told him to visit www.example.com for the maps of London.
+"Wait—" he said, glancing at the dash — "are you sure?"
+[quietly] He closed the door.
+''';
+      final out = ReaderTextCleaner.cleanForTts(raw);
+      expect(out, contains('www.example.com'));
+      expect(out, contains('maps of London'));
+      expect(out, contains('[quietly]'));
+      expect(out, contains('—'));
+    });
+
+    test('drops URL-only short lines but keeps footnote digits stripped', () {
+      const raw = '''
+www.spam-ads.example
+Chapter text continues here with a note.[1]
+More prose after the marker.
+''';
+      final out = ReaderTextCleaner.cleanForTts(raw);
+      expect(out.contains('www.spam-ads.example'), isFalse);
+      expect(out, contains('Chapter text continues'));
+      expect(out.contains('[1]'), isFalse);
+      expect(out, contains('More prose'));
+    });
   });
 }

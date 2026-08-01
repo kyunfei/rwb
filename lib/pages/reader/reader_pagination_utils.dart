@@ -24,10 +24,13 @@ class ReaderPaginationUtils {
   }
 
   /// 从近似位置向前找到句首（中文/英文标点分句）。
+  ///
+  /// 英文句号 `.`、问号/叹号及弯引号后的空白都会视为边界；
+  /// 缩写（Mr.）可能被误切，仅用于朗读起点估算，可接受。
   static int findSentenceStartIndex(String text, int approximateIndex) {
     if (text.isEmpty) return 0;
     var i = approximateIndex.clamp(0, text.length - 1);
-    const boundaries = '。！？；!?;…\n';
+    const boundaries = '。！？；.!?;…\n';
     while (i > 0) {
       final ch = text[i - 1];
       if (boundaries.contains(ch)) {

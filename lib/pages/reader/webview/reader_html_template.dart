@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/highlight.dart';
 import '../../../providers/reader_provider.dart';
+import '../reader_typography.dart';
 
 /// 生成阅读器 HTML 模板
 ///
@@ -43,7 +44,13 @@ class ReaderHtmlTemplate {
     required int chapterIndex,
     bool isRichHtml = false,
   }) {
-    final css = _generateCss(provider, isScrollMode);
+    final latinDominant =
+        !isRichHtml && ReaderTypography.isPredominantlyLatin(content);
+    final css = _generateCss(
+      provider,
+      isScrollMode,
+      latinDominant: latinDominant,
+    );
     final js = _readerJs();
 
     // 富 HTML（EPUB）：解析 [[EPUB_CSS]]/[[EPUB_BODY]] 包裹格式
@@ -217,11 +224,18 @@ class ReaderHtmlTemplate {
   /// - #reader-stage: relative + overflow:hidden，作为 a/b 的定位容器
   /// - .reader-content: absolute + column 布局，a/b 重叠在同一位置
   /// - #reader-content-b: 默认 visibility:hidden + pointer-events:none
-  static String _generateCss(ReaderProvider provider, bool isScrollMode) {
+  static String _generateCss(
+    ReaderProvider provider,
+    bool isScrollMode, {
+    bool latinDominant = false,
+  }) {
     final textColor = _colorToHex(provider.textColor);
     final bgColor = _colorToHex(provider.backgroundColor);
     final fontFamily = provider.fontFamily.isEmpty ? 'inherit' : provider.fontFamily;
-    final indentEm = provider.paragraphIndent.length.toDouble();
+    final indentEm = ReaderTypography.effectiveIndentEm(
+      configuredEm: provider.paragraphIndent.length.toDouble(),
+      latinDominant: latinDominant,
+    );
     final titleAlign = provider.titleMode == 1
         ? 'center'
         : provider.titleMode == 3
@@ -338,8 +352,7 @@ html {
   padding: 0;
   text-align: justify;
   text-indent: var(--reader-text-indent);
-  word-break: break-word;
-  overflow-wrap: break-word;
+${ReaderTypography.paragraphWrapCss}
   font-weight: var(--reader-text-weight);
 }
 
@@ -687,8 +700,7 @@ body.reader-scroll #reader-content-b {
   margin: 0 0 var(--reader-paragraph-spacing) 0;
   text-align: justify;
   text-indent: var(--reader-text-indent);
-  word-break: break-word;
-  overflow-wrap: break-word;
+${ReaderTypography.paragraphWrapCss}
   font-weight: var(--reader-text-weight);
 }
 #reader-content-a p:last-child { margin-bottom: 0; }
@@ -880,13 +892,9 @@ body.reader-scroll #reader-content-b {
     return '<div data-chapter-index="$chapterIndex" style="display:block">$bodyHtml</div>';
   }
 
-  /// 把内容切分成段落
+  /// 把内容切分成段落（中文按行；拉丁文按空行，段内软换行合并）
   static List<String> _splitToParagraphs(String content) {
-    return content
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    return ReaderTypography.splitToParagraphs(content);
   }
 
   /// 应用高亮规则

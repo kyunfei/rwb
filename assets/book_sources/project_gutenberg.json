@@ -1,0 +1,43 @@
+{
+  "bookSourceUrl": "https://www.gutenberg.org",
+  "bookSourceName": "Project Gutenberg",
+  "bookSourceGroup": "English",
+  "bookSourceType": 0,
+  "enabled": true,
+  "enabledExplore": true,
+  "header": "{\"User-Agent\": \"Mozilla/5.0 (compatible; MR-Reader/1.0; +https://www.gutenberg.org/policy/robot_access.html)\"}",
+  "bookSourceComment": "内置英文书源：Project Gutenberg 公有领域。规则仅经本地 HTML fixture 验证，未做真实网络抓取校验。正文优先走纯文本下载（单章 Full Text）。",
+  "searchUrl": "https://www.gutenberg.org/ebooks/search/?query={{key}}",
+  "exploreUrl": "Top downloaded::https://www.gutenberg.org/ebooks/search/?sort_order=downloads",
+  "ruleSearch": {
+    "bookList": "li.booklink",
+    "name": "span.title@text",
+    "author": "span.subtitle@text",
+    "bookUrl": "a.link@href",
+    "coverUrl": "img.cover-thumb@src||img@src",
+    "intro": "span.extra@text"
+  },
+  "ruleExplore": {
+    "bookList": "li.booklink",
+    "name": "span.title@text",
+    "author": "span.subtitle@text",
+    "bookUrl": "a.link@href",
+    "coverUrl": "img.cover-thumb@src||img@src"
+  },
+  "ruleBookInfo": {
+    "name": "h1@text||span[itemprop=headline]@text",
+    "author": "a[itemprop=creator]@text||a.authortag@text",
+    "intro": "span[itemprop=description]@text||td[itemprop=about]@text",
+    "coverUrl": "img.cover@src||img[itemprop=image]@src",
+    "tocUrl": "a[type*=text/plain]@href||a[href$='.txt.utf-8']@href||a[href$='-0.txt']@href||a[href$='.txt']@href"
+  },
+  "ruleToc": {
+    "chapterList": "title",
+    "chapterName": "text",
+    "chapterUrl": ""
+  },
+  "ruleContent": {
+    "content": "body@text||text",
+    "replaceRegex": "##^\\*\\*\\* START OF.*\\*\\*\\*##\n##^\\*\\*\\* END OF.*\\*\\*\\*##"
+  }
+}

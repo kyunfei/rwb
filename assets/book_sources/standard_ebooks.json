@@ -1,0 +1,43 @@
+{
+  "bookSourceUrl": "https://standardebooks.org",
+  "bookSourceName": "Standard Ebooks",
+  "bookSourceGroup": "English",
+  "bookSourceType": 0,
+  "enabled": true,
+  "enabledExplore": true,
+  "header": "{\"User-Agent\": \"Mozilla/5.0 (compatible; MR-Reader/1.0)\"}",
+  "bookSourceComment": "内置英文书源：Standard Ebooks 精校公有领域。规则仅经本地 HTML fixture 验证，未做真实网络抓取校验。阅读走站点在线 HTML 分章。",
+  "searchUrl": "https://standardebooks.org/ebooks?query={{key}}",
+  "exploreUrl": "Recent::https://standardebooks.org/ebooks?sort=newest\nPopular::https://standardebooks.org/ebooks?sort=popular",
+  "ruleSearch": {
+    "bookList": "ol.ebooks-list@tag.li",
+    "name": "p.title@tag.a@text||a[href*=/ebooks/]@text",
+    "author": "p.author@tag.a@text||p.author@text",
+    "bookUrl": "p.title@tag.a@href||a[href*=/ebooks/]@href",
+    "coverUrl": "img@src",
+    "intro": "p.description@text||p.blurb@text"
+  },
+  "ruleExplore": {
+    "bookList": "ol.ebooks-list@tag.li",
+    "name": "p.title@tag.a@text||a[href*=/ebooks/]@text",
+    "author": "p.author@tag.a@text||p.author@text",
+    "bookUrl": "p.title@tag.a@href||a[href*=/ebooks/]@href",
+    "coverUrl": "img@src"
+  },
+  "ruleBookInfo": {
+    "name": "h1@text||meta[property=og:title]@content",
+    "author": "p.author@tag.a@text||a[href*=/ebooks/?query=]@text",
+    "intro": "meta[property=og:description]@content||div.description@text||section#description@text",
+    "coverUrl": "meta[property=og:image]@content||img.ebook@src||picture@tag.img@src",
+    "tocUrl": "a[href$=/text]@href||a[href*=/text]@href"
+  },
+  "ruleToc": {
+    "chapterList": "nav#toc@tag.a",
+    "chapterName": "text",
+    "chapterUrl": "href"
+  },
+  "ruleContent": {
+    "content": "article@html||main@html||section#chapter@html",
+    "replaceRegex": "##End of (the )?Project Gutenberg.*##\n##Standard Ebooks.*license.*##"
+  }
+}

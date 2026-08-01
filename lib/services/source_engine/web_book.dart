@@ -17,6 +17,7 @@ import '../native/js_advanced_service.dart';
 import '../native/js_engine.dart';
 import '../native/dio_ssl_helper_stub.dart'
     if (dart.library.io) '../native/dio_ssl_helper_io.dart' as ssl;
+import '../../pages/reader/reader_typography.dart';
 
 /// 每个规则类型只显示一次日志的集合
 final Set<String> _loggedRuleTags = {};
@@ -2508,10 +2509,14 @@ class WebBook {
     }
 
     // 7. 规范化换行 + 段落缩进（对齐 legado indent1Regex/indent2Regex）
+    // 西文主导时用半角缩进，避免全角空格挤占英文版心；阅读器侧仍会剥前导空白改用 CSS text-indent。
+    final indent = ReaderTypography.contentFormatIndent(
+      latinDominant: ReaderTypography.isPredominantlyLatin(result),
+    );
     // 连续换行+空白 → 单换行+缩进
-    result = result.replaceAll(RegExp(r'\s*\n+\s*'), '\n\u3000\u3000');
+    result = result.replaceAll(RegExp(r'\s*\n+\s*'), '\n$indent');
     // 行首缩进
-    result = result.replaceFirst(RegExp(r'^[\n\s]+'), '\u3000\u3000');
+    result = result.replaceFirst(RegExp(r'^[\n\s]+'), indent);
     // 去掉尾部空白
     result = result.replaceFirst(RegExp(r'[\n\s]+$'), '');
 
