@@ -3,7 +3,7 @@ $env:FLUTTER_STORAGE_BASE_URL="https://storage.flutter-io.cn"
 $env:PUB_CACHE = (Join-Path $PSScriptRoot ".pub-cache")
 
 # 国内镜像 + Flutter SDK 路径
-$FlutterSdk = "D:\flutter_windows_3.41.7-stable\flutter"
+$FlutterSdk = "D:\flutter_windows_3.44.8-stable\flutter"
 if (-not $env:FLUTTER_ROOT) { $env:FLUTTER_ROOT = $FlutterSdk }
 
 if ($env:FLUTTER_ROOT) {
