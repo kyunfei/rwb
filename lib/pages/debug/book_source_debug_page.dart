@@ -1070,7 +1070,7 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     // 默认使用内置浏览器打开链接
-    Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       AppRoutes.internalBrowser,
       arguments: {
