@@ -33,13 +33,10 @@ import '../pages/web/internal_browser_page.dart';
 class AppPageRoute<T> extends PageRouteBuilder<T> {
   AppPageRoute({
     required WidgetBuilder builder,
-    RouteSettings? settings,
-    bool maintainState = true,
-    bool fullscreenDialog = false,
+    super.settings,
+    super.maintainState,
+    super.fullscreenDialog,
   }) : super(
-          settings: settings,
-          maintainState: maintainState,
-          fullscreenDialog: fullscreenDialog,
           allowSnapshotting: false,
           transitionDuration: const Duration(milliseconds: 250),
           reverseTransitionDuration: const Duration(milliseconds: 250),

@@ -64,9 +64,9 @@ class ChapterPrefetchService {
     List<Chapter>? allChapters,
     int concurrency = _defaultConcurrency,
   }) async {
-    if (chapters.isEmpty || book.bookUrl == null) return;
+    if (chapters.isEmpty) return;
 
-    final bookUrl = book.bookUrl!;
+    final bookUrl = book.bookUrl;
     final toFetch = <Chapter>[];
     for (final ch in chapters) {
       if (ch.url == null || ch.isVolume) continue;
@@ -106,7 +106,6 @@ class ChapterPrefetchService {
   }) async {
     if (chapter.url == null) return null;
     final bookUrl = book.bookUrl;
-    if (bookUrl == null) return null;
     final k = _key(bookUrl, chapter.url!);
 
     // 1. 内存缓存
@@ -149,7 +148,7 @@ class ChapterPrefetchService {
       final content = await provider.getContent(book, chapter,
           allChapters: allChapters);
       if (content != null && content.isNotEmpty) {
-        final k = _key(book.bookUrl!, chapter.url!);
+        final k = _key(book.bookUrl, chapter.url!);
         _putMemoryCache(k, content);
         // 异步写回文件缓存
         if (book.originType == BookOriginType.online) {

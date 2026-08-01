@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -571,7 +570,7 @@ class _DetailPageState extends State<DetailPage> {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.actionRadius)),
       ),
-      child: Text(text, style: TextStyle(fontSize: DesignTokens.fontSummary, height: 1)),
+      child: Text(text, style: const TextStyle(fontSize: DesignTokens.fontSummary, height: 1)),
     );
   }
 
@@ -743,7 +742,7 @@ class _DetailPageState extends State<DetailPage> {
       foregroundColor: fg,
       elevation: 0,
       title: const Text('书籍信息'),
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         color: fg,
         fontSize: DesignTokens.fontTitle,
         fontWeight: FontWeight.w600,
@@ -815,10 +814,10 @@ class _DetailPageState extends State<DetailPage> {
             }
           },
           itemBuilder: (context) => [
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'refresh',
-              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: 12),
-              child: const Text('刷新'),
+              padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: 12),
+              child: Text('刷新'),
             ),
             if (isOnline)
               const PopupMenuItem(
@@ -1316,7 +1315,7 @@ class _DetailPageState extends State<DetailPage> {
     if (count >= 10000) {
       return '${(count / 10000).toStringAsFixed(1)}万字';
     }
-    return '${count}字';
+    return '$count字';
   }
 
   Widget _buildBottomActionBar() {

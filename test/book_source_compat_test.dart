@@ -55,7 +55,7 @@ void main() {
     // [回归测试] 验证 JS 输出的 url,{headers} 格式被正确解析
     // 场景：全本小说书源 JS 返回 /?c=book&...,{\"headers\":{\"Referer\":\"...\"}}
     test('parses JS output url with headers option (quanben style)', () {
-      final jsOutput =
+      const jsOutput =
           '/?c=book&a=search.json&callback=search&t=1783250564438'
           '&keywords=我的&b=y%25NPr1IPyc,'
           '{"headers":{"Referer":"https://quanben-xiaoshuo.com/search.html"}}';

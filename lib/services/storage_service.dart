@@ -372,8 +372,8 @@ class StorageService {
     }
     try {
       return _bookshelfBox!.values
-          .where((e) => e is Map)
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } catch (e) {
       debugPrint('❌ StorageService: getAllBooks 读取失败: $e');
@@ -535,8 +535,8 @@ class StorageService {
     }
     try {
       return _bookSourceBox!.values
-          .where((e) => e is Map)
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } catch (e) {
       debugPrint('❌ StorageService: getAllBookSources 读取失败: $e');

@@ -200,12 +200,10 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
         primary: _dayPrimaryColor,
         secondary: _dayAccentColor,
         surface: _daySurfaceColor,
-        background: _dayBackgroundColor,
         onPrimary: _foregroundFor(_dayPrimaryColor),
         onSecondary: _foregroundFor(_dayAccentColor),
         onSurface: const Color(0xDE000000), // surface 色上的文字颜色 (87%黑)
-        onSurfaceVariant: const Color(0x8A000000), // 次要文字颜色 (54%黑)
-        onBackground: const Color(0xDE000000), // background 色上的文字颜色 (87%黑)
+        onSurfaceVariant: const Color(0x8A000000), // background 色上的文字颜色 (87%黑)
         error: const Color(0xFFE53935),
         onError: Colors.white,
       ),
@@ -302,12 +300,10 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
         primary: _nightPrimaryColor,
         secondary: _nightAccentColor,
         surface: _nightSurfaceColor,
-        background: _nightBackgroundColor,
         onPrimary: _foregroundFor(_nightPrimaryColor),
         onSecondary: _foregroundFor(_nightAccentColor),
         onSurface: const Color(0xDEFFFFFF), // surface 色上的文字颜色 (87%白)
-        onSurfaceVariant: const Color(0xB3FFFFFF), // 次要文字颜色 (70%白)
-        onBackground: const Color(0xDEFFFFFF), // background 色上的文字颜色 (87%白)
+        onSurfaceVariant: const Color(0xB3FFFFFF), // background 色上的文字颜色 (87%白)
         error: const Color(0xFFE53935),
         onError: Colors.white,
       ),
@@ -515,11 +511,11 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('dayPrimaryColor', _dayPrimaryColor.value);
-    await prefs.setInt('dayAccentColor', _dayAccentColor.value);
-    await prefs.setInt('dayBackgroundColor', _dayBackgroundColor.value);
-    await prefs.setInt('daySurfaceColor', _daySurfaceColor.value);
-    await prefs.setInt('dayNavBarColor', _dayNavBarColor.value);
+    await prefs.setInt('dayPrimaryColor', _dayPrimaryColor.toARGB32());
+    await prefs.setInt('dayAccentColor', _dayAccentColor.toARGB32());
+    await prefs.setInt('dayBackgroundColor', _dayBackgroundColor.toARGB32());
+    await prefs.setInt('daySurfaceColor', _daySurfaceColor.toARGB32());
+    await prefs.setInt('dayNavBarColor', _dayNavBarColor.toARGB32());
     await _saveThemeExtras(prefs, isNight: false);
     if (backgroundImage != null) {
       if (backgroundImage.isEmpty) {
@@ -599,11 +595,11 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('nightPrimaryColor', _nightPrimaryColor.value);
-    await prefs.setInt('nightAccentColor', _nightAccentColor.value);
-    await prefs.setInt('nightBackgroundColor', _nightBackgroundColor.value);
-    await prefs.setInt('nightSurfaceColor', _nightSurfaceColor.value);
-    await prefs.setInt('nightNavBarColor', _nightNavBarColor.value);
+    await prefs.setInt('nightPrimaryColor', _nightPrimaryColor.toARGB32());
+    await prefs.setInt('nightAccentColor', _nightAccentColor.toARGB32());
+    await prefs.setInt('nightBackgroundColor', _nightBackgroundColor.toARGB32());
+    await prefs.setInt('nightSurfaceColor', _nightSurfaceColor.toARGB32());
+    await prefs.setInt('nightNavBarColor', _nightNavBarColor.toARGB32());
     await _saveThemeExtras(prefs, isNight: true);
     if (backgroundImage != null) {
       if (backgroundImage.isEmpty) {
@@ -708,7 +704,7 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (border == null) {
       await prefs.remove('${prefix}PanelBorderColor');
     } else {
-      await prefs.setInt('${prefix}PanelBorderColor', border.value);
+      await prefs.setInt('${prefix}PanelBorderColor', border.toARGB32());
     }
     await prefs.setInt(
       '${prefix}PanelBorderAlpha',

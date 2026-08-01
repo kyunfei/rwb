@@ -308,7 +308,7 @@ class ReaderProvider extends ChangeNotifier {
       'lineHeight': _lineHeight,
       'brightness': _brightness,
       'isNightMode': _isNightMode,
-      'backgroundColor': _backgroundColor.value,
+      'backgroundColor': _backgroundColor.toARGB32(),
       'pageMode': _pageMode.index,
       'fontFamily': _fontFamily,
       'loadEpubFonts': _loadEpubFonts,

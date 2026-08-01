@@ -66,6 +66,9 @@ dependencies:
   # 编码转换 - TXT 本地书 GBK 检测
   charset: ^2.0.0
 
+  # 代码中直接 import 但此前仅靠传递依赖引入
+  uuid: ^4.5.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

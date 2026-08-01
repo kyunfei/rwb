@@ -355,13 +355,13 @@ class SourceDebugService {
       log('┌获取作者');
       log('└${book.author}');
       log('┌获取分类');
-      final kind = '${book.kind ?? ''}'.trim();
+      final kind = (book.kind ?? '').trim();
       log(kind.isNotEmpty ? '└$kind' : '└<空>');
       log('┌获取字数');
-      final wordCount = '${book.wordCount ?? ''}'.trim();
+      final wordCount = (book.wordCount ?? '').trim();
       log(wordCount.isNotEmpty ? '└$wordCount' : '└<空>');
       log('┌获取最新章节');
-      final lastChapter = '${book.lastChapter ?? ''}'.trim();
+      final lastChapter = (book.lastChapter ?? '').trim();
       log(lastChapter.isNotEmpty ? '└$lastChapter' : '└<空>');
       log('┌获取简介');
       final intro = book.intro.trim();

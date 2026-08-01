@@ -265,7 +265,7 @@ class _TxtTocRulePageState extends State<TxtTocRulePage> {
                         rule.rule,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: DesignTokens.fontCaption,
                         ),

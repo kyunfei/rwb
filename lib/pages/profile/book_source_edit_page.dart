@@ -102,7 +102,7 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
     }
 
     // 优先级：已有书源 > 模板书源 > 空白书源
-    _source = _originalSource ?? widget.templateSource ?? BookSource(
+    _source = _originalSource ?? widget.templateSource ?? const BookSource(
       bookSourceUrl: '',
       bookSourceName: '',
     );
@@ -1722,7 +1722,7 @@ class _ContentEditPageState extends State<_ContentEditPage> {
 
   /// 构建行号
   Widget _buildLineNumbers() {
-    final lineHeight = 18.0;
+    const lineHeight = 18.0;
     return Container(
       width: 48,
       color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -1930,9 +1930,9 @@ class _ContentEditPageState extends State<_ContentEditPage> {
                       scrollController: _scrollController,
                       maxLines: null,
                       expands: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.only(left: 8, right: 12, top: 2, bottom: 24),
+                        contentPadding: EdgeInsets.only(left: 8, right: 12, top: 2, bottom: 24),
                       ),
                       style: TextStyle(
                         fontFamily: 'monospace',

@@ -1423,10 +1423,10 @@ class _ThemeEditDialogState extends State<_ThemeEditDialog> {
                       ),
                       child: TextField(
                         controller: _nameController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: '主题名称',
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14),
                         ),
                         style: const TextStyle(fontSize: 15),
                         onChanged: (v) => _theme.name = v,
@@ -1664,7 +1664,7 @@ class _ThemeEditDialogState extends State<_ThemeEditDialog> {
   // 颜色选项
   Widget _buildColorOption(String title, Color color, ValueChanged<Color> onChanged, {bool canDisable = false}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colorHex = '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex = '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
     return _buildOptionRow(
       child: GestureDetector(
@@ -1761,7 +1761,7 @@ class _ThemeEditDialogState extends State<_ThemeEditDialog> {
     
     // 颜色编码输入控制器
     final colorController = TextEditingController(
-      text: '#${currentColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
+      text: '#${currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
     );
     final colorFocusNode = FocusNode();
 
@@ -1772,7 +1772,7 @@ class _ThemeEditDialogState extends State<_ThemeEditDialog> {
           final selectedColor = HSVColor.fromAHSV(1.0, hue, saturation, value).toColor();
           
           // 滑动调色时同步编码；手动输入期间不覆盖用户正在编辑的内容。
-          final colorHex = '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+          final colorHex = '#${selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
           if (!isEditingColorCode && colorController.text != colorHex) {
             colorController.text = colorHex;
             colorController.selection = TextSelection.collapsed(offset: colorHex.length);
@@ -2570,7 +2570,7 @@ class ThemeConfig {
   }
 
   String toJson() {
-    return '$id|$name|$isNight|$isBuiltin|${primaryColor.value}|${accentColor.value}|${backgroundColor.value}|${navBarColor.value}|${mainBgImage ?? ''}|$bgImageBlur|${bookInfoBgImage ?? ''}|${panelBgImage ?? ''}|$panelBgMode|$cornerScale|$layoutAlpha|${panelBorderColor?.value ?? 0}|$panelBorderAlpha|$searchFollow|$replyFollow|$fontScale|${uiFont ?? ''}|${titleFont ?? ''}|${updatedAt.millisecondsSinceEpoch}';
+    return '$id|$name|$isNight|$isBuiltin|${primaryColor.toARGB32()}|${accentColor.toARGB32()}|${backgroundColor.toARGB32()}|${navBarColor.toARGB32()}|${mainBgImage ?? ''}|$bgImageBlur|${bookInfoBgImage ?? ''}|${panelBgImage ?? ''}|$panelBgMode|$cornerScale|$layoutAlpha|${panelBorderColor?.toARGB32() ?? 0}|$panelBorderAlpha|$searchFollow|$replyFollow|$fontScale|${uiFont ?? ''}|${titleFont ?? ''}|${updatedAt.millisecondsSinceEpoch}';
   }
 
   factory ThemeConfig.fromJson(String json) {
@@ -3408,7 +3408,7 @@ class _NavBarEditDialogState extends State<_NavBarEditDialog> {
                     _buildColorOption(
                       '边框颜色',
                       _config.borderColor != null ? Color(_config.borderColor!) : Colors.transparent,
-                      (c) => setState(() => _config.borderColor = c.value),
+                      (c) => setState(() => _config.borderColor = c.toARGB32()),
                       canDisable: true,
                     ),
 
@@ -3594,7 +3594,7 @@ class _NavBarEditDialogState extends State<_NavBarEditDialog> {
   Widget _buildColorOption(String title, Color color, ValueChanged<Color> onChanged, {bool canDisable = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     final colorHex = color != Colors.transparent 
-        ? '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
+        ? '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
         : '禁用';
 
     return _buildOptionRow(
@@ -4019,7 +4019,7 @@ class _NavBarEditDialogState extends State<_NavBarEditDialog> {
     bool isEditingColorCode = false;
     
     final colorController = TextEditingController(
-      text: '#${currentColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
+      text: '#${currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
     );
     final colorFocusNode = FocusNode();
 
@@ -4029,7 +4029,7 @@ class _NavBarEditDialogState extends State<_NavBarEditDialog> {
         builder: (ctx, setDialogState) {
           final selectedColor = HSVColor.fromAHSV(1.0, hue, saturation, value).toColor();
           
-          final colorHex = '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+          final colorHex = '#${selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
           if (!isEditingColorCode && colorController.text != colorHex) {
             colorController.text = colorHex;
             colorController.selection = TextSelection.collapsed(offset: colorHex.length);
@@ -5036,7 +5036,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
                       _buildColorOption(
                         '背景色',
                         _config.backgroundColor != null ? Color(_config.backgroundColor!) : (_config.isNight ? Colors.black : Colors.white),
-                        (c) => setState(() => _config.backgroundColor = c.value),
+                        (c) => setState(() => _config.backgroundColor = c.toARGB32()),
                       ),
                       _buildSelectOption(
                         '顶栏壁纸',
@@ -5062,7 +5062,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
                     _buildColorOption(
                       '标签栏背景',
                       _config.tagBarColor != null ? Color(_config.tagBarColor!) : (_config.style == 'regular' ? Colors.white : colorScheme.surfaceContainerHighest),
-                      (c) => setState(() => _config.tagBarColor = c.value),
+                      (c) => setState(() => _config.tagBarColor = c.toARGB32()),
                     ),
 
                     // 标签栏透明度
@@ -5079,7 +5079,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
                     _buildColorOption(
                       '选中标签背景',
                       _config.tagSelectedColor != null ? Color(_config.tagSelectedColor!) : colorScheme.surface,
-                      (c) => setState(() => _config.tagSelectedColor = c.value),
+                      (c) => setState(() => _config.tagSelectedColor = c.toARGB32()),
                     ),
 
                     // 选中标签透明度
@@ -5244,7 +5244,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
 
   Widget _buildColorOption(String title, Color color, ValueChanged<Color> onChanged) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colorHex = '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex = '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
     return _buildOptionRow(
       child: GestureDetector(
@@ -5322,12 +5322,8 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
               onTap: () {
                 setState(() {
                   _config.style = 'regular';
-                  if (_config.backgroundColor == null) {
-                    _config.backgroundColor = (_config.isNight ? Colors.black : Colors.white).value;
-                  }
-                  if (_config.tagBarColor == null) {
-                    _config.tagBarColor = Colors.white.value;
-                  }
+                  _config.backgroundColor ??= (_config.isNight ? Colors.black : Colors.white).toARGB32();
+                  _config.tagBarColor ??= Colors.white.toARGB32();
                 });
                 Navigator.pop(ctx);
               },
@@ -5465,7 +5461,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
     bool isEditingColorCode = false;
 
     final colorController = TextEditingController(
-      text: '#${currentColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
+      text: '#${currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
     );
     final colorFocusNode = FocusNode();
 
@@ -5475,7 +5471,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
         builder: (ctx, setDialogState) {
           final selectedColor = HSVColor.fromAHSV(1.0, hue, saturation, value).toColor();
 
-          final colorHex = '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+          final colorHex = '#${selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
           if (!isEditingColorCode && colorController.text != colorHex) {
             colorController.text = colorHex;
             colorController.selection = TextSelection.collapsed(offset: colorHex.length);
@@ -5807,7 +5803,9 @@ class _BookInfoManagePageState extends State<BookInfoManagePage> {
             icon: const Icon(Icons.refresh),
             tooltip: '重置',
             onPressed: () => setState(() {
-              for (var item in _items) item.visible = true;
+              for (var item in _items) {
+                item.visible = true;
+              }
             }),
           ),
         ],
@@ -5878,8 +5876,8 @@ class _BubbleManagePageState extends State<BubbleManagePage> {
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('bubbleSizeScale', _sizeScale);
-    await prefs.setInt('bubbleDayColor', _dayColor.value);
-    await prefs.setInt('bubbleNightColor', _nightColor.value);
+    await prefs.setInt('bubbleDayColor', _dayColor.toARGB32());
+    await prefs.setInt('bubbleNightColor', _nightColor.toARGB32());
   }
 
   @override
@@ -7198,7 +7196,7 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
   void _exportCollection(CoverCollection collection) {
     // TODO: 实现导出ZIP功能
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('导出功能待实现')),
+      const SnackBar(content: Text('导出功能待实现')),
     );
   }
 

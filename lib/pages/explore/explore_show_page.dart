@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import '../../providers/explore_show_provider.dart';
 import '../../routes/app_routes.dart';
@@ -85,8 +86,7 @@ class _ExploreShowPageState extends State<ExploreShowPage> {
               widget.exploreUrl,
             ),
             child: GridView.builder(
-              cacheExtent: 500,
-              padding: const EdgeInsets.all(DesignTokens.spacingMd),
+              scrollCacheExtent: ScrollCacheExtent.pixels(500), padding: const EdgeInsets.all(DesignTokens.spacingMd),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 childAspectRatio: 0.65,

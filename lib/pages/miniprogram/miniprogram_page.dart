@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/miniprogram.dart';
 import '../../utils/design_tokens.dart';
@@ -194,8 +195,7 @@ class _MiniprogramPageState extends State<MiniprogramPage>
 
   Widget _buildList() {
     return ListView.builder(
-      cacheExtent: 500,
-      padding: const EdgeInsets.all(DesignTokens.spacingMd),
+      scrollCacheExtent: ScrollCacheExtent.pixels(500), padding: const EdgeInsets.all(DesignTokens.spacingMd),
       itemCount: _miniprograms.length,
       itemBuilder: (context, index) {
         final mp = _miniprograms[index];

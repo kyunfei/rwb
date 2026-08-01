@@ -149,7 +149,7 @@ void main() {
       const ctHex = '9a57ecd85a5af5a63be360b0f6446096';       // Node.js 加密 "Hello, World!" 的密文
       const expectedPtHex = '48656c6c6f2c20576f726c6421';     // "Hello, World!" 的 hex
 
-      final jsCode = '''
+      const jsCode = '''
 (function(){
   function hexToU8(hex) {
     var u8 = new Uint8Array(hex.length / 2);

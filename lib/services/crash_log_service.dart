@@ -288,7 +288,7 @@ class CrashLogService {
     sb.writeln('导出时间: ${DateTime.now().toString().substring(0, 19)}');
     sb.writeln('日志条数: ${_entries.length}');
     sb.writeln('会话ID: $_sessionId');
-    sb.writeln('错误总数: ${totalErrorCount}');
+    sb.writeln('错误总数: $totalErrorCount');
     sb.writeln('');
     for (final entry in _entries) {
       sb.writeln(entry.toFullString());

@@ -3428,8 +3428,9 @@ class _ChapterListPanelState extends State<_ChapterListPanel> {
   }
 
   Future<void> _loadCacheInfo() async {
-    if (widget.book == null || widget.book!.originType != BookOriginType.online)
+    if (widget.book == null || widget.book!.originType != BookOriginType.online) {
       return;
+    }
     final files = await ChapterCacheService.instance.getChapterCacheFiles(
       widget.book!,
       isComic: true,
@@ -3499,12 +3500,15 @@ class _ChapterListPanelState extends State<_ChapterListPanel> {
     final query = _searchQuery.toLowerCase();
     return _bookmarks.where((b) {
       bool hit = false;
-      if (_searchChapterName && b.chapterTitle.toLowerCase().contains(query))
+      if (_searchChapterName && b.chapterTitle.toLowerCase().contains(query)) {
         hit = true;
-      if (_searchBookText && b.content.toLowerCase().contains(query))
+      }
+      if (_searchBookText && b.content.toLowerCase().contains(query)) {
         hit = true;
-      if (_searchContent && (b.note?.toLowerCase().contains(query) ?? false))
+      }
+      if (_searchContent && (b.note?.toLowerCase().contains(query) ?? false)) {
         hit = true;
+      }
       return hit;
     }).toList();
   }

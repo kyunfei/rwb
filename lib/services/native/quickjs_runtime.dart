@@ -671,7 +671,9 @@ List<String?> lzDecompressBatch(List<String?> inputs) {
       } else {
         final bytes = utf8.encode(s);
         final ptr = malloc<Uint8>(bytes.length + 1);
-        for (var j = 0; j < bytes.length; j++) ptr[j] = bytes[j];
+        for (var j = 0; j < bytes.length; j++) {
+          ptr[j] = bytes[j];
+        }
         ptr[bytes.length] = 0;
         inputsPtr[i] = ptr.cast();
         lensPtr[i] = bytes.length;
@@ -732,12 +734,16 @@ List<String?> aesDecryptLzBatch(List<String> b64Inputs, String key) {
     for (var i = 0; i < count; i++) {
       final bytes = utf8.encode(b64Inputs[i]);
       final ptr = malloc<Uint8>(bytes.length + 1);
-      for (var j = 0; j < bytes.length; j++) ptr[j] = bytes[j];
+      for (var j = 0; j < bytes.length; j++) {
+        ptr[j] = bytes[j];
+      }
       ptr[bytes.length] = 0;
       inputsPtr[i] = ptr.cast();
       lensPtr[i] = bytes.length;
     }
-    for (var i = 0; i < keyBytes.length; i++) keyPtr[i] = keyBytes[i];
+    for (var i = 0; i < keyBytes.length; i++) {
+      keyPtr[i] = keyBytes[i];
+    }
     keyPtr[keyBytes.length] = 0;
     final rc = _aesDecryptLzBatch(
         inputsPtr, lensPtr, count, keyPtr.cast(), keyBytes.length, outResultsPtr, outLensPtr);
@@ -803,14 +809,20 @@ List<String?> aesDecryptCbcBatch(
     for (var i = 0; i < count; i++) {
       final bytes = utf8.encode(b64Inputs[i]);
       final ptr = malloc<Uint8>(bytes.length + 1);
-      for (var j = 0; j < bytes.length; j++) ptr[j] = bytes[j];
+      for (var j = 0; j < bytes.length; j++) {
+        ptr[j] = bytes[j];
+      }
       ptr[bytes.length] = 0;
       inputsPtr[i] = ptr.cast();
       lensPtr[i] = bytes.length;
     }
-    for (var i = 0; i < keyBytes.length; i++) keyPtr[i] = keyBytes[i];
+    for (var i = 0; i < keyBytes.length; i++) {
+      keyPtr[i] = keyBytes[i];
+    }
     keyPtr[keyBytes.length] = 0;
-    for (var i = 0; i < ivBytes.length; i++) ivPtr[i] = ivBytes[i];
+    for (var i = 0; i < ivBytes.length; i++) {
+      ivPtr[i] = ivBytes[i];
+    }
     ivPtr[ivBytes.length] = 0;
     final rc = _aesDecryptCbcBatch(inputsPtr, lensPtr, count,
         keyPtr.cast(), keyBytes.length, ivPtr.cast(), ivBytes.length,
@@ -874,12 +886,16 @@ List<String?> aesDecryptEcbBatch(List<String> b64Inputs, String key) {
     for (var i = 0; i < count; i++) {
       final bytes = utf8.encode(b64Inputs[i]);
       final ptr = malloc<Uint8>(bytes.length + 1);
-      for (var j = 0; j < bytes.length; j++) ptr[j] = bytes[j];
+      for (var j = 0; j < bytes.length; j++) {
+        ptr[j] = bytes[j];
+      }
       ptr[bytes.length] = 0;
       inputsPtr[i] = ptr.cast();
       lensPtr[i] = bytes.length;
     }
-    for (var i = 0; i < keyBytes.length; i++) keyPtr[i] = keyBytes[i];
+    for (var i = 0; i < keyBytes.length; i++) {
+      keyPtr[i] = keyBytes[i];
+    }
     keyPtr[keyBytes.length] = 0;
     final rc = _aesDecryptEcbBatch(
         inputsPtr, lensPtr, count, keyPtr.cast(), keyBytes.length,

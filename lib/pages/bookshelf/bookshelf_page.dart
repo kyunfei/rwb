@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
@@ -1357,8 +1358,7 @@ class _BookshelfPageState extends State<BookshelfPage>
 
   Widget _buildListViewWithBooks(List<Book> books, BookshelfProvider provider) {
     final listView = ListView.builder(
-      cacheExtent: 500,
-      padding: EdgeInsets.all(_margin),
+      scrollCacheExtent: ScrollCacheExtent.pixels(500), padding: EdgeInsets.all(_margin),
       itemCount: books.length,
       itemBuilder: (context, index) {
         final book = books[index];
@@ -1376,8 +1376,7 @@ class _BookshelfPageState extends State<BookshelfPage>
   Widget _buildGridViewWithBooks(List<Book> books, BookshelfProvider provider) {
     final margin = _safeMargin;
     final gridView = GridView.builder(
-      cacheExtent: 500,
-      padding: EdgeInsets.all(margin),
+      scrollCacheExtent: ScrollCacheExtent.pixels(500), padding: EdgeInsets.all(margin),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: _gridColumnCount,
         childAspectRatio: 0.65,

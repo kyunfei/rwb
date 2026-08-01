@@ -635,14 +635,14 @@ class _ProfilePageState extends State<ProfilePage>
     showDialog(
       context: context,
       builder: (context) {
-        return AboutDialog(
+        return const AboutDialog(
           applicationName: '蛋的神器',
           applicationVersion: '1.0.0',
-          applicationIcon: const Icon(Icons.book, size: 48),
+          applicationIcon: Icon(Icons.book, size: 48),
           children: [
-            const Text('一款支持小说、漫画、视频、音频的多媒体阅读器'),
-            const SizedBox(height: 8),
-            const Text('nojs.py 引擎版本: 1.0.0'),
+            Text('一款支持小说、漫画、视频、音频的多媒体阅读器'),
+            SizedBox(height: 8),
+            Text('nojs.py 引擎版本: 1.0.0'),
           ],
         );
       },
@@ -789,7 +789,7 @@ class _SvgPathParser {
       if (_isCommandLetter(ch)) {
         command = _nextChar();
       } else if (command == null) {
-        throw FormatException('Invalid SVG path data');
+        throw const FormatException('Invalid SVG path data');
       }
       _parseCommand(command);
     }
@@ -910,7 +910,7 @@ class _SvgPathParser {
     final ch = _nextChar();
     if (ch == '0') return false;
     if (ch == '1') return true;
-    throw FormatException('Invalid arc flag in SVG path data');
+    throw const FormatException('Invalid arc flag in SVG path data');
   }
 
   double _readNumber() {

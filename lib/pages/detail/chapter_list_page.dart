@@ -785,12 +785,15 @@ class _ChapterListPageState extends State<ChapterListPage> {
     final query = _searchQuery.toLowerCase();
     return _bookmarks.where((b) {
       bool hit = false;
-      if (_searchChapterName && b.chapterTitle.toLowerCase().contains(query))
+      if (_searchChapterName && b.chapterTitle.toLowerCase().contains(query)) {
         hit = true;
-      if (_searchBookText && b.content.toLowerCase().contains(query))
+      }
+      if (_searchBookText && b.content.toLowerCase().contains(query)) {
         hit = true;
-      if (_searchNote && (b.note?.toLowerCase().contains(query) ?? false))
+      }
+      if (_searchNote && (b.note?.toLowerCase().contains(query) ?? false)) {
         hit = true;
+      }
       return hit;
     }).toList();
   }

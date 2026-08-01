@@ -110,13 +110,13 @@ class CookieItem {
   factory CookieItem.fromSetCookieHeader(String header, String requestUrl) {
     final parts = header.split(';').map((s) => s.trim()).toList();
     if (parts.isEmpty) {
-      throw FormatException('Invalid Set-Cookie header');
+      throw const FormatException('Invalid Set-Cookie header');
     }
 
     // 解析 name=value
     final nameValue = parts[0].split('=');
     if (nameValue.length < 2) {
-      throw FormatException('Invalid cookie name-value pair');
+      throw const FormatException('Invalid cookie name-value pair');
     }
 
     final name = nameValue[0].trim();

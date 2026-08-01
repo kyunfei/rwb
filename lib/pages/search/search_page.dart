@@ -1067,7 +1067,7 @@ class _SearchPageState extends State<SearchPage> {
                                   ),
                                   title: Text(
                                     source.bookSourceName,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: DesignTokens.fontBody,
                                     ),
                                   ),

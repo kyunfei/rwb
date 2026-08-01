@@ -33,7 +33,7 @@ class CoverRule {
   /// 默认封面规则 - 来自原版 coverRule.json
   static const CoverRule defaultRule = CoverRule(
     enable: true,
-    searchUrl: 'data:;base64,{{java.base64Encode(key)}},{\"type\":\"lyc\"}',
+    searchUrl: 'data:;base64,{{java.base64Encode(key)}},{"type":"lyc"}',
     coverRule: r'''@js:
 var key = java.hexDecodeToString(result);
 var url1 = `https://pre-api.tuishujun.com/api/searchBook?search_value=${key}&page=1&pageSize=20`;
@@ -430,20 +430,29 @@ class CoverCollectionManager {
     final key = isNight ? _dayIndexKey : _nightIndexKey;
     final jsonStr = prefs.getString(key);
     if (jsonStr == null || jsonStr.isEmpty) {
-      if (isNight) _nightCache = [];
-      else _dayCache = [];
+      if (isNight) {
+        _nightCache = [];
+      } else {
+        _dayCache = [];
+      }
       return [];
     }
     try {
       final list = (json.decode(jsonStr) as List<dynamic>)
           .map((e) => CoverCollection.fromJson(e as Map<String, dynamic>))
           .toList();
-      if (isNight) _nightCache = list;
-      else _dayCache = list;
+      if (isNight) {
+        _nightCache = list;
+      } else {
+        _dayCache = list;
+      }
       return list;
     } catch (_) {
-      if (isNight) _nightCache = [];
-      else _dayCache = [];
+      if (isNight) {
+        _nightCache = [];
+      } else {
+        _dayCache = [];
+      }
       return [];
     }
   }
@@ -460,8 +469,11 @@ class CoverCollectionManager {
     final prefs = await SharedPreferences.getInstance();
     final key = isNight ? _dayIndexKey : _nightIndexKey;
     await prefs.setString(key, json.encode(collections.map((e) => e.toJson()).toList()));
-    if (isNight) _nightCache = collections;
-    else _dayCache = collections;
+    if (isNight) {
+      _nightCache = collections;
+    } else {
+      _dayCache = collections;
+    }
   }
 
   /// 创建图集
@@ -469,7 +481,7 @@ class CoverCollectionManager {
     required String name,
     required bool isNight,
   }) async {
-    final uuid = const Uuid();
+    const uuid = Uuid();
     final id = uuid.v4();
     final dirName = id.substring(0, 8);
     final collection = CoverCollection(

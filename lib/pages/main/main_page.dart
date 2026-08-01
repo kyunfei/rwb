@@ -153,14 +153,14 @@ class _MainPageState extends State<MainPage> {
   Widget _buildContent(
       AppProvider appProvider, String layoutMode, String sidebarGravity) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: DesignTokens.spacingLg),
-              const Text('正在加载...'),
+              CircularProgressIndicator(),
+              SizedBox(height: DesignTokens.spacingLg),
+              Text('正在加载...'),
             ],
           ),
         ),

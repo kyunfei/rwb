@@ -156,7 +156,7 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
     if (n1.contains(n2) || n2.contains(n1)) return true;
     
     // 相似度检查（至少80%相似）
-    if (n1.length > 0 && n2.length > 0) {
+    if (n1.isNotEmpty && n2.isNotEmpty) {
       final longer = n1.length > n2.length ? n1 : n2;
       final shorter = n1.length > n2.length ? n2 : n1;
       int matchCount = 0;

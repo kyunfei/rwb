@@ -848,7 +848,7 @@ class JsEngine {
     final extracted = _extractJsCode(jsCode) ?? jsCode;
     final resolved = resolveEngine(extracted, sourceEngine: sourceEngine);
 
-    final engineTag = 'QuickJS';
+    const engineTag = 'QuickJS';
     final codePreview = resolved.code;
 
     // 显式增加 QuickJS 执行计数（统一计数入口）
@@ -2047,7 +2047,7 @@ return __returnValue;
   /// 预缓存桥接结果（用于同步模式的 java.ajax 等）
   /// 借鉴 legado 的 CacheManager 机制
   Future<void> preCacheBridgeResult(String method, String url, String result) async {
-    final cacheKey = '${method}:${url}';
+    final cacheKey = '$method:$url';
     final script = '__setCache(${jsonEncode(cacheKey)}, ${jsonEncode(result)});';
     evaluate(script);
     _cachedKeys.add(cacheKey);

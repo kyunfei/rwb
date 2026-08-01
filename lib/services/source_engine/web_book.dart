@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -1846,11 +1845,11 @@ class WebBook {
       // 正文 HTML 格式化（对齐 legado HtmlFormatter.formatKeepImg）
       // 将 <p>/<div>/<br> 等块级标签替换为换行符，移除非 img 标签，补全 img URL
       if (content != null && content.isNotEmpty) {
-        final _beforeFmtLen = content.length;
+        final beforeFmtLen = content.length;
         content = _formatContentHtml(content, response.url);
         // #region debug-point H4: 格式化前后长度对比
         AppLogger.instance.info(LogCategory.parse,
-            '[DBG-H4] 正文格式化: $_beforeFmtLen → ${content.length}',
+            '[DBG-H4] 正文格式化: $beforeFmtLen → ${content.length}',
             detail: 'fullContent: $content');
         // #endregion
         // 对齐 legado：格式化后再 unescape HTML 实体

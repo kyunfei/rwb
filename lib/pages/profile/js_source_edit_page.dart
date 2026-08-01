@@ -346,7 +346,7 @@ function nextContentUrl(result) {
       coverDecodeJs: coverDecodeMeta,
       searchUrl: searchUrlMeta ?? '',
       exploreUrl: exploreUrlMeta ?? '',
-      ruleSearch: hasSearch ? SearchRule(
+      ruleSearch: hasSearch ? const SearchRule(
         bookList: '<js>search(key, page, result)</js>',
         name: '\$.name',
         author: '\$.author',
@@ -356,7 +356,7 @@ function nextContentUrl(result) {
         kind: '\$.kind',
         lastChapter: '\$.lastChapter',
       ) : null,
-      ruleExplore: hasExplore ? ExploreRule(
+      ruleExplore: hasExplore ? const ExploreRule(
         bookList: '<js>explore(baseUrl, result)</js>',
         name: '\$.name',
         author: '\$.author',
@@ -366,7 +366,7 @@ function nextContentUrl(result) {
         kind: '\$.kind',
         lastChapter: '\$.lastChapter',
       ) : null,
-      ruleBookInfo: hasBookInfo ? BookInfoRule(
+      ruleBookInfo: hasBookInfo ? const BookInfoRule(
         init: '<js>bookInfo(result)</js>',
         name: '\$.name',
         author: '\$.author',
