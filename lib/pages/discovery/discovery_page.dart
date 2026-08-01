@@ -5,6 +5,8 @@ import '../../models/book_source.dart';
 import '../../providers/bookshelf_provider.dart';
 import '../../providers/discovery_provider.dart';
 import '../../routes/app_routes.dart';
+import '../../services/discovery_source_selection_logic.dart';
+import '../../services/storage_service.dart';
 import '../../utils/continue_reading.dart';
 import '../../utils/design_tokens.dart';
 import '../../utils/explore_category_parser.dart';
@@ -26,8 +28,18 @@ class _DiscoveryPageState extends State<DiscoveryPage>
   @override
   bool get wantKeepAlive => true;
 
-  /// 当前选中的可发现书源 URL；null 表示尚未选定（自动选第一个）
+  /// 当前选中的可发现书源 URL；null 表示尚未选定（按默认策略解析）
   String? _selectedSourceUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = StorageService.instance
+        .getSetting(discoveryLastSelectedSourceUrlKey);
+    if (saved is String && saved.isNotEmpty) {
+      _selectedSourceUrl = saved;
+    }
+  }
 
   /// 按书源 URL 缓存分类解析结果
   final Map<String, List<ExploreCategory>> _cachedCategories = {};
@@ -52,14 +64,22 @@ class _DiscoveryPageState extends State<DiscoveryPage>
   }
 
   BookSource? _resolveSelectedSource(List<BookSource> discoverable) {
-    if (discoverable.isEmpty) return null;
-    if (_selectedSourceUrl != null) {
-      for (final s in discoverable) {
-        if (s.bookSourceUrl == _selectedSourceUrl) return s;
-      }
+    final url = resolveDiscoverySelectedSourceUrl(
+      discoverable: discoverable,
+      lastSelectedUrl: _selectedSourceUrl,
+    );
+    if (url == null) return null;
+    for (final source in discoverable) {
+      if (source.bookSourceUrl == url) return source;
     }
-    // 默认第一个可用书源
-    return discoverable.first;
+    return null;
+  }
+
+  void _persistDiscoverySourceChoice(String url) {
+    StorageService.instance.setSetting(
+      discoveryLastSelectedSourceUrlKey,
+      url,
+    );
   }
 
   void _openSearch() {
@@ -268,6 +288,7 @@ class _DiscoveryPageState extends State<DiscoveryPage>
                   offset: const Offset(0, DesignTokens.topBarHeight),
                   onSelected: (url) {
                     setState(() => _selectedSourceUrl = url);
+                    _persistDiscoverySourceChoice(url);
                   },
                   itemBuilder: (context) => sources
                       .map(
