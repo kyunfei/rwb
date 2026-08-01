@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/book.dart';
@@ -6,10 +5,10 @@ import '../../models/book_source.dart';
 import '../../providers/bookshelf_provider.dart';
 import '../../providers/discovery_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/cover_config_service.dart';
 import '../../utils/continue_reading.dart';
 import '../../utils/design_tokens.dart';
 import '../../utils/explore_category_parser.dart';
+import '../../widgets/book_cover.dart';
 
 /// 书城页：分类网格 + 搜书 + 继续阅读
 ///
@@ -517,27 +516,13 @@ class _ContinueReadingCard extends StatelessWidget {
   }
 
   Widget _buildCover(bool isDark) {
-    final coverConfig = CoverConfigService.instance;
-    final coverUrl = book.displayCoverUrl;
-    final placeholder = coverConfig.buildDefaultCoverPlaceholder(
-      bookName: book.displayName,
-      bookAuthor: book.displayAuthor,
+    // 走共享的 BookCover：它带防盗链请求头与加密封面解密，缺了这两样，
+    // 同一本书的封面会「书架显示得出、这里显示不出」。
+    return BookCover(
+      book: book,
       isDark: isDark,
-    );
-
-    if (coverUrl.isEmpty || coverConfig.useDefaultCover) {
-      return placeholder;
-    }
-
-    return CachedNetworkImage(
-      imageUrl: coverUrl,
-      fit: BoxFit.cover,
       width: 52,
       height: 70,
-      memCacheWidth: 120,
-      maxWidthDiskCache: 200,
-      placeholder: (_, __) => placeholder,
-      errorWidget: (_, __, ___) => placeholder,
     );
   }
 }
