@@ -96,7 +96,182 @@ void main() {
       expect(source.ruleContent!.title, 'class.chapter-title@text');
       expect(source.ruleContent!.content, source.ruleContent!.title);
     });
+
+    test('书源注释标明正文规则残缺，避免用户误排查', () {
+      expect(source.bookSourceComment, contains('正文规则已知残缺'));
+      expect(source.bookSourceComment, contains('中文维基文库'));
+    });
   });
+
+  group('Chinese Wikisource fixtures', () {
+    late BookSource source;
+
+    setUp(() {
+      source = loadAssetSource('chinese_wikisource.json');
+    });
+
+    test('可被 BookSource.fromJson 完整解析，四组规则字段齐全', () {
+      expect(source.bookSourceUrl, 'https://zh.wikisource.org');
+      expect(source.bookSourceName, '中文维基文库');
+      expect(source.searchUrl, contains('zh.wikisource.org'));
+      expect(source.ruleSearch, isNotNull);
+      expect(source.ruleSearch!.bookList, isNotEmpty);
+      expect(source.ruleSearch!.name, isNotEmpty);
+      expect(source.ruleSearch!.bookUrl, isNotEmpty);
+      expect(source.ruleBookInfo, isNotNull);
+      expect(source.ruleBookInfo!.name, isNotEmpty);
+      expect(source.ruleToc, isNotNull);
+      expect(source.ruleToc!.chapterList, isNotEmpty);
+      expect(source.ruleContent, isNotNull);
+      expect(source.ruleContent!.content, isNotEmpty);
+      expect(source.ruleContent!.title, isNotEmpty);
+      expect(source.ruleContent!.content, isNot(source.ruleContent!.title));
+      expect(source.ruleContent!.content, contains('mw-parser-output'));
+      expect(source.ruleToc!.chapterList, contains('multicol'));
+    });
+
+    test('搜索规则可在本地 fixture HTML 上抽出书名与链接', () {
+      const html = '''
+<html><body>
+<ul class="mw-search-results">
+  <li class="mw-search-result">
+    <div class="mw-search-result-heading">
+      <a href="/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2">紅樓夢</a>
+    </div>
+    <div class="searchresult">清 曹雪芹…</div>
+  </li>
+</ul>
+</body></html>
+''';
+      final analyzer = AnalyzeRule().setContent(
+        html,
+        baseUrl: 'https://zh.wikisource.org/w/index.php?search=%E7%B4%85%E6%A8%93%E5%A4%A2',
+      );
+      final books = analyzer.getElements(source.ruleSearch!.bookList!);
+      expect(books, hasLength(1));
+      final item = AnalyzeRule().setContent(
+        books.first,
+        baseUrl: 'https://zh.wikisource.org/w/index.php?search=%E7%B4%85%E6%A8%93%E5%A4%A2',
+      );
+      expect(item.getString(source.ruleSearch!.name!), '紅樓夢');
+      expect(
+        item.getString(source.ruleSearch!.bookUrl!, isUrl: true),
+        'https://zh.wikisource.org/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2',
+      );
+    });
+
+    test('目录抽出章节列表，正文抽出正文而不是标题', () {
+      // 模拟中文维基文库常见分栏目录 + 侧栏 TextInfo 杂链（应被 class.multicol 优先规则避开）
+      const tocHtml = '''
+<html><body>
+  <h1 id="firstHeading">紅樓夢</h1>
+  <div id="mw-content-text">
+    <div class="mw-parser-output">
+      <div id="headerContainer"><a href="/wiki/Author:%E6%9B%B9%E9%9B%AA%E8%8A%B9">曹雪芹</a></div>
+      <ul><li class="sisitem"><a href="/wiki/Template:Textinfo"><img alt="info"/></a></li></ul>
+      <p>這是紅樓夢的数字化文本。</p>
+      <table class="references-small multicol">
+        <tr><td>
+          <ul>
+            <li><a href="/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2/%E7%AC%AC001%E5%9B%9E">第一回　甄士隱夢幻識通靈</a></li>
+            <li><a href="/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2/%E7%AC%AC002%E5%9B%9E">第二回　賈夫人仙逝揚州城</a></li>
+          </ul>
+        </td></tr>
+      </table>
+    </div>
+  </div>
+</body></html>
+''';
+      final tocAnalyzer = AnalyzeRule().setContent(
+        tocHtml,
+        baseUrl: 'https://zh.wikisource.org/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2',
+      );
+      expect(tocAnalyzer.getString(source.ruleBookInfo!.name!), '紅樓夢');
+      final chapters =
+          tocAnalyzer.getElements(source.ruleToc!.chapterList!);
+      expect(chapters.length, greaterThanOrEqualTo(2));
+      final ch0 = AnalyzeRule().setContent(
+        chapters.first,
+        baseUrl: 'https://zh.wikisource.org/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2',
+      );
+      expect(
+        ch0.getString(source.ruleToc!.chapterName!),
+        contains('第一回'),
+      );
+      expect(
+        ch0.getString(source.ruleToc!.chapterUrl!, isUrl: true),
+        'https://zh.wikisource.org/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2/%E7%AC%AC001%E5%9B%9E',
+      );
+
+      const chapterHtml = '''
+<html><body>
+  <h1 id="firstHeading">紅樓夢/第001回</h1>
+  <div id="mw-content-text">
+    <div class="mw-parser-output">
+      <div class="center"><b>第一回　甄士隱夢幻識通靈</b></div>
+      <p>此开卷第一回也。作者自云：因曾历过一番梦幻之后，故将真事隐去……</p>
+      <p>列位看官：你道此书从何而来？</p>
+    </div>
+  </div>
+</body></html>
+''';
+      final contentAnalyzer = AnalyzeRule().setContent(chapterHtml);
+      final body =
+          contentAnalyzer.getString(source.ruleContent!.content!) ?? '';
+      final title =
+          contentAnalyzer.getString(source.ruleContent!.title!) ?? '';
+      expect(title, contains('紅樓夢/第001回'));
+      expect(body, contains('此开卷第一回也'));
+      expect(body, contains('列位看官'));
+      // 正文不得退化成只剩标题行
+      expect(body.trim(), isNot(equals(title.trim())));
+      expect(body.length, greaterThan(title.length));
+    });
+  });
+
+  group('内置源正文规则回归', () {
+    /// ppxsw 为已知残缺示例源：content 误指章节标题，故列入例外。
+    const knownBrokenContentEqualsTitle = {
+      'https://www.ppxsw.co',
+    };
+
+    test('除已知例外外，任何内置源的 ruleContent.content 不得等于 title', () {
+      final dir = Directory('assets/book_sources');
+      expect(dir.existsSync(), isTrue);
+      final files = dir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.json'))
+          .toList();
+      expect(files, isNotEmpty);
+
+      for (final file in files) {
+        final sources =
+            BuiltinBookSourceService.parseSourcesJson(file.readAsStringSync());
+        for (final source in sources) {
+          final content = source.ruleContent?.content?.trim() ?? '';
+          final title = source.ruleContent?.title?.trim();
+          if (title == null || title.isEmpty) continue;
+          if (knownBrokenContentEqualsTitle.contains(source.bookSourceUrl)) {
+            expect(
+              content,
+              title,
+              reason: '${source.bookSourceUrl} 应仍为已知残缺示例',
+            );
+            continue;
+          }
+          expect(
+            content,
+            isNot(equals(title)),
+            reason:
+                '${source.bookSourceUrl} (${file.uri.pathSegments.last}) '
+                'ruleContent.content 不得与 title 相同',
+          );
+        }
+      }
+    });
+  });
+
 
   group('Project Gutenberg fixtures', () {
     late BookSource source;

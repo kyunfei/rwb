@@ -57,7 +57,7 @@ Future<void> main() async {
       if (!StorageService.instance.isInitialized) {
         debugPrint('❌ StorageService 初始化失败: ${StorageService.instance.initError}');
       } else {
-        // 一次性注入内置书源（仅补缺失 URL，不覆盖用户已有源；v2 含中文示例源）
+        // 一次性注入内置书源（仅补缺失 URL，不覆盖用户已有源；v3 含中文维基文库）
         try {
           final added =
               await BuiltinBookSourceService.ensureBuiltinSourcesSeeded();

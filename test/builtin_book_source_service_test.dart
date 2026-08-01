@@ -43,6 +43,7 @@ void main() {
       );
 
   Future<List<BookSource>> loadFixture() async => [
+        source('https://zh.wikisource.org', '中文维基文库'),
         source('https://www.ppxsw.co', '皮皮小说网'),
         source('https://www.gutenberg.org', 'Project Gutenberg'),
         source('https://en.wikisource.org', 'English Wikisource'),
@@ -50,13 +51,14 @@ void main() {
       ];
 
   group('ensureBuiltinSourcesSeeded', () {
-    test('首次注入写入全部内置源并打上 v2 标记', () async {
+    test('首次注入写入全部内置源并打上 v3 标记', () async {
       final store = MemoryBuiltinSourceSeedStore();
       final added = await BuiltinBookSourceService.ensureBuiltinSourcesSeeded(
         store: store,
         loadSources: loadFixture,
       );
-      expect(added, 4);
+      expect(added, 5);
+      expect(store.sources.keys, contains('https://zh.wikisource.org'));
       expect(store.sources.keys, contains('https://www.ppxsw.co'));
       expect(
         store.getSetting(BuiltinBookSourceService.seededFlagKey),
@@ -64,7 +66,7 @@ void main() {
       );
     });
 
-    test('已打 v2 标记时幂等，不再写入', () async {
+    test('已打 v3 标记时幂等，不再写入', () async {
       final store = MemoryBuiltinSourceSeedStore(
         settings: {BuiltinBookSourceService.seededFlagKey: true},
       );
@@ -76,7 +78,38 @@ void main() {
       expect(store.sources, isEmpty);
     });
 
-    test('仅有旧版 v1 标记时仍会补跑 v2（可补中文源）', () async {
+    test('仅有旧版 v2 标记时仍会补跑 v3（可补中文维基文库）', () async {
+      final store = MemoryBuiltinSourceSeedStore(
+        settings: {
+          BuiltinBookSourceService.previousSeededFlagKey: true,
+        },
+        sources: {
+          'https://www.ppxsw.co':
+              source('https://www.ppxsw.co', '皮皮小说网').toJson(),
+          'https://www.gutenberg.org':
+              source('https://www.gutenberg.org', 'Project Gutenberg').toJson(),
+          'https://en.wikisource.org':
+              source('https://en.wikisource.org', 'English Wikisource').toJson(),
+          'https://standardebooks.org':
+              source('https://standardebooks.org', 'Standard Ebooks').toJson(),
+        },
+      );
+      final added = await BuiltinBookSourceService.ensureBuiltinSourcesSeeded(
+        store: store,
+        loadSources: loadFixture,
+      );
+      expect(added, 1);
+      expect(
+        store.sources['https://zh.wikisource.org']?['bookSourceName'],
+        '中文维基文库',
+      );
+      expect(
+        store.getSetting(BuiltinBookSourceService.seededFlagKey),
+        isTrue,
+      );
+    });
+
+    test('仅有旧版 v1 标记时仍会补跑（可补中文源）', () async {
       final store = MemoryBuiltinSourceSeedStore(
         settings: {BuiltinBookSourceService.legacySeededFlagKey: true},
         sources: {
@@ -92,8 +125,12 @@ void main() {
         store: store,
         loadSources: loadFixture,
       );
-      expect(added, 1);
+      expect(added, 2);
       expect(store.sources['https://www.ppxsw.co']?['bookSourceName'], '皮皮小说网');
+      expect(
+        store.sources['https://zh.wikisource.org']?['bookSourceName'],
+        '中文维基文库',
+      );
       expect(
         store.getSetting(BuiltinBookSourceService.seededFlagKey),
         isTrue,
@@ -103,15 +140,19 @@ void main() {
     test('不覆盖用户已修改的同 URL 源', () async {
       final store = MemoryBuiltinSourceSeedStore(
         sources: {
-          'https://www.ppxsw.co': source('https://www.ppxsw.co', '用户改过的名字').toJson(),
+          'https://www.ppxsw.co':
+              source('https://www.ppxsw.co', '用户改过的名字').toJson(),
         },
       );
       final added = await BuiltinBookSourceService.ensureBuiltinSourcesSeeded(
         store: store,
         loadSources: loadFixture,
       );
-      expect(added, 3);
-      expect(store.sources['https://www.ppxsw.co']?['bookSourceName'], '用户改过的名字');
+      expect(added, 4);
+      expect(
+        store.sources['https://www.ppxsw.co']?['bookSourceName'],
+        '用户改过的名字',
+      );
     });
 
     test('存储未初始化时直接返回 0', () async {
@@ -122,19 +163,26 @@ void main() {
       );
       expect(added, 0);
       expect(
-        store.getSetting(BuiltinBookSourceService.seededFlagKey, defaultValue: false),
+        store.getSetting(
+          BuiltinBookSourceService.seededFlagKey,
+          defaultValue: false,
+        ),
         isFalse,
       );
     });
   });
 
   group('assetPaths', () {
-    test('包含中文示例源与三个英文公有领域源', () {
+    test('包含中文维基文库、中文示例源与三个英文公有领域源', () {
+      expect(
+        BuiltinBookSourceService.assetPaths,
+        contains('assets/book_sources/chinese_wikisource.json'),
+      );
       expect(
         BuiltinBookSourceService.assetPaths,
         contains('assets/book_sources/ppxsw.json'),
       );
-      expect(BuiltinBookSourceService.assetPaths, hasLength(4));
+      expect(BuiltinBookSourceService.assetPaths, hasLength(5));
     });
   });
 }
