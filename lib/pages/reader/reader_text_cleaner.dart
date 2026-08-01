@@ -1,4 +1,4 @@
-/// 朗读前正文清洗：去掉 HTML/网页残留、书源广告段与无意义空白。
+/// 朗读 / 显示前的正文清洗：去掉 HTML/网页残留、书源广告段与无意义空白。
 ///
 /// 对西文友好：不整段误杀含 URL 的叙述句，不剥掉英文方括号旁白/脚注散文。
 class ReaderTextCleaner {
@@ -17,11 +17,26 @@ class ReaderTextCleaner {
     '笔趣阁',
     '顶点小说',
     '飘天文学',
-    // 英文站点常见引流（仍受短行阈值约束）
+    // 英文站点常见引流（仍受短行规则约束）
     'please remember this site',
     'click next page',
     'continue reading',
   ];
+
+  /// 显示用占位：正文里残留的 `<img>` 替换为此标记（不改缓存原文）。
+  static const String imagePlaceholder = '【图片】';
+
+  /// 将章节正文转为适合阅读器显示的纯文本。
+  ///
+  /// 书源侧 formatKeepImg 会刻意保留 `<img>`；纯文本分页路径会对全文 HTML
+  /// 转义，行内真图又会牵动分栏测量，故显示时先换成短占位，缓存原文不动。
+  static String cleanForDisplay(String raw) {
+    if (raw.isEmpty) return '';
+    return raw.replaceAll(
+      RegExp(r'<img\b[^>]*/?>', caseSensitive: false),
+      imagePlaceholder,
+    );
+  }
 
   /// 将章节正文转为适合 TTS 的纯文本。
   static String cleanForTts(

@@ -58,5 +58,41 @@ More prose after the marker.
       expect(out.contains('[1]'), isFalse);
       expect(out, contains('More prose'));
     });
+
+    test('cleanForDisplay hides raw img markup from Standard Ebooks style content', () {
+      const raw =
+          'Imprint  <img alt="The Standard Ebooks logo." '
+          'src="https://standardebooks.org/ebooks/charles-kingsley/hypatia/text/../images/logo.svg" '
+          'epub:type="se:image.color-depth.black-on-transparent z3998:publisher-logo">  '
+          'This ebook is the product of many hours of hard work by volunteers.';
+      final out = ReaderTextCleaner.cleanForDisplay(raw);
+      expect(out.toLowerCase().contains('<img'), isFalse);
+      expect(out.contains('src='), isFalse);
+      expect(out.contains('epub:type='), isFalse);
+      expect(out, contains(ReaderTextCleaner.imagePlaceholder));
+      expect(out, contains('Imprint'));
+      expect(out, contains('volunteers'));
+    });
+
+    test('cleanForDisplay leaves Chinese line-per-paragraph prose untouched', () {
+      const raw = '''
+他推开门，走廊里只有风声。
+「你来了。」她没有回头。
+夜色沉得像一块湿布。
+''';
+      final out = ReaderTextCleaner.cleanForDisplay(raw);
+      expect(out, equals(raw));
+      expect(out.split('\n').where((l) => l.trim().isNotEmpty).length, 3);
+    });
+
+    test('cleanForDisplay leaves English prose without images untouched', () {
+      const raw =
+          'She told him to visit the old library before dusk.\n'
+          '"Wait—" he said, glancing at the dash — "are you sure?"\n';
+      final out = ReaderTextCleaner.cleanForDisplay(raw);
+      expect(out, equals(raw));
+      expect(out, contains('old library'));
+      expect(out, contains('—'));
+    });
   });
 }

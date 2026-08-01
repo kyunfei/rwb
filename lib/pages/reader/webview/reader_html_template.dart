@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/highlight.dart';
 import '../../../providers/reader_provider.dart';
+import '../reader_text_cleaner.dart';
 import '../reader_typography.dart';
 
 /// 生成阅读器 HTML 模板
@@ -44,8 +45,11 @@ class ReaderHtmlTemplate {
     required int chapterIndex,
     bool isRichHtml = false,
   }) {
+    // 纯文本路径：先清掉 formatKeepImg 留下的 <img>，再判西文/切段（避免 URL 干扰）
+    final plainContent =
+        isRichHtml ? content : ReaderTextCleaner.cleanForDisplay(content);
     final latinDominant =
-        !isRichHtml && ReaderTypography.isPredominantlyLatin(content);
+        !isRichHtml && ReaderTypography.isPredominantlyLatin(plainContent);
     final css = _generateCss(
       provider,
       isScrollMode,
@@ -75,7 +79,7 @@ class ReaderHtmlTemplate {
       // EPUB 模式：不生成应用自身标题，让 EPUB 自带标题（h1.chapter-title 等）展示
       titleHtml = '';
     } else {
-      paragraphsHtml = buildParagraphsHtml(content, provider);
+      paragraphsHtml = buildParagraphsHtml(plainContent, provider);
       titleHtml = buildTitleHtml(title, provider, chapterIndex);
     }
 
@@ -847,8 +851,10 @@ ${ReaderTypography.paragraphWrapCss}
     String content,
     ReaderProvider provider,
   ) {
+    // 滚动追加/预挂章节也走此处；幂等，generate() 里已清洗过也无妨
+    final cleaned = ReaderTextCleaner.cleanForDisplay(content);
     final rules = provider.highlightRules.where((r) => r.enabled).toList();
-    final paragraphs = _splitToParagraphs(content);
+    final paragraphs = _splitToParagraphs(cleaned);
     final buf = StringBuffer();
 
     for (var i = 0; i < paragraphs.length; i++) {
