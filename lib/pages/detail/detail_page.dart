@@ -25,6 +25,7 @@ import '../../widgets/book_edit_sheet.dart';
 import '../../utils/design_tokens.dart';
 import '../../services/shelf/shelf_download_queue_service.dart';
 import '../../services/shelf/shelf_update_service.dart';
+import '../../services/source_request_failure.dart';
 import '../../models/shelf/shelf_download_task.dart';
 import 'shelf_download_tasks_sheet.dart';
 
@@ -47,6 +48,9 @@ class _DetailPageState extends State<DetailPage> {
   bool _isRefreshing = false;
   Book? _book;
   List<Chapter> _chapters = [];
+  /// 目录是否已结束加载（成功或失败）；用于避免「目录：加载中」永不结束。
+  bool _chaptersLoadFinished = false;
+  String? _chapterLoadError;
   int _totalWordCount = 0;
   bool _showReadRecord = true;
   BookSource? _bookSource;
@@ -72,6 +76,7 @@ class _DetailPageState extends State<DetailPage> {
     Book? book = storedBook ?? widget.initialBook;
     List<Chapter> chapters = [];
     String? error;
+    String? chapterError;
     BookSource? bookSource;
 
     if (book != null) {
@@ -109,7 +114,9 @@ class _DetailPageState extends State<DetailPage> {
           book = book.copyWith(totalChapterNum: chapters.length);
         }
       } catch (e) {
-        error = e.toString();
+        chapterError = describeSourceRequestFailure(e);
+        error = chapterError;
+        chapters = [];
       }
     }
 
@@ -122,6 +129,8 @@ class _DetailPageState extends State<DetailPage> {
       setState(() {
         _book = book;
         _chapters = chapters;
+        _chaptersLoadFinished = true;
+        _chapterLoadError = chapterError;
         _isInBookshelf = storedData != null;
         _isLoading = false;
         _bookSource = bookSource;
@@ -129,7 +138,7 @@ class _DetailPageState extends State<DetailPage> {
       if (error != null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('部分信息加载失败：$error')));
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
     }
   }
@@ -171,8 +180,12 @@ class _DetailPageState extends State<DetailPage> {
         if (!mounted) return;
         _book = book;
         _chapters = chapters;
-      } catch (_) {
-        // Keep the currently displayed metadata if refreshing fails.
+        _chaptersLoadFinished = true;
+        _chapterLoadError = null;
+      } catch (e) {
+        // 保留当前展示的元数据，但目录进入明确失败态
+        _chaptersLoadFinished = true;
+        _chapterLoadError = describeSourceRequestFailure(e);
       }
       _totalWordCount = _chapters.fold<int>(
         0,
@@ -591,8 +604,14 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   String _chapterSummaryText() {
-    if (_chapters.isEmpty) {
+    if (!_chaptersLoadFinished) {
       return '加载中';
+    }
+    if (_chapterLoadError != null) {
+      return '加载失败';
+    }
+    if (_chapters.isEmpty) {
+      return '暂无目录';
     }
     if (_book!.durChapterTitle.isNotEmpty) {
       return _book!.durChapterTitle;
@@ -1489,7 +1508,10 @@ class _DetailPageState extends State<DetailPage> {
                     ? scheme.primary
                     : scheme.primary.withValues(alpha: 0.4),
                 child: InkWell(
-                  onTap: canRead ? _startReading : null,
+                  // 目录为空/失败时也要可点，给出原因提示（勿静默无反应）
+                  onTap: () {
+                    unawaited(_startReading());
+                  },
                   child: SizedBox(
                     height: DesignTokens.bottomBarHeight,
                     child: Center(
@@ -1624,9 +1646,10 @@ class _DetailPageState extends State<DetailPage> {
 
   Future<void> _startReading() async {
     if (_chapters.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('目录为空，无法开始阅读')));
+      final msg = !_chaptersLoadFinished
+          ? '目录仍在加载，请稍候再试'
+          : (_chapterLoadError ?? '目录为空，无法开始阅读。可尝试换源后重试。');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
     final route = _readerRouteName();

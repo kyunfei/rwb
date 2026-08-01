@@ -9,6 +9,7 @@ import '../../models/book.dart';
 import '../../models/book_search_exception.dart';
 import '../../models/chapter.dart';
 import '../app_logger.dart';
+import '../source_request_failure.dart';
 import 'analyze_rule.dart';
 import 'analyze_url.dart' as legado_url;
 import 'charset_utils.dart';
@@ -109,12 +110,17 @@ class StrResponse {
   final Map<String, String> headers;
   final Response? raw;
 
+  /// 网络层失败时保留底层异常（如 [DioException]），供上层生成用户可读文案。
+  /// 成功响应为 null；勿在此字段上做业务分支以外的逻辑。
+  final Object? error;
+
   StrResponse({
     required this.url,
     required this.body,
     this.statusCode = 200,
     this.headers = const {},
     this.raw,
+    this.error,
   });
 
   bool get isSuccessful => statusCode >= 200 && statusCode < 300;
@@ -268,13 +274,15 @@ class HttpClient {
             headers: errHeaders,
           );
         }
-        // 网络错误（连接超时、DNS解析失败等），返回空响应而不是抛异常
+        // 网络错误（连接超时、DNS解析失败等），返回空响应而不是抛异常；
+        // 保留底层异常供上层 classify，避免「暂无内容」伪装失败。
         debugPrint('❌ 网络请求失败: $errDetail');
         return StrResponse(
           url: url,
           body: '',
           statusCode: 0,
           headers: {},
+          error: e,
         );
       } catch (e, st) {
         debugPrint('❌ 请求异常: $e\n$st');
@@ -283,6 +291,7 @@ class HttpClient {
           body: '',
           statusCode: 0,
           headers: {},
+          error: e,
         );
       }
     }
@@ -975,7 +984,8 @@ class WebBook {
   }
 
   /// 发现书籍
-  /// 当发现规则为空或 bookList 为空时，退回使用搜索规则
+  /// 当发现规则为空或 bookList 为空时，退回使用搜索规则。
+  /// 网络/站点失败抛 [SourceRequestException]；成功但无书返回空列表（真的空分类）。
   Future<List<Map<String, dynamic>>> exploreBook(String exploreUrl) async {
     // 加载书源 JS 库
     await _loadJsLib();
@@ -997,7 +1007,9 @@ class WebBook {
       AppLogger.instance.info(LogCategory.parse, '发现规则为空，退回搜索规则');
     }
 
-    if (bookListRule.isEmpty && nameRule.isEmpty) return [];
+    if (bookListRule.isEmpty && nameRule.isEmpty) {
+      throw SourceRequestException.ruleEmpty(what: '分类内容');
+    }
 
     // 支持 JS 动态生成发现 URL
     final resolvedExploreUrl = await _resolveUrl(exploreUrl);
@@ -1012,13 +1024,35 @@ class WebBook {
 
       AppLogger.instance.info(LogCategory.network,
           '发现响应: ${html.length} chars, 状态码: ${response.statusCode}');
+
+      if (response.statusCode == 0) {
+        AppLogger.instance.error(LogCategory.network, '发现网络失败',
+            detail: 'URL: ${parsed.url}\n状态码: 0');
+        lastExploreHtml = '<!-- 发现网络失败 -->\n'
+            '<!-- URL: ${parsed.url} -->\n'
+            '<!-- 书源: ${source.bookSourceName} -->';
+        throw classifyHttpLayerFailure(
+          statusCode: 0,
+          cause: response.error,
+        );
+      }
+
+      if (!response.isSuccessful) {
+        AppLogger.instance.error(LogCategory.network, '发现站点报错',
+            detail: 'URL: ${parsed.url}\n状态码: ${response.statusCode}');
+        throw SourceRequestException.httpStatus(response.statusCode);
+      }
+
       if (html.isEmpty) {
         AppLogger.instance.error(LogCategory.network, '发现响应为空',
             detail: 'URL: ${parsed.url}\n状态码: ${response.statusCode}');
         lastExploreHtml = '<!-- 发现响应为空 -->\n'
             '<!-- URL: ${parsed.url} -->\n'
             '<!-- 状态码: ${response.statusCode} -->';
-        return [];
+        throw const SourceRequestException(
+          kind: SourceRequestErrorKind.networkUnreachable,
+          userMessage: '站点返回了空内容，请稍后重试或换源。',
+        );
       }
 
       // 使用 AnalyzeRule 引擎解析
@@ -1038,6 +1072,7 @@ class WebBook {
       // 保存原始元素数量（用于调试）
       lastExploreElementCount = bookElements.length;
 
+      // HTTP 成功且列表规则命中 0 条：视为该分类真的没有内容
       if (bookElements.isEmpty) return [];
 
       // [性能] 全量并发 + 空规则跳过，复用 _extractBookItems
@@ -1066,10 +1101,17 @@ class WebBook {
         sourceMap: exploreSourceMap,
       );
 
+      // 列表有节点但书名全空：规则字段失效
+      if (results.isEmpty) {
+        throw SourceRequestException.ruleEmpty(what: '分类内容');
+      }
+
       return results;
+    } on SourceRequestException {
+      rethrow;
     } catch (e) {
       AppLogger.instance.error(LogCategory.parse, '发现失败', detail: e.toString());
-      return [];
+      throw classifySourceRequestError(e);
     }
   }
 
@@ -1180,7 +1222,9 @@ class WebBook {
       Set<String>? visitedTocUrls,
       int depth = 0}) async {
     final tocRule = source.ruleToc;
-    if (tocRule == null) return [];
+    if (tocRule == null) {
+      throw SourceRequestException.ruleEmpty(what: '目录');
+    }
 
     await _loadJsLib();
 
@@ -1188,9 +1232,27 @@ class WebBook {
       // legado: body ?: throw
       final response = await _executeRequest(_parseUrlWithOption(tocUrl));
       var html = response.body;
+
+      if (response.statusCode == 0) {
+        lastTocHtml = '<!-- 目录网络失败 -->\n'
+            '<!-- URL: $tocUrl -->\n'
+            '<!-- 书源: ${source.bookSourceName} -->';
+        throw classifyHttpLayerFailure(
+          statusCode: 0,
+          cause: response.error,
+        );
+      }
+
+      if (!response.isSuccessful) {
+        throw SourceRequestException.httpStatus(response.statusCode);
+      }
+
       if (html.isEmpty) {
         lastTocHtml = '<!-- 目录响应为空 -->';
-        return [];
+        throw const SourceRequestException(
+          kind: SourceRequestErrorKind.networkUnreachable,
+          userMessage: '站点返回了空内容，请稍后重试或换源。',
+        );
       }
 
       // preUpdateJs
@@ -1309,7 +1371,10 @@ class WebBook {
           break;
       }
 
-      if (chapterList.isEmpty) return [];
+      // HTTP 成功但抽不出章节：规则失效（如 Gutenberg），勿伪装成「目录为空」
+      if (chapterList.isEmpty) {
+        throw SourceRequestException.ruleEmpty(what: '目录');
+      }
 
       // legado: if (!reverse) chapterList.reverse()
       if (!reverse) {
@@ -1363,10 +1428,12 @@ class WebBook {
       }
 
       return list;
+    } on SourceRequestException {
+      rethrow;
     } catch (e) {
       AppLogger.instance
           .error(LogCategory.parse, '获取目录失败', detail: e.toString());
-      return [];
+      throw classifySourceRequestError(e);
     }
   }
 
