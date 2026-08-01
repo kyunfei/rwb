@@ -6,7 +6,7 @@
   "enabled": true,
   "enabledExplore": true,
   "header": "{\"User-Agent\": \"Mozilla/5.0 (compatible; MR-Reader/1.0; +https://www.gutenberg.org/policy/robot_access.html)\"}",
-  "bookSourceComment": "内置英文书源：Project Gutenberg 公有领域。规则仅经本地 HTML fixture 验证，未做真实网络抓取校验。正文优先走纯文本下载（单章 Full Text）。",
+  "bookSourceComment": "内置英文书源：Project Gutenberg 公有领域。书页是下载页而非章节列表；目录从下载区抽出纯文本/HTML 全文链接作为单章「全文」。规则已对照真实 gutenberg.org 页面校验。注意：经典长篇（如 Moby Dick）全文约 120 万字符，单章阅读可能较慢。",
   "searchUrl": "https://www.gutenberg.org/ebooks/search/?query={{key}}",
   "exploreUrl": "Top downloaded::https://www.gutenberg.org/ebooks/search/?sort_order=downloads",
   "ruleSearch": {
@@ -28,16 +28,15 @@
     "name": "h1@text||span[itemprop=headline]@text",
     "author": "a[itemprop=creator]@text||a.authortag@text",
     "intro": "span[itemprop=description]@text||td[itemprop=about]@text",
-    "coverUrl": "img.cover@src||img[itemprop=image]@src",
-    "tocUrl": "a[type*=text/plain]@href||a[href$='.txt.utf-8']@href||a[href$='-0.txt']@href||a[href$='.txt']@href"
+    "coverUrl": "img.cover@src||img[itemprop=image]@src"
   },
   "ruleToc": {
-    "chapterList": "title",
-    "chapterName": "text",
-    "chapterUrl": ""
+    "chapterList": "a[type*=text/plain]||a[href*=.txt.utf-8]||a.read-online-button||a[href*='/cache/epub/'][href$='.html']",
+    "chapterName": "text##[\\s\\S]+##全文",
+    "chapterUrl": "href"
   },
   "ruleContent": {
     "content": "body@text||text",
-    "replaceRegex": "##^\\*\\*\\* START OF.*\\*\\*\\*##\n##^\\*\\*\\* END OF.*\\*\\*\\*##"
+    "replaceRegex": "^\\*\\*\\* START OF.*?\\*\\*\\*\\s*##\n\\*\\*\\* END OF.*##"
   }
 }
