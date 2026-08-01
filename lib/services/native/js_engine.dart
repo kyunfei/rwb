@@ -18,6 +18,11 @@ import 'platform_channel.dart';
 import 'platform_bridge.dart';
 import 'shared_js_scope.dart';
 
+void _logJsEngineCatch(String where, Object error) {
+  debugPrint('JsEngine/$where: $error');
+}
+
+
 // ===== 分流引擎架构 =====
 
 /// JS 引擎类型枚举
@@ -358,7 +363,8 @@ class JsEngine {
     if (Platform.isAndroid) {
       try {
         _nativeLibChecked = await NativeChannel.instance.checkNativeLib('quickjs_c_bridge');
-      } catch (_) {
+      } catch (e) {
+        _logJsEngineCatch('fallback#1', e);
         _nativeLibChecked = false;
       }
       // native lib 未就绪 → 跳过所有 FFI 调用，避免 SIGSEGV
@@ -379,7 +385,7 @@ class JsEngine {
     if (_jsRuntime != null && !_initialized) {
       try {
         _jsRuntime!.dispose();
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#1', e); }
       _jsRuntime = null;
     }
 
@@ -424,7 +430,7 @@ class JsEngine {
           // 导致旧 runtime 的 Finalizer 在不确定时机释放 C 侧 bridge
           try {
             _jsRuntime!.dispose();
-          } catch (_) {}
+          } catch (e) { _logJsEngineCatch('swallow#2', e); }
           _jsRuntime = null;
           return false;
         }
@@ -440,7 +446,7 @@ class JsEngine {
       if (_jsRuntime != null) {
         try {
           _jsRuntime!.dispose();
-        } catch (_) {}
+        } catch (e) { _logJsEngineCatch('swallow#3', e); }
         _jsRuntime = null;
       }
       return false;
@@ -476,7 +482,7 @@ class JsEngine {
       try {
         final fallback = await rootBundle.loadString('assets/js_polyfill/fallback-polyfill.js');
         _jsRuntime!.evaluate(fallback);
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#4', e); }
     }
   }
 
@@ -519,7 +525,8 @@ class JsEngine {
   int get nativeCpuCount {
     try {
       return nativeGetCpuCount();
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#2', e);
       return 1;
     }
   }
@@ -530,7 +537,8 @@ class JsEngine {
   String get quickJsVersion {
     try {
       return nativeGetQuickJsVersion();
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#3', e);
       return 'unknown';
     }
   }
@@ -551,7 +559,8 @@ class JsEngine {
     if (_jsRuntime == null) return 0;
     try {
       return _jsRuntime!.promiseState(varName);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#4', e);
       return 0;
     }
   }
@@ -562,7 +571,8 @@ class JsEngine {
     try {
       return _jsRuntime!.printValue(jsExpr,
           maxDepth: maxDepth, maxStringLength: maxStringLength);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#5', e);
       return null;
     }
   }
@@ -574,7 +584,8 @@ class JsEngine {
   String unescapeHtmlNative(String input) {
     try {
       return nativeUnescapeHtml(input);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#6', e);
       return input;
     }
   }
@@ -584,7 +595,8 @@ class JsEngine {
   String urlEncodeNative(String input, String charset) {
     try {
       return nativeCharsetUrlEncode(input, charset);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#7', e);
       return input;
     }
   }
@@ -593,7 +605,8 @@ class JsEngine {
   String urlDecodeNative(String input) {
     try {
       return nativeUrlDecode(input);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#8', e);
       return input;
     }
   }
@@ -612,7 +625,8 @@ class JsEngine {
   String htmlQueryExtractNative(String html, String selector, String attr, bool listMode) {
     try {
       return nativeHtmlQueryExtract(html, selector, attr, listMode);
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#9', e);
       return listMode ? '[]' : '';
     }
   }
@@ -867,7 +881,8 @@ class JsEngine {
       if (content is List || content is Map) {
         try {
           inputPreview = jsonEncode(content);
-        } catch (_) {
+        } catch (e) {
+          _logJsEngineCatch('fallback#10', e);
           inputPreview = content.toString();
         }
       } else {
@@ -1564,7 +1579,7 @@ return __returnValue;
               if (ck.isNotEmpty) {
                 _jsRuntime!.evaluate('__setCache(${jsonEncode(ck)}, "");');
               }
-            } catch (_) {}
+            } catch (e) { _logJsEngineCatch('swallow#5', e); }
             continue;
           }
         }
@@ -1733,7 +1748,8 @@ return __returnValue;
         return '';
       }
       return result;
-    } catch (_) {
+    } catch (e) {
+      _logJsEngineCatch('fallback#11', e);
       return '';
     } finally {
       _isFlushingLogs = false;
@@ -1840,7 +1856,7 @@ return __returnValue;
     if (result.startsWith('{') || result.startsWith('[') || result.startsWith('"')) {
       try {
         return jsonDecode(result);
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#6', e); }
     }
     return result;
   }
@@ -1915,7 +1931,7 @@ return __returnValue;
           'JSON.stringify(Object.getOwnPropertyNames(globalThis))'
         );
         beforeProps = r.stringResult;
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#7', e); }
     }
 
     // 把 jsLib eval 到全局作用域（等价于 legado 的 RhinoScriptEngine.eval(jsLib, scope)）
@@ -1952,7 +1968,7 @@ return __returnValue;
         _computeNewGlobals(beforeProps, afterProps);
         AppLogger.instance.info(LogCategory.js,
             '[loadJsLib] 新增全局函数: ${_currentJsLibFunctions.length}个: ${_currentJsLibFunctions.take(10).join(", ")}');
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#8', e); }
     }
 
     // 验证 search 函数是否在全局（undefined 时输出 warn 级别，调试页面可见）
@@ -1968,7 +1984,7 @@ return __returnValue;
           AppLogger.instance.info(LogCategory.js,
               '[loadJsLib] 验证: typeof search = $searchType');
         }
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#9', e); }
     }
   }
 
@@ -1984,7 +2000,7 @@ return __returnValue;
           _currentJsLibFunctions.add(prop);
         }
       }
-    } catch (_) {}
+    } catch (e) { _logJsEngineCatch('swallow#10', e); }
   }
 
   /// 清除当前已加载的 jsLib 全局函数
@@ -1994,7 +2010,7 @@ return __returnValue;
     try {
       final deleteCode = _currentJsLibFunctions.map((fn) => 'try{delete globalThis.$fn}catch(e){}').join(';');
       _jsRuntime!.evaluate(deleteCode);
-    } catch (_) {}
+    } catch (e) { _logJsEngineCatch('swallow#11', e); }
     _currentJsLibFunctions.clear();
     _currentJsLibSourceUrl = null;
     _currentJsLibCode = null;
@@ -2141,7 +2157,7 @@ return __returnValue;
           'webview_ua': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
         });
       }
-    } catch (_) {}
+    } catch (e) { _logJsEngineCatch('swallow#12', e); }
 
     // 1. 扫描字面量 URL: java.ajax("url"), java.get("url"), java.post("url"), fetch("url")
     for (final match in _literalPattern.allMatches(jsCode)) {
@@ -2200,7 +2216,7 @@ return __returnValue;
             urlOptionGetHeaders[absoluteUrl] = opt.headers!;
           }
         }
-      } catch (_) {}
+      } catch (e) { _logJsEngineCatch('swallow#13', e); }
     }
     // URL 选项的 GET URL 加入 httpUrls 统一预缓存
     httpUrls.addAll(urlOptionGetUrls);
@@ -2237,9 +2253,10 @@ return __returnValue;
             for (final url in urls) {
               if (url is String && url.isNotEmpty) httpUrls.add(url);
             }
-          } catch (_) {}
+          } catch (e) { _logJsEngineCatch('swallow#14', e); }
         }
-      } catch (_) {
+      } catch (e) {
+        _logJsEngineCatch('fallback#12', e);
         // 批量求值失败，跳过
       }
     }
@@ -2351,7 +2368,7 @@ return __returnValue;
               try {
                 final result = nativeSha256(str);
                 if (result.isNotEmpty) cryptoResults[cacheKey] = result;
-              } catch (_) {}
+              } catch (e) { _logJsEngineCatch('swallow#15', e); }
             }
           }
         }
@@ -2366,7 +2383,7 @@ return __returnValue;
               try {
                 final result = nativeHmacSha256(data, key);
                 if (result.isNotEmpty) cryptoResults[cacheKey] = result;
-              } catch (_) {}
+              } catch (e) { _logJsEngineCatch('swallow#16', e); }
             }
           }
         }
@@ -2577,7 +2594,7 @@ return __returnValue;
           if (result != null && result.isNotEmpty) {
             return MapEntry(cacheKey, result);
           }
-        } catch (_) {}
+        } catch (e) { _logJsEngineCatch('swallow#17', e); }
         return null;
       }());
     }
@@ -2612,7 +2629,7 @@ return __returnValue;
           if (result != null && result.isNotEmpty) {
             return MapEntry(cacheKey, result);
           }
-        } catch (_) {}
+        } catch (e) { _logJsEngineCatch('swallow#18', e); }
         return null;
       }());
     }
@@ -2639,7 +2656,7 @@ return __returnValue;
         Directory? docDir;
         try {
           docDir = await getApplicationDocumentsDirectory();
-        } catch (_) {}
+        } catch (e) { _logJsEngineCatch('swallow#19', e); }
         final docPath = docDir?.path ?? '/tmp';
 
         // 每个 match 独立 I/O，并发执行
@@ -2685,7 +2702,7 @@ return __returnValue;
                           entity.path.toLowerCase().endsWith('.txt')) {
                         try {
                           buffer.writeln(await entity.readAsString());
-                        } catch (_) {}
+                        } catch (e) { _logJsEngineCatch('swallow#20', e); }
                       }
                     }
                     return MapEntry(cacheKey, buffer.toString());
@@ -2698,7 +2715,7 @@ return __returnValue;
                   }
                   break;
               }
-            } catch (_) {}
+            } catch (e) { _logJsEngineCatch('swallow#21', e); }
             return null;
           }());
         }
@@ -2720,7 +2737,7 @@ return __returnValue;
         Directory? tempDir;
         try {
           tempDir = await getTemporaryDirectory();
-        } catch (_) {}
+        } catch (e) { _logJsEngineCatch('swallow#22', e); }
         final tempPath = tempDir?.path ?? '/tmp';
 
         // 每个 archive 操作独立，并发执行
@@ -2757,7 +2774,8 @@ return __returnValue;
               localPath = '$tempPath/$saveName';
               try {
                 await PlatformBridge.instance.httpDownload(firstArg, localPath);
-              } catch (_) {
+              } catch (e) {
+                _logJsEngineCatch('fallback#13', e);
                 return null;
               }
             } else if (firstArg.startsWith('/') ||
@@ -2790,7 +2808,8 @@ return __returnValue;
                 } else {
                   archiveObj = zipDecoder.decodeBytes(bytes);
                 }
-              } catch (_) {
+              } catch (e) {
+                _logJsEngineCatch('fallback#14', e);
                 return null;
               }
 
@@ -2831,7 +2850,7 @@ return __returnValue;
                   }
                   break;
               }
-            } catch (_) {}
+            } catch (e) { _logJsEngineCatch('swallow#23', e); }
             return null;
           }());
         }
@@ -2858,7 +2877,7 @@ return __returnValue;
                 Uri.parse(url),
                 mode: url_launcher.LaunchMode.platformDefault,
               );
-            } catch (_) {}
+            } catch (e) { _logJsEngineCatch('swallow#24', e); }
           }());
         }
         // 并发执行所有 launchUrl 调用
@@ -2906,7 +2925,7 @@ return __returnValue;
             break;
           }
         } else if (firstArg.startsWith('"') || firstArg.startsWith("'")) {
-          try { htmlContent = jsonDecode(firstArg) as String; } catch (_) {}
+          try { htmlContent = jsonDecode(firstArg) as String; } catch (e) { _logJsEngineCatch('swallow#25', e); }
         } else {
           // 变量名（如 item）- 跳过，运行时处理
           continue;
@@ -2914,7 +2933,7 @@ return __returnValue;
         // 解析选择器
         if (secondArg != null) {
           if (secondArg.startsWith('"') || secondArg.startsWith("'")) {
-            try { selector = jsonDecode(secondArg); } catch (_) { selector = secondArg; }
+            try { selector = jsonDecode(secondArg); } catch (e) { _logJsEngineCatch('fallback#15', e); selector = secondArg; }
           } else {
             selector = secondArg;
           }
@@ -2922,7 +2941,7 @@ return __returnValue;
         // 解析属性名
         if (thirdArg != null && method == 'getAttr') {
           if (thirdArg.startsWith('"') || thirdArg.startsWith("'")) {
-            try { attrName = jsonDecode(thirdArg); } catch (_) { attrName = thirdArg; }
+            try { attrName = jsonDecode(thirdArg); } catch (e) { _logJsEngineCatch('fallback#16', e); attrName = thirdArg; }
           } else {
             attrName = thirdArg;
           }
@@ -2939,7 +2958,7 @@ return __returnValue;
           // 字面量字符串内容
           try {
             htmlContent = jsonDecode(firstArg) as String;
-          } catch (_) {}
+          } catch (e) { _logJsEngineCatch('swallow#26', e); }
         } else {
           // 变量名 - 尝试从 QuickJS 求值
           try {
@@ -2947,7 +2966,7 @@ return __returnValue;
             if (evalResult != null && evalResult.isNotEmpty && evalResult.length > 50) {
               htmlContent = evalResult;
             }
-          } catch (_) {}
+          } catch (e) { _logJsEngineCatch('swallow#27', e); }
         }
 
         // 解析选择器
@@ -2955,7 +2974,8 @@ return __returnValue;
           if (secondArg.startsWith('"') || secondArg.startsWith("'")) {
             try {
               selector = jsonDecode(secondArg);
-            } catch (_) {
+            } catch (e) {
+              _logJsEngineCatch('fallback#17', e);
               selector = secondArg;
             }
           } else {
@@ -2970,7 +2990,7 @@ return __returnValue;
           if (sel.startsWith('"') || sel.startsWith("'")) {
             try {
               sel = jsonDecode(sel);
-            } catch (_) {}
+            } catch (e) { _logJsEngineCatch('swallow#28', e); }
           }
           if (sel.startsWith('@@')) sel = sel.substring(2);
           if (sel.startsWith('@css:')) sel = sel.substring(5);
@@ -3028,7 +3048,7 @@ return __returnValue;
             if (elements.isNotEmpty) {
               attrValue = elements.first.attributes[attrName] ?? '';
             }
-          } catch (_) {}
+          } catch (e) { _logJsEngineCatch('swallow#29', e); }
           evaluate('__setCache(${jsonEncode(gaKey)}, ${jsonEncode(attrValue ?? '')});');
           _cachedKeys.add(gaKey);
         }
@@ -3138,7 +3158,8 @@ return __returnValue;
       try {
         final decoded = jsonDecode('"$raw"');
         if (decoded is String) return decoded;
-      } catch (_) {
+      } catch (e) {
+        _logJsEngineCatch('fallback#18', e);
         // fallback 到手动反转义
       }
     }
@@ -3231,7 +3252,8 @@ return __returnValue;
       // 尝试 JSON 解码字面量
       try {
         return jsonDecode(s) as String;
-      } catch (_) {
+      } catch (e) {
+        _logJsEngineCatch('fallback#19', e);
         return s.substring(1, s.length - 1);
       }
     }
