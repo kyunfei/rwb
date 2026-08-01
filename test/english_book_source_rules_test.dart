@@ -35,6 +35,69 @@ void main() {
     });
   });
 
+  group('ppxsw.json 中文示例源', () {
+    late BookSource source;
+
+    setUp(() {
+      source = loadAssetSource('ppxsw.json');
+    });
+
+    test('可被 BookSource.fromJson 完整解析，四组规则字段齐全', () {
+      expect(source.bookSourceUrl, 'https://www.ppxsw.co');
+      expect(source.bookSourceName, '皮皮小说网');
+      expect(source.searchUrl, isNotEmpty);
+      expect(source.ruleSearch, isNotNull);
+      expect(source.ruleSearch!.bookList, isNotEmpty);
+      expect(source.ruleSearch!.name, isNotEmpty);
+      expect(source.ruleSearch!.bookUrl, isNotEmpty);
+      expect(source.ruleBookInfo, isNotNull);
+      expect(source.ruleBookInfo!.name, isNotEmpty);
+      expect(source.ruleToc, isNotNull);
+      expect(source.ruleToc!.chapterList, isNotEmpty);
+      expect(source.ruleToc!.chapterName, isNotEmpty);
+      expect(source.ruleContent, isNotNull);
+      expect(source.ruleContent!.content, isNotEmpty);
+    });
+
+    test('搜索规则可在本地 fixture HTML 上抽出书名与链接', () {
+      const html = '''
+<html><body>
+<ul class="txt-list">
+  <li>
+    <span class="s1">玄幻</span>
+    <span class="s2"><a href="/book/1.html">测试小说</a></span>
+    <span class="s3"><a href="/author/a">测试作者</a></span>
+    <span class="s4"><a href="/book/1/100.html">第100章</a></span>
+  </li>
+</ul>
+</body></html>
+''';
+      final analyzer = AnalyzeRule().setContent(
+        html,
+        baseUrl: 'https://www.ppxsw.co/search.html',
+      );
+      final books = analyzer.getElements(source.ruleSearch!.bookList!);
+      expect(books, isNotEmpty);
+      final first = AnalyzeRule().setContent(
+        books.first,
+        baseUrl: 'https://www.ppxsw.co/search.html',
+      );
+      expect(first.getString(source.ruleSearch!.name!), '测试小说');
+      expect(
+        first.getString(source.ruleSearch!.bookUrl!, isUrl: true),
+        'https://www.ppxsw.co/book/1.html',
+      );
+    });
+
+    test('正文规则可疑：content 与 title 使用同一选择器（章节标题）', () {
+      // 钉住现状：该示例源的 ruleContent.content 指向 chapter-title，
+      // 即使注入成功，真实阅读也很可能抽不到正文。勿在未校验站点前“修好”它。
+      expect(source.ruleContent!.content, 'class.chapter-title@text');
+      expect(source.ruleContent!.title, 'class.chapter-title@text');
+      expect(source.ruleContent!.content, source.ruleContent!.title);
+    });
+  });
+
   group('Project Gutenberg fixtures', () {
     late BookSource source;
 
