@@ -121,7 +121,7 @@ class TtsNotificationPlugin(private val context: Context) {
         val toggleIcon =
             if (paused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
 
-        final togglePending = PendingIntent.getBroadcast(
+        val togglePending = PendingIntent.getBroadcast(
             context,
             1,
             Intent().setAction(toggleAction).setPackage(context.packageName),
