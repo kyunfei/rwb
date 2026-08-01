@@ -1149,6 +1149,7 @@ class _ThemeManagePageState extends State<ThemeManagePage> {
                 _themes.removeWhere((t) => !t.isBuiltin);
               });
               await _saveThemes();
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('已恢复默认主题')),
               );
@@ -1172,7 +1173,7 @@ class _ThemeManagePageState extends State<ThemeManagePage> {
             onPressed: () async {
               setState(() => _themes.remove(theme));
               await _saveThemes();
-              Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('删除', style: TextStyle(color: Colors.red)),
           ),
@@ -1505,6 +1506,7 @@ class _ThemeEditDialogState extends State<_ThemeEditDialog> {
                       ),
                       onPressed: () async {
                         await widget.onSave(_theme);
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                       },
                       child: Text(
@@ -2789,11 +2791,12 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
   }
 
   Future<void> _applyConfig(NavigationBarConfig config) async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
     setState(() => _activeConfigId = config.id);
     await _saveConfigs();
+    if (!mounted) return;
 
     // 应用底栏配置到 AppProvider
-    final appProvider = Provider.of<AppProvider>(context, listen: false);
     await appProvider.setNavBarConfig(
       layoutMode: config.layoutMode,
       effectMode: config.effectMode,
@@ -2980,7 +2983,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
               );
               if (result != null && result.files.isNotEmpty) {
                 final path = result.files.first.path;
-                if (path != null) {
+                if (path != null && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('选择文件: $path')),
                   );
@@ -3190,7 +3193,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
           await _saveConfigs();
           // 如果编辑的是当前已应用的底栏包，保存后自动重新应用
           if (wasActive) {
-            _applyConfig(updatedConfig);
+            await _applyConfig(updatedConfig);
           }
         },
       ),
@@ -3271,7 +3274,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
             onPressed: () async {
               setState(() => _configs.remove(config));
               await _saveConfigs();
-              Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('删除', style: TextStyle(color: Colors.red)),
           ),
@@ -3486,6 +3489,7 @@ class _NavBarEditDialogState extends State<_NavBarEditDialog> {
                       ),
                       onPressed: () async {
                         await widget.onSave(_config);
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                       },
                       child: Text(
@@ -4644,7 +4648,7 @@ class _TopBarManagePageState extends State<TopBarManagePage> {
               );
               if (result != null && result.files.isNotEmpty) {
                 final path = result.files.first.path;
-                if (path != null) {
+                if (path != null && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('选择文件: $path')),
                   );
@@ -4916,7 +4920,7 @@ class _TopBarManagePageState extends State<TopBarManagePage> {
             onPressed: () async {
               setState(() => _configs.remove(config));
               await _saveConfigs();
-              Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('删除', style: TextStyle(color: Colors.red)),
           ),
@@ -5137,6 +5141,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
                       ),
                       onPressed: () async {
                         await widget.onSave(_config);
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                       },
                       child: Text(
@@ -5364,10 +5369,10 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
     );
   }
 
-  void _showWallpaperPicker() async {
+  Future<void> _showWallpaperPicker() async {
     final hasWallpaper = _config.wallpaperPath != null && _config.wallpaperPath!.isNotEmpty;
     if (hasWallpaper) {
-      showDialog(
+      await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
           content: Column(
@@ -5392,7 +5397,7 @@ class _TopBarEditDialogState extends State<_TopBarEditDialog> {
         ),
       );
     } else {
-      _pickWallpaperImage();
+      await _pickWallpaperImage();
     }
   }
 
@@ -6052,19 +6057,19 @@ class _CoverConfigPageState extends State<CoverConfigPage> {
   Future<void> _saveBool(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
-    CoverConfigService.instance.reload();
+    await CoverConfigService.instance.reload();
   }
 
   Future<void> _saveString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
-    CoverConfigService.instance.reload();
+    await CoverConfigService.instance.reload();
   }
 
   Future<void> _removePref(String key) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
-    CoverConfigService.instance.reload();
+    await CoverConfigService.instance.reload();
   }
 
   String _getModeLabel(String mode) {
@@ -6506,9 +6511,11 @@ class _CoverConfigPageState extends State<CoverConfigPage> {
                       TextButton(
                         onPressed: () async {
                           // 恢复默认
+                          final messenger = ScaffoldMessenger.of(context);
                           await CoverConfigService.instance.deleteCoverRule();
+                          if (!ctx.mounted) return;
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             const SnackBar(content: Text('已恢复默认封面规则')),
                           );
                         },
@@ -6532,8 +6539,9 @@ class _CoverConfigPageState extends State<CoverConfigPage> {
                           const SizedBox(width: 8),
                           TextButton(
                             onPressed: () async {
+                              final messenger = ScaffoldMessenger.of(context);
                               if (searchUrl.isEmpty || coverRule.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(content: Text('搜索URL和封面规则不能为空')),
                                 );
                                 return;
@@ -6544,8 +6552,9 @@ class _CoverConfigPageState extends State<CoverConfigPage> {
                                 coverRule: coverRule,
                               );
                               await CoverConfigService.instance.saveCoverRule(newRule);
+                              if (!ctx.mounted) return;
                               Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 const SnackBar(content: Text('封面规则已保存')),
                               );
                             },
@@ -7082,8 +7091,9 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
                   name: name,
                   isNight: _isNight,
                 );
-                _loadCollections();
+                await _loadCollections();
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('创建失败: $e')),
                 );
@@ -7105,7 +7115,7 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
       );
       if (result != null && result.files.isNotEmpty) {
         final path = result.files.first.path;
-        if (path != null) {
+        if (path != null && mounted) {
           // TODO: 实现ZIP导入功能
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('选择文件: $path')),
@@ -7113,6 +7123,7 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('导入失败: $e')),
       );
@@ -7179,8 +7190,9 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
                 await CoverCollectionManager.instance.renameCollection(
                   collection.id, name, collection.isNight,
                 );
-                _loadCollections();
+                await _loadCollections();
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('重命名失败: $e')),
                 );
@@ -7226,8 +7238,9 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
         await CoverCollectionManager.instance.deleteCollection(
           collection.id, collection.isNight,
         );
-        _loadCollections();
+        await _loadCollections();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('删除失败: $e')),
         );
@@ -7251,7 +7264,7 @@ class _CoverCollectionManagePageState extends State<CoverCollectionManagePage> {
         transitionDuration: const Duration(milliseconds: 200),
       ),
     );
-    _loadCollections();
+    await _loadCollections();
   }
 }
 
@@ -7377,7 +7390,8 @@ class _CoverCollectionDetailPageState extends State<CoverCollectionDetailPage> {
         await CoverCollectionManager.instance.importImages(
           _collection.id, paths, _collection.isNight,
         );
-        _reloadCollection();
+        await _reloadCollection();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('已导入${paths.length}张图片')),
         );
@@ -7417,8 +7431,9 @@ class _CoverCollectionDetailPageState extends State<CoverCollectionDetailPage> {
         await CoverCollectionManager.instance.removeImage(
           _collection.id, _collection.images[index], _collection.isNight,
         );
-        _reloadCollection();
+        await _reloadCollection();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('删除失败: $e')),
         );
