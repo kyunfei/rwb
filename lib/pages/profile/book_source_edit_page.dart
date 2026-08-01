@@ -455,6 +455,7 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
 
   Future<void> _pasteSource() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
     if (data?.text != null) {
       try {
         final json = jsonDecode(data!.text!) as Map<String, dynamic>;
@@ -491,19 +492,19 @@ class _BookSourceEditPageState extends State<BookSourceEditPage>
     // 直接传 BookSource 对象给调试页面，无需保存即可调试
     if (mounted) {
       debugPrint('🔄 跳转调试页面: ${source.bookSourceName}');
-      Navigator.pushNamed(context, AppRoutes.bookSourceDebug, arguments: {
+      await Navigator.pushNamed(context, AppRoutes.bookSourceDebug, arguments: {
         'sourceUrl': source.bookSourceUrl,
         'source': source,
       });
     }
   }
 
-  void _searchWithSource() {
+  Future<void> _searchWithSource() async {
     final source = _buildSourceFromEntities();
-    StorageService.instance.saveBookSource(source.toJson()).then((_) {
-      Navigator.pushNamed(context, AppRoutes.search, arguments: {
-        'sourceUrl': source.bookSourceUrl,
-      });
+    await StorageService.instance.saveBookSource(source.toJson());
+    if (!mounted) return;
+    await Navigator.pushNamed(context, AppRoutes.search, arguments: {
+      'sourceUrl': source.bookSourceUrl,
     });
   }
 
@@ -2307,7 +2308,7 @@ class _SourceLoginPageState extends State<_SourceLoginPage> {
               // 如果正在检查登录状态，完成登录
               if (_checking) {
                 widget.onLoginSuccess();
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context);
                 }
               }

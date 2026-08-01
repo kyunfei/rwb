@@ -73,7 +73,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       await file.writeAsString(jsonEncode(data));
 
       setState(() => _isBackingUp = false);
-      _loadBackupInfo();
+      await _loadBackupInfo();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +163,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           final newFile = File('${backupDir.path}/backup_$timestamp.json');
           await newFile.writeAsString(content);
 
-          _loadBackupInfo();
+          await _loadBackupInfo();
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +188,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/backup/$fileName');
       await file.delete();
-      _loadBackupInfo();
+      await _loadBackupInfo();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

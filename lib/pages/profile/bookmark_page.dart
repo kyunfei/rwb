@@ -113,7 +113,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
           bookUrl: book.bookUrl,
           bookmarkId: bookmark.id,
         );
-        _loadBookmarks();
+        await _loadBookmarks();
       },
       child: ListTile(
         leading: ClipRRect(
@@ -321,7 +321,9 @@ class _BookmarkPageState extends State<BookmarkPage> {
                   );
                 }
               }
-              _loadBookmarks();
+              if (mounted) {
+                await _loadBookmarks();
+              }
             },
             child: Text('确定', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
