@@ -7,6 +7,10 @@ on:
   push:
     branches:
       - master
+  # PR 只跑静态分析门禁，不打包（打包任务见各 job 的 if 条件）
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       release_type:
@@ -30,6 +34,8 @@ jobs:
   # ===== 版本号计算（共享）=====
   prepare:
     name: Prepare Version
+    # PR 上只跑 analyze 门禁，打包链整条跳过
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -682,7 +688,8 @@ jobs:
     name: Create Release
     needs: [prepare, build-android, build-ios, build-ohos]
     runs-on: ubuntu-latest
-    if: always()
+    # always() 会无视上游 skip，PR 上必须显式排除，否则会在没有产物时空跑发布
+    if: always() && github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
