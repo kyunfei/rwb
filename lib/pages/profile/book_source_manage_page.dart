@@ -1201,27 +1201,47 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               const SizedBox(height: DesignTokens.spacingLg),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.bug_report),
-                        label: const Text('调试'),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.bookSourceDebug,
-                            arguments: {
-                              'sourceUrl': source.bookSourceUrl,
-                              'source': source,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.push_pin_outlined),
+                            label: const Text('置顶'),
+                            onPressed: () async {
+                              final discovery =
+                                  context.read<DiscoveryProvider>();
+                              Navigator.pop(context);
+                              await discovery.pinSource(source.bookSourceUrl);
+                              if (!mounted) return;
+                              await _loadSources();
                             },
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                        const SizedBox(width: DesignTokens.spacingMd),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.bug_report),
+                            label: const Text('调试'),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.bookSourceDebug,
+                                arguments: {
+                                  'sourceUrl': source.bookSourceUrl,
+                                  'source': source,
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: DesignTokens.spacingMd),
-                    Expanded(
+                    const SizedBox(height: DesignTokens.spacingMd),
+                    SizedBox(
+                      width: double.infinity,
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.delete),
                         label: const Text('删除书源'),
