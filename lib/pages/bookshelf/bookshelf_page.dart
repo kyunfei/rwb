@@ -2140,20 +2140,24 @@ class _BookshelfPageState extends State<BookshelfPage>
   void _showBatchUpdateDialog(BookshelfProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('批量更新'),
         content: Text('确定要更新选中的 ${provider.selectedBookIds.length} 本书籍吗？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final ids = provider.selectedBookIds.toList();
+              // 对话框 pop 后其 context 即失效，故先从 State.context 取出
+              // 依赖对象，后续一律用它们；mounted 守卫的也正是 State.context
+              final messenger = ScaffoldMessenger.of(context);
               final updateService = context.read<ShelfUpdateService>();
-              ScaffoldMessenger.of(context).showSnackBar(
+              Navigator.pop(dialogContext);
+
+              final ids = provider.selectedBookIds.toList();
+              messenger.showSnackBar(
                 const SnackBar(content: Text('正在更新选中书籍...')),
               );
               await updateService.checkBooks(ids);
@@ -2162,7 +2166,7 @@ class _BookshelfPageState extends State<BookshelfPage>
               provider.exitBatchMode();
               if (!mounted) return;
               final progress = updateService.progress;
-              ScaffoldMessenger.of(context).showSnackBar(
+              messenger.showSnackBar(
                 SnackBar(
                   content: Text(
                     '批量更新完成：成功 ${progress.completed}，失败 ${progress.failed}',
