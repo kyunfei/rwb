@@ -886,15 +886,20 @@ class _ChapterListPageState extends State<ChapterListPage> {
   }
 
   void _doOpenChapterAtIndex(int chapterIndex) {
+    final route = _readerRouteName();
+    if (route == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂不支持音视频阅读')),
+      );
+      return;
+    }
     Navigator.pushReplacementNamed(
       context,
-      _readerRouteName(),
+      route,
       arguments: {
         'bookUrl': widget.bookUrl,
         'bookId': widget.bookUrl,
         'chapterIndex': chapterIndex,
-        'trackId': chapterIndex.toString(),
-        'episodeId': chapterIndex.toString(),
         'resumeProgress': false,
         'bookData': _book,
       },
