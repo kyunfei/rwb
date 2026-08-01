@@ -60,12 +60,12 @@ typedef _SetCryptoCallbackBinaryDart
     = void Function(Pointer<NativeFunction<_CryptoCallbackBinaryC>>);
 
 // 加密操作类型常量（对齐 C 层 quickjs_bridge.h）
-const int _CRYPTO_OP_AES_DECRYPT = 0;
-const int _CRYPTO_OP_AES_ENCRYPT = 1;
-const int _CRYPTO_OP_MD5 = 2;
-const int _CRYPTO_OP_SHA256 = 3;
-const int _CRYPTO_OP_HMAC_SHA256 = 4;
-const int _CRYPTO_OP_SHA1 = 5;
+const int _cryptoOpAesDecrypt = 0;
+const int _cryptoOpAesEncrypt = 1;
+const int _cryptoOpMd5 = 2;
+const int _cryptoOpSha256 = 3;
+const int _cryptoOpHmacSha256 = 4;
+const int _cryptoOpSha1 = 5;
 
 /// 加载 QuickJS 动态库
 ///
@@ -1023,24 +1023,24 @@ Pointer<Utf8> _nativeCryptoCallback(
 
     String result;
     switch (op) {
-      case _CRYPTO_OP_AES_DECRYPT:
+      case _cryptoOpAesDecrypt:
         result = _performAesDecrypt(a, b, c);
         break;
-      case _CRYPTO_OP_AES_ENCRYPT:
+      case _cryptoOpAesEncrypt:
         result = _performAesEncrypt(a, b, c);
         break;
-      case _CRYPTO_OP_MD5:
+      case _cryptoOpMd5:
         result = crypto.md5.convert(utf8.encode(a)).toString();
         break;
-      case _CRYPTO_OP_SHA256:
+      case _cryptoOpSha256:
         result = crypto.sha256.convert(utf8.encode(a)).toString();
         break;
-      case _CRYPTO_OP_HMAC_SHA256:
+      case _cryptoOpHmacSha256:
         result = crypto.Hmac(crypto.sha256, utf8.encode(b))
             .convert(utf8.encode(a))
             .toString();
         break;
-      case _CRYPTO_OP_SHA1:
+      case _cryptoOpSha1:
         result = crypto.sha1.convert(utf8.encode(a)).toString();
         break;
       default:
@@ -1130,7 +1130,7 @@ Pointer<Uint8> _nativeCryptoCallbackBinary(
 
     Uint8List result;
     switch (op) {
-      case _CRYPTO_OP_AES_DECRYPT:
+      case _cryptoOpAesDecrypt:
         // data0=base64 密文字节, data1=key 字节, data2=iv 字节
         final dataB64 = utf8.decode(data0, allowMalformed: true);
         final key = utf8.decode(data1, allowMalformed: true);
@@ -1138,7 +1138,7 @@ Pointer<Uint8> _nativeCryptoCallbackBinary(
         final plain = _performAesDecrypt(dataB64, key, iv);
         result = Uint8List.fromList(utf8.encode(plain));
         break;
-      case _CRYPTO_OP_AES_ENCRYPT:
+      case _cryptoOpAesEncrypt:
         // data0=明文字节, data1=key 字节, data2=iv 字节
         final data = utf8.decode(data0, allowMalformed: true);
         final key = utf8.decode(data1, allowMalformed: true);
@@ -1146,20 +1146,20 @@ Pointer<Uint8> _nativeCryptoCallbackBinary(
         final cipherB64 = _performAesEncrypt(data, key, iv);
         result = Uint8List.fromList(utf8.encode(cipherB64));
         break;
-      case _CRYPTO_OP_MD5:
+      case _cryptoOpMd5:
         result = Uint8List.fromList(
             utf8.encode(crypto.md5.convert(data0).toString()));
         break;
-      case _CRYPTO_OP_SHA256:
+      case _cryptoOpSha256:
         result = Uint8List.fromList(
             utf8.encode(crypto.sha256.convert(data0).toString()));
         break;
-      case _CRYPTO_OP_HMAC_SHA256:
+      case _cryptoOpHmacSha256:
         // data0=数据字节, data1=key 字节
         result = Uint8List.fromList(utf8.encode(
             crypto.Hmac(crypto.sha256, data1).convert(data0).toString()));
         break;
-      case _CRYPTO_OP_SHA1:
+      case _cryptoOpSha1:
         result = Uint8List.fromList(
             utf8.encode(crypto.sha1.convert(data0).toString()));
         break;

@@ -21,9 +21,9 @@ import 'services/source_engine/proxy_service.dart';
 import 'services/cover_config_service.dart';
 import 'widgets/themed_background.dart';
 
-void main() async {
+Future<void> main() async {
   // 在 Zone 中运行，捕获所有未处理的异步错误
-  runZonedGuarded(() async {
+  await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // [修复 Bug #4] 初始化时序保护
@@ -40,7 +40,7 @@ void main() async {
 
     // 初始化应用日志文件系统（启动即记录所有操作日志）
     try {
-      AppLogger.instance.initFileLogging();
+      await AppLogger.instance.initFileLogging();
       // 启用 debugPrint 全局拦截：所有 debugPrint 输出重定向到日志系统，
       // 调试页面和日志页面均可查看，同时仍保持控制台输出
       AppLogger.enableDebugPrintCapture();
@@ -91,10 +91,10 @@ void main() async {
         errStr.contains('unknown typeId') ||
         errStr.contains('Did you forget to register an adapter')) {
       debugPrint('🚨 检测到 Hive 错误，触发紧急重建: $errStr');
-      // fire-and-forget，避免阻塞 zone 错误回调
-      StorageService.instance.emergencyRecoverAll().catchError((e) {
+      // 即发即忘：zone 错误回调中不能 await，避免阻塞后续错误处理
+      unawaited(StorageService.instance.emergencyRecoverAll().catchError((e) {
         debugPrint('❌ 紧急重建失败: $e');
-      });
+      }));
     }
   });
 }

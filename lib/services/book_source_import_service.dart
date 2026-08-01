@@ -333,7 +333,7 @@ class BookSourceImportService {
       final trimmed = line.trim();
       if (!collecting) {
         // 同时匹配 // @key 和 * @key 两种注释格式
-        final m = RegExp('^(?://|\\*)\\s*@' + key + r'\s+(.*)$')
+        final m = RegExp(r'^(?://|\*)\s*@\${RegExp.escape(key)}\s+(.*)\$')
             .firstMatch(trimmed);
         if (m != null) {
           collecting = true;

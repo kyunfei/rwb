@@ -55,7 +55,7 @@ class _MainPageState extends State<MainPage> {
   Future<void> _checkSharedText() async {
     final sharedText = await ShareService.instance.getSharedText();
     if (sharedText != null && sharedText.isNotEmpty && mounted) {
-      Navigator.pushNamed(
+      await Navigator.pushNamed(
         context,
         AppRoutes.bookSourceImport,
         arguments: sharedText,
@@ -85,9 +85,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _loadData() async {
+    final bookshelfProvider = context.read<BookshelfProvider>();
+    final discoveryProvider = context.read<DiscoveryProvider>();
     try {
-      await context.read<BookshelfProvider>().loadBooks();
-      await context.read<DiscoveryProvider>().loadBookSources();
+      await bookshelfProvider.loadBooks();
+      await discoveryProvider.loadBookSources();
       if (!mounted) return;
       setState(() {
         _isLoading = false;

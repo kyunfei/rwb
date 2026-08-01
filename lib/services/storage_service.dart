@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -481,9 +482,10 @@ class StorageService {
       if (!ok) {
         debugPrint('❌ StorageService: 初始化失败，无法保存书源: $sourceUrl');
         // 不抛异常，触发紧急重建由 zone 兜底
-        emergencyRecoverAll().catchError((e) {
+        // 即发即忘：保存失败路径中不能阻塞，紧急重建由 zone 兜底
+        unawaited(emergencyRecoverAll().catchError((e) {
           debugPrint('❌ StorageService: 紧急重建失败: $e');
-        });
+        }));
         return;
       }
     }

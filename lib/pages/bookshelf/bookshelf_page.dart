@@ -759,7 +759,7 @@ class _BookshelfPageState extends State<BookshelfPage>
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('新建分组'),
         content: TextField(
           controller: controller,
@@ -768,16 +768,18 @@ class _BookshelfPageState extends State<BookshelfPage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty) {
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.addCustomGroup(controller.text);
-                Navigator.pop(context);
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
                 if (!success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('分组已达上限(64个)或名称已存在')),
                   );
                 }
@@ -794,7 +796,7 @@ class _BookshelfPageState extends State<BookshelfPage>
     final controller = TextEditingController(text: oldName);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('编辑分组'),
         content: TextField(
           controller: controller,
@@ -803,24 +805,26 @@ class _BookshelfPageState extends State<BookshelfPage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty && controller.text != oldName) {
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.renameCustomGroup(
                   oldName,
                   controller.text,
                 );
-                Navigator.pop(context);
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
                 if (!success && mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('分组名称已存在')));
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('分组名称已存在')),
+                  );
                 }
               } else {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               }
             },
             child: const Text('保存'),
@@ -833,18 +837,19 @@ class _BookshelfPageState extends State<BookshelfPage>
   void _showDeleteGroupDialog(BookshelfProvider provider, String groupName) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('删除分组'),
         content: Text('确定要删除分组"$groupName"吗？\n该分组下的书籍将移至未分组。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
               await provider.removeCustomGroup(groupName);
-              Navigator.pop(context);
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
             },
             child: const Text('删除'),
           ),
@@ -2092,19 +2097,20 @@ class _BookshelfPageState extends State<BookshelfPage>
       final controller = ImportProgressController();
       final totalCount = result.files.length;
 
-      // 显示进度对话框
+      // 显示进度对话框（与下方导入循环并行，故意不 await）
       if (!mounted) return;
-      showDialog(
+      unawaited(showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => _ImportProgressDialog(
           controller: controller,
           totalCount: totalCount,
         ),
-      );
+      ));
 
       int successCount = 0;
       int failedCount = 0;
+      final bookshelfProvider = context.read<BookshelfProvider>();
 
       for (int i = 0; i < result.files.length; i++) {
         final file = result.files[i];
@@ -2121,7 +2127,7 @@ class _BookshelfPageState extends State<BookshelfPage>
         );
 
         if (book != null) {
-          await context.read<BookshelfProvider>().addToBookshelf(book);
+          await bookshelfProvider.addToBookshelf(book);
           successCount++;
         } else {
           failedCount++;
@@ -2336,7 +2342,7 @@ class _BookshelfPageState extends State<BookshelfPage>
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('新建分组'),
         content: TextField(
           controller: controller,
@@ -2345,16 +2351,18 @@ class _BookshelfPageState extends State<BookshelfPage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty) {
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.addCustomGroup(controller.text);
-                Navigator.pop(context);
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
                 if (!success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('分组已达上限(64个)或名称已存在')),
                   );
                 }
@@ -2377,7 +2385,7 @@ class _BookshelfPageState extends State<BookshelfPage>
     final controller = TextEditingController(text: oldName);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('编辑分组'),
         content: TextField(
           controller: controller,
@@ -2387,38 +2395,41 @@ class _BookshelfPageState extends State<BookshelfPage>
         actions: [
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               // 删除分组
               await provider.removeCustomGroup(oldName);
+              if (!mounted) return;
               // 重新打开分组选择对话框
               _showMoveToGroupDialog(book, provider);
             },
             child: Text(
               '删除',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              style: TextStyle(color: Theme.of(dialogContext).colorScheme.error),
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty && controller.text != oldName) {
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.renameCustomGroup(
                   oldName,
                   controller.text,
                 );
-                Navigator.pop(context);
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
                 if (!success && mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('分组名称已存在')));
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('分组名称已存在')),
+                  );
                 }
                 // 重新打开分组选择对话框
                 _showMoveToGroupDialog(book, provider);
               } else {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               }
             },
             child: const Text('保存'),
