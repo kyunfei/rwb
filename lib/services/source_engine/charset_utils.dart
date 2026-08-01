@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:charset/charset.dart';
 import '../native/js_engine.dart';
+import 'big5_codec.dart';
 
 /// 编码工具函数库
 ///
@@ -11,8 +12,8 @@ import '../native/js_engine.dart';
 /// - [detectCharsetFromHeaders]：从 Content-Type 头提取 charset
 /// - [detectCharsetFromHtml]：从 HTML meta 标签检测 charset
 ///
-/// 编码转换统一走 C 原生层（quickjs charset_conv.c），
-/// 通过 JS 引擎桥接调用，Android/iOS/Web 通用。
+/// 解码优先走 Dart 侧：`charset` 包注册表（GBK 等）+ 内置 Big5/CP950 表；
+/// URL 编码中的非 UTF-8 仍走 C 原生层（quickjs charset_conv.c，目前主要覆盖 GB 族）。
 class CharsetUtils {
   /// URL-encode 字符串，使用指定字符集
   ///
@@ -28,7 +29,7 @@ class CharsetUtils {
     if (cs.isEmpty || cs == 'utf-8' || cs == 'utf8') {
       return Uri.encodeComponent(str);
     }
-    // 通过 C 原生层进行 GBK/GB2312/GB18030/Big5 编码
+    // 通过 C 原生层进行 GBK/GB2312/GB18030 编码（charset_conv.c 当前无 Big5）
     // JsEngine.urlEncodeNative 调用 quickjs charset_url_encode
     try {
       final result = JsEngine.instance.urlEncodeNative(str, charset.trim());
@@ -107,14 +108,26 @@ class CharsetUtils {
     'windows-936',
   };
 
+  /// Big5 / CP950 别名。charset 2.x 无 Big5 实现，走内置纯 Dart 映射表。
+  static const _big5Family = <String>{
+    'big5',
+    'big-5',
+    'big_5',
+    'cn-big5',
+    'csbig5',
+    'x-x-big5',
+    'cp950',
+    'cp-950',
+    'windows-950',
+    'ms950',
+  };
+
   /// 将字节数组按指定字符集解码为字符串
   ///
   /// 通过 charset 包的编码注册表支持 GBK/GB2312/GB18030/EUC-JP/EUC-KR/
   /// Shift_JIS/windows-125x/ISO-8859-x/UTF-16/UTF-32，叠加 dart:convert
-  /// 内置的 utf-8/latin-1/ascii。
-  ///
-  /// 已知缺口：Big5（charset 2.x 未提供该编码），繁体源会落到 latin-1
-  /// 兜底——不丢字节但显示为乱码。
+  /// 内置的 utf-8/latin-1/ascii；Big5/CP950 由内置 [Big5Codec] 覆盖
+  ///（纯 Dart，Windows 单测无需 quickjs_c_bridge.dll）。
   static String decodeResponse(Uint8List bytes, String? charset) {
     final cs = charset?.trim().toLowerCase() ?? '';
     if (cs.isEmpty || cs == 'utf-8' || cs == 'utf8') {
@@ -134,6 +147,13 @@ class CharsetUtils {
         // 落到下方兜底
       }
     }
+    if (_big5Family.contains(cs)) {
+      try {
+        return const Big5Codec(allowMalformed: true).decode(bytes);
+      } catch (_) {
+        // 落到下方兜底
+      }
+    }
     final encoding = Charset.getByName(cs);
     if (encoding != null) {
       try {
@@ -142,7 +162,7 @@ class CharsetUtils {
         // 落到下方兜底
       }
     }
-    // 注册表未覆盖（如 Big5）或解码失败：latin-1 保证不丢字节，
+    // 注册表仍未覆盖或解码失败：latin-1 保证不丢字节，
     // 调用方可用 detectCharsetFromHtml 二次检测后重新解码
     try {
       return latin1.decode(bytes);
