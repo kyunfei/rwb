@@ -83,6 +83,9 @@ class ReaderTtsManager {
 
   void pauseForAudioFocusLoss() => _service.pauseForAudioFocusLoss();
 
+  void onAudioFocusGained() => _service.onAudioFocusGained();
+
+  /// 兼容旧 API；不再自动 resume，见 [ReaderTtsService.resumeAfterAudioFocusGain]。
   Future<void> resumeAfterAudioFocusGain() =>
       _service.resumeAfterAudioFocusGain();
 

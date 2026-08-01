@@ -37,7 +37,6 @@ class ReaderTtsService {
   bool _initialized = false;
   bool _isSpeaking = false;
   bool _isPaused = false;
-  bool _pausedByFocusLoss = false;
   int _segmentIndex = 0;
   double _rate = 0.5;
   double _pitch = 1.0;
@@ -82,6 +81,8 @@ class ReaderTtsService {
         onPause: pause,
         onResume: () => unawaited(resume()),
         onStop: stop,
+        onAudioFocusLost: pauseForAudioFocusLoss,
+        onAudioFocusGained: onAudioFocusGained,
       );
 
       for (final code in ['zh-CN', 'zh', 'cmn', 'zh-Hans']) {
@@ -137,12 +138,12 @@ class ReaderTtsService {
     }
     _isSpeaking = true;
     _isPaused = false;
-    _pausedByFocusLoss = false;
     await _enableKeepAwake(true);
     _notifyState();
     await _tts.stop();
-    await _speakCurrent();
+    // 先拉起前台服务并申请音频焦点，再发声
     await _syncNotification();
+    await _speakCurrent();
   }
 
   void pause() {
@@ -160,17 +161,15 @@ class ReaderTtsService {
     }
     if (!_isPaused) return;
     _isPaused = false;
-    _pausedByFocusLoss = false;
     _notifyState();
-    await _speakCurrent();
     await _syncNotification();
+    await _speakCurrent();
   }
 
   void stop() {
     _cancelSleepTimer();
     _isSpeaking = false;
     _isPaused = false;
-    _pausedByFocusLoss = false;
     unawaited(_tts.stop());
     unawaited(_enableKeepAwake(false));
     unawaited(ReaderTtsNotificationBridge.instance.dismiss());
@@ -265,14 +264,20 @@ class ReaderTtsService {
 
   void pauseForAudioFocusLoss() {
     if (!_isSpeaking || _isPaused) return;
-    _pausedByFocusLoss = true;
     pause();
   }
 
+  /// 音频焦点恢复：**不**自动继续朗读，仅刷新 UI 状态。
+  ///
+  /// 理由：来电/导航播报结束后突然出声容易惊吓用户；
+  /// 且用户可能已离开阅读场景。保持暂停，由通知栏或页内按钮手动继续。
+  void onAudioFocusGained() {
+    _notifyState();
+  }
+
+  /// 兼容旧调用点；行为与 [onAudioFocusGained] 相同（不自动 resume）。
   Future<void> resumeAfterAudioFocusGain() async {
-    if (!_pausedByFocusLoss) return;
-    _pausedByFocusLoss = false;
-    await resume();
+    onAudioFocusGained();
   }
 
   void dispose() {
@@ -335,7 +340,7 @@ class ReaderTtsService {
     if (!_isSpeaking) return;
     final seg = currentSegment;
     await ReaderTtsNotificationBridge.instance.show(
-      title: '朗读中',
+      title: _isPaused ? '已暂停' : '朗读中',
       body: seg?.text ?? '',
       isPaused: _isPaused,
     );

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Android 通知栏朗读控制桥接（其他平台为 no-op）。
+/// Android 通知栏 / 前台服务朗读控制桥接（其他平台为 no-op）。
 class ReaderTtsNotificationBridge {
   ReaderTtsNotificationBridge._();
 
@@ -17,16 +17,22 @@ class ReaderTtsNotificationBridge {
   VoidCallback? _onPause;
   VoidCallback? _onResume;
   VoidCallback? _onStop;
+  VoidCallback? _onAudioFocusLost;
+  VoidCallback? _onAudioFocusGained;
   bool _handlersAttached = false;
 
   Future<void> attachHandlers({
     required VoidCallback onPause,
     required VoidCallback onResume,
     required VoidCallback onStop,
+    VoidCallback? onAudioFocusLost,
+    VoidCallback? onAudioFocusGained,
   }) async {
     _onPause = onPause;
     _onResume = onResume;
     _onStop = onStop;
+    _onAudioFocusLost = onAudioFocusLost;
+    _onAudioFocusGained = onAudioFocusGained;
     if (_handlersAttached) return;
     _handlersAttached = true;
     _callbackChannel.setMethodCallHandler((call) async {
@@ -40,6 +46,14 @@ class ReaderTtsNotificationBridge {
         case 'stop':
           _onStop?.call();
           break;
+        case 'audioFocusLost':
+        case 'audioBecomingNoisy':
+          // 来电 / 其他音频 / 耳机拔出：统一走失焦暂停
+          (_onAudioFocusLost ?? _onPause)?.call();
+          break;
+        case 'audioFocusGained':
+          _onAudioFocusGained?.call();
+          break;
       }
       return null;
     });
@@ -51,6 +65,8 @@ class ReaderTtsNotificationBridge {
     _onPause = null;
     _onResume = null;
     _onStop = null;
+    _onAudioFocusLost = null;
+    _onAudioFocusGained = null;
   }
 
   Future<void> show({
