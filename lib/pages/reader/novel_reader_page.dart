@@ -37,6 +37,9 @@ import 'webview/reader_webview_controller.dart';
 import 'webview/reader_html_template.dart';
 import 'page_turn/reader_page_view.dart';
 import 'page_turn/page_delegate.dart';
+import 'reader_pagination_utils.dart';
+import 'reader_text_cleaner.dart';
+import '../../services/reader_tts_service.dart';
 
 class NovelReaderPage extends StatefulWidget {
   final String bookUrl;
@@ -57,7 +60,7 @@ class NovelReaderPage extends StatefulWidget {
 }
 
 class _NovelReaderPageState extends State<NovelReaderPage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   bool _showMenu = false;
   /// 翻页动画进行中标记，用于阻止动画期间 JS click 误触发菜单
   /// 由 _onPageTurnCompleted / _onPageTurnCancelled 复位
@@ -136,6 +139,8 @@ class _NovelReaderPageState extends State<NovelReaderPage>
   int _scrollChapterMax = -1;
   // _appendNextChapter 防重入标志：避免 onScrollNearEnd 高频触发时重复加载
   bool _isAppendingChapter = false;
+  /// TTS 自动续章加载中：避免 _loadChapterContent 误停朗读。
+  bool _ttsAdvancingChapter = false;
 
   // 滚动模式向上衔接：当前已加载到第几章（最小 index）
   //
@@ -203,13 +208,34 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     });
     _loadBookAndChapters();
     _loadReaderContentOptions();
-    _initTts();
     _checkBookmark();
+    WidgetsBinding.instance.addObserver(this);
     // 延迟到首帧后初始化系统交互（provider 此时已可用）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _initSystemInteractions();
+      final provider = context.read<ReaderProvider>();
+      provider.applyPlatformNightMode(
+        MediaQuery.platformBrightnessOf(context),
+      );
+      _setupTtsHandlers(provider);
     });
+  }
+
+  void _setupTtsHandlers(ReaderProvider provider) {
+    provider.setTtsChapterCompleteHandler(_onTtsChapterComplete);
+    provider.setTtsSegmentHandler(_onTtsSegmentChanged);
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    if (!mounted) return;
+    final provider = context.read<ReaderProvider>();
+    provider.applyPlatformNightMode(
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
+    );
+    _repaginatePreservingPosition();
   }
 
   /// 初始化系统交互：屏幕常亮 + 亮度调节 + 监听配置变化
@@ -317,6 +343,10 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     _menuAnimController.dispose();
     _focusNode.dispose();
     _readerWebViewController.detach();
+    WidgetsBinding.instance.removeObserver(this);
+    provider.setTtsChapterCompleteHandler(null);
+    provider.setTtsSegmentHandler(null);
+    unawaited(_readerWebViewController.clearTtsHighlight());
     provider.disposeTts();
     // 恢复系统亮度（应用层亮度是全局的，退出阅读器必须还原）
     // 不等待 Future，dispose 中无法 await
@@ -342,10 +372,9 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     }
   }
 
-  Future<void> _initTts() async {
-    final provider = context.read<ReaderProvider>();
-    await provider.initTts(
-      rate: 0.5,
+  Future<void> _ensureTtsReady(ReaderProvider provider) async {
+    await provider.ensureTtsInitialized(
+      rate: _ttsSpeed,
       onStateChanged: () {
         if (mounted) setState(() {});
       },
@@ -353,6 +382,92 @@ class _NovelReaderPageState extends State<NovelReaderPage>
         if (mounted) setState(() {});
       },
     );
+  }
+
+  Future<int> _estimateTtsStartOffset(String cleanedPlain) async {
+    if (cleanedPlain.isEmpty) return 0;
+    final provider = context.read<ReaderProvider>();
+    double fraction = 0;
+    if (_isScrollLikeMode(provider) && _readerWebViewController.isReady) {
+      try {
+        fraction = await _readerWebViewController.getScrollProgress();
+      } catch (_) {
+        fraction = _scrollProgress;
+      }
+    } else {
+      fraction = ReaderPaginationUtils.pageIndexToFraction(
+        _webviewCurrentPage,
+        _webviewPageCount,
+      );
+    }
+    final approx = ReaderPaginationUtils.estimateCharOffsetFromFraction(
+      fraction,
+      cleanedPlain.length,
+    );
+    return ReaderPaginationUtils.findSentenceStartIndex(cleanedPlain, approx);
+  }
+
+  Future<bool> _onTtsChapterComplete() async {
+    if (_currentChapterIndex >= _totalChapters - 1) return false;
+    _ttsAdvancingChapter = true;
+    try {
+      _currentChapterIndex++;
+      _sliderValue = _currentChapterIndex.toDouble();
+      await _loadChapterContent();
+      if (!mounted || _content.isEmpty) return false;
+      final provider = context.read<ReaderProvider>();
+      final converted = ChineseConverter.convert(
+        _processedContent(_content),
+        provider.chineseConverterType,
+      );
+      provider.setTtsChapterContent(converted, startOffset: 0);
+      return true;
+    } finally {
+      _ttsAdvancingChapter = false;
+    }
+  }
+
+  void _onTtsSegmentChanged(ReaderTtsSegment segment) {
+    unawaited(_readerWebViewController.highlightTtsSentence(segment.text));
+    unawaited(_syncReaderPageForTts(segment));
+  }
+
+  Future<void> _syncReaderPageForTts(ReaderTtsSegment segment) async {
+    if (!mounted || !_readerWebViewController.isReady) return;
+    final provider = context.read<ReaderProvider>();
+    if (_isScrollLikeMode(provider)) return;
+    final plain = ReaderTextCleaner.cleanForTts(
+      ChineseConverter.convert(
+        _processedContent(_content),
+        provider.chineseConverterType,
+      ),
+    );
+    if (plain.isEmpty) return;
+    final fraction = segment.endOffset / plain.length;
+    final target = ReaderPaginationUtils.fractionToPageIndex(
+      fraction,
+      _webviewPageCount,
+    );
+    if (target != _webviewCurrentPage) {
+      await _readerWebViewController.jumpToPage(target, animate: false);
+    }
+  }
+
+  void _startTts() {
+    unawaited(_startTtsAsync());
+  }
+
+  Future<void> _startTtsAsync() async {
+    final provider = context.read<ReaderProvider>();
+    await _ensureTtsReady(provider);
+    final converted = ChineseConverter.convert(
+      _processedContent(_content),
+      provider.chineseConverterType,
+    );
+    final cleaned = ReaderTextCleaner.cleanForTts(converted);
+    final startOffset = await _estimateTtsStartOffset(cleaned);
+    provider.setTtsChapterContent(converted, startOffset: startOffset);
+    await provider.startTts(fromParagraphIndex: provider.ttsParagraphIndex);
   }
 
   Future<void> _checkBookmark() async {
@@ -398,17 +513,6 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     final provider = context.read<ReaderProvider>();
     _hideMenu();
     _showInterfaceSettingsDialog(provider);
-  }
-
-  void _startTts() {
-    final provider = context.read<ReaderProvider>();
-    provider.setTtsChapterContent(
-      ChineseConverter.convert(
-        _processedContent(_content),
-        provider.chineseConverterType,
-      ),
-    );
-    provider.startTts();
   }
 
   Future<void> _loadReaderContentOptions() async {
@@ -764,6 +868,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
 
   void _stopTts() {
     context.read<ReaderProvider>().stopTts();
+    unawaited(_readerWebViewController.clearTtsHighlight());
   }
 
   void _pauseTts() {
@@ -929,8 +1034,9 @@ class _NovelReaderPageState extends State<NovelReaderPage>
 
         // 章节切换时若 TTS 正在播放，先停止再替换内容，避免 paragraphIndex 越界
         final readerProvider = context.read<ReaderProvider>();
-        if (readerProvider.isTtsPlaying) {
+        if (readerProvider.isTtsPlaying && !_ttsAdvancingChapter) {
           readerProvider.stopTts();
+          unawaited(_readerWebViewController.clearTtsHighlight());
         }
         readerProvider.setTtsChapterContent(
           ChineseConverter.convert(
@@ -3646,6 +3752,54 @@ class _NovelReaderPageState extends State<NovelReaderPage>
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.brightness_auto),
+                    title: const Text('夜间模式跟随系统'),
+                    trailing: Switch(
+                      value: provider.nightModeFollowSystem,
+                      onChanged: (value) {
+                        provider.setNightModeFollowSystem(value);
+                        if (value) {
+                          provider.applyPlatformNightMode(
+                            MediaQuery.platformBrightnessOf(context),
+                          );
+                          _repaginatePreservingPosition();
+                        }
+                        if (mounted) setState(() {});
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.timer),
+                    title: const Text('朗读定时关闭'),
+                    subtitle: Text(
+                      provider.ttsSleepTimerMinutes <= 0
+                          ? '未开启'
+                          : '${provider.ttsSleepTimerMinutes} 分钟后停止',
+                    ),
+                    onTap: () async {
+                      final minutes = await _pickTtsSleepTimer(context);
+                      if (minutes == null) return;
+                      provider.setTtsSleepTimerMinutes(minutes);
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.record_voice_over),
+                    title: const Text('朗读发音人'),
+                    subtitle: Text(provider.ttsVoiceName ?? '系统默认'),
+                    onTap: () => unawaited(_pickTtsVoice(provider)),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.graphic_eq),
+                    title: Text('朗读音调 ${provider.ttsPitch.toStringAsFixed(1)}'),
+                    onTap: () async {
+                      final pitch = await _pickTtsPitch(context, provider.ttsPitch);
+                      if (pitch == null) return;
+                      await provider.setTtsPitch(pitch);
+                      if (mounted) setState(() {});
+                    },
+                  ),
                   // 行距设置
                   ListTile(
                     leading: const Icon(Icons.format_line_spacing),
@@ -3738,6 +3892,102 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           },
         );
       },
+    );
+  }
+
+  Future<int?> _pickTtsSleepTimer(BuildContext context) async {
+    const options = [0, 15, 30, 45, 60, 90, 120];
+    return showModalBottomSheet<int>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: options.map((m) {
+            final label = m == 0 ? '关闭定时' : '$m 分钟';
+            return ListTile(
+              title: Text(label),
+              onTap: () => Navigator.pop(ctx, m),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickTtsVoice(ReaderProvider provider) async {
+    final voices = await provider.listTtsVoices();
+    if (!mounted) return;
+    if (voices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('未获取到中文发音人，使用系统默认')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: const Text('系统默认'),
+              onTap: () {
+                unawaited(provider.setTtsVoice(null));
+                Navigator.pop(ctx);
+              },
+            ),
+            ...voices.map((v) {
+              final name = v['name'] ?? '';
+              return ListTile(
+                title: Text(name),
+                subtitle: Text(v['locale'] ?? ''),
+                onTap: () {
+                  unawaited(provider.setTtsVoice(name));
+                  Navigator.pop(ctx);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<double?> _pickTtsPitch(BuildContext context, double current) async {
+    var value = current;
+    return showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('朗读音调'),
+        content: StatefulBuilder(
+          builder: (context, setLocal) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 15,
+                  value: value,
+                  label: value.toStringAsFixed(1),
+                  onChanged: (v) => setLocal(() => value = v),
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, value),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
     );
   }
 

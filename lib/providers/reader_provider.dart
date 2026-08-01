@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/highlight.dart';
+import '../pages/reader/reader_text_cleaner.dart';
 import '../services/storage_service.dart';
 import '../services/reader_bookmark_service.dart';
 import '../services/reader_tts_manager.dart';
+import '../services/reader_tts_service.dart';
 
 enum PageMode { scroll, slide, cover, simulation, none }
 
@@ -53,6 +55,7 @@ class ReaderProvider extends ChangeNotifier {
   Color _textColor = Colors.black87;
   double _brightness = 1.0;
   bool _isNightMode = false;
+  bool _nightModeFollowSystem = true;
   bool _initialized = false;
 
   double _letterSpacing = 0.1;
@@ -82,6 +85,11 @@ class ReaderProvider extends ChangeNotifier {
   int _ttsParagraphIndex = 0;
   int _ttsParagraphTotal = 0;
   double _ttsRate = 0.5;
+  double _ttsPitch = 1.0;
+  String? _ttsVoiceName;
+  int _ttsSleepTimerMinutes = 0;
+  ReaderTtsChapterCompleteCallback? _ttsChapterCompleteHandler;
+  ReaderTtsSegmentCallback? _ttsSegmentHandler;
 
   // 阅读设置
   bool _showReadingInfo = true;
@@ -153,6 +161,7 @@ class ReaderProvider extends ChangeNotifier {
   Color get textColor => _textColor;
   double get brightness => _brightness;
   bool get isNightMode => _isNightMode;
+  bool get nightModeFollowSystem => _nightModeFollowSystem;
   String get fontFamily => _fontFamily;
   bool get loadEpubFonts => _loadEpubFonts;
   Map<String, String> get fontOverrides => Map.unmodifiable(_fontOverrides);
@@ -172,6 +181,8 @@ class ReaderProvider extends ChangeNotifier {
       _lineHeight = (config['lineHeight'] as num?)?.toDouble() ?? 1.6;
       _brightness = (config['brightness'] as num?)?.toDouble() ?? 1.0;
       _isNightMode = config['isNightMode'] as bool? ?? false;
+      _nightModeFollowSystem =
+          config['nightModeFollowSystem'] as bool? ?? true;
       final bgValue = config['backgroundColor'] as int?;
       if (bgValue != null) _backgroundColor = Color(bgValue);
       final modeIndex = config['pageMode'] as int?;
@@ -308,6 +319,7 @@ class ReaderProvider extends ChangeNotifier {
       'lineHeight': _lineHeight,
       'brightness': _brightness,
       'isNightMode': _isNightMode,
+      'nightModeFollowSystem': _nightModeFollowSystem,
       'backgroundColor': _backgroundColor.toARGB32(),
       'pageMode': _pageMode.index,
       'fontFamily': _fontFamily,
@@ -427,7 +439,36 @@ class ReaderProvider extends ChangeNotifier {
   }
 
   void toggleNightMode() {
-    _isNightMode = !_isNightMode;
+    _nightModeFollowSystem = false;
+    _applyNightModeColors(!_isNightMode);
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  void setNightMode(bool value) {
+    if (_isNightMode == value && !_nightModeFollowSystem) return;
+    _nightModeFollowSystem = false;
+    _applyNightModeColors(value);
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  void setNightModeFollowSystem(bool follow) {
+    if (_nightModeFollowSystem == follow) return;
+    _nightModeFollowSystem = follow;
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  /// 跟随系统深色模式时，由阅读页在 [didChangePlatformBrightness] 中调用。
+  void applyPlatformNightMode(Brightness platformBrightness) {
+    if (!_nightModeFollowSystem) return;
+    _applyNightModeColors(platformBrightness == Brightness.dark);
+    notifyListeners();
+  }
+
+  void _applyNightModeColors(bool night) {
+    _isNightMode = night;
     if (_isNightMode) {
       _backgroundColor = const Color(0xFF1A1A1A);
       _textColor = Colors.white70;
@@ -435,13 +476,6 @@ class ReaderProvider extends ChangeNotifier {
       _backgroundColor = const Color(0xFFFFF8E1);
       _textColor = Colors.black87;
     }
-    _saveToStorage();
-    notifyListeners();
-  }
-
-  void setNightMode(bool value) {
-    if (_isNightMode == value) return;
-    toggleNightMode();
   }
 
   void setFontFamily(String family) {
@@ -608,6 +642,30 @@ class ReaderProvider extends ChangeNotifier {
   int get ttsParagraphIndex => _ttsParagraphIndex;
   int get ttsParagraphTotal => _ttsParagraphTotal;
   double get ttsRate => _ttsRate;
+  double get ttsPitch => _ttsPitch;
+  String? get ttsVoiceName => _ttsVoiceName;
+  int get ttsSleepTimerMinutes => _ttsSleepTimerMinutes;
+
+  void setTtsChapterCompleteHandler(ReaderTtsChapterCompleteCallback? handler) {
+    _ttsChapterCompleteHandler = handler;
+  }
+
+  void setTtsSegmentHandler(ReaderTtsSegmentCallback? handler) {
+    _ttsSegmentHandler = handler;
+  }
+
+  Future<void> ensureTtsInitialized({
+    double rate = 0.5,
+    VoidCallback? onStateChanged,
+    VoidCallback? onParagraphChanged,
+  }) async {
+    if (_ttsManager != null) return;
+    await initTts(
+      rate: rate,
+      onStateChanged: onStateChanged,
+      onParagraphChanged: onParagraphChanged,
+    );
+  }
 
   Future<void> initTts({
     double rate = 0.5,
@@ -625,6 +683,7 @@ class ReaderProvider extends ChangeNotifier {
         _isTtsPlaying = manager.isSpeaking;
         _isTtsPaused = manager.isPaused;
         _ttsParagraphIndex = manager.paragraphIndex;
+        _ttsParagraphTotal = manager.paragraphCount;
         onStateChanged?.call();
         notifyListeners();
       },
@@ -632,24 +691,40 @@ class ReaderProvider extends ChangeNotifier {
         final manager = _ttsManager;
         if (manager == null) return;
         _ttsParagraphIndex = manager.paragraphIndex;
+        _ttsParagraphTotal = manager.paragraphCount;
         onParagraphChanged?.call();
         notifyListeners();
       },
+      onSegmentChanged: (seg) {
+        _ttsSegmentHandler?.call(seg);
+      },
+      onChapterComplete: () async {
+        final handler = _ttsChapterCompleteHandler;
+        if (handler == null) return false;
+        return handler();
+      },
     );
+    if (_ttsVoiceName != null) {
+      await _ttsManager!.setVoice(_ttsVoiceName);
+    }
+    await _ttsManager!.setPitch(_ttsPitch);
+    if (_ttsSleepTimerMinutes > 0) {
+      _ttsManager!.setSleepTimerMinutes(_ttsSleepTimerMinutes);
+    }
   }
 
-  void setTtsChapterContent(String content) {
-    _ttsManager?.setChapterContent(content);
-    // 计算段落总数
-    _ttsParagraphTotal = content
-        .split(RegExp(r'\n+'))
-        .where((p) => p.trim().isNotEmpty)
-        .length;
+  void setTtsChapterContent(String content, {int startOffset = 0}) {
+    _ttsManager?.setChapterContent(content, startOffset: startOffset);
+    _ttsParagraphTotal = _ttsManager?.paragraphCount ??
+        ReaderTextCleaner.cleanForTts(content)
+            .split(RegExp(r'\n+'))
+            .where((p) => p.trim().isNotEmpty)
+            .length;
     notifyListeners();
   }
 
-  Future<void> startTts() async {
-    await _ttsManager?.start();
+  Future<void> startTts({int? fromParagraphIndex}) async {
+    await _ttsManager?.start(fromParagraphIndex: fromParagraphIndex);
   }
 
   void pauseTts() {
@@ -662,6 +737,9 @@ class ReaderProvider extends ChangeNotifier {
 
   void stopTts() {
     _ttsManager?.stop();
+    _isTtsPlaying = false;
+    _isTtsPaused = false;
+    notifyListeners();
   }
 
   Future<void> nextTtsParagraph() async {
@@ -676,6 +754,37 @@ class ReaderProvider extends ChangeNotifier {
     _ttsRate = rate;
     await _ttsManager?.setRate(rate);
     notifyListeners();
+  }
+
+  Future<void> setTtsPitch(double pitch) async {
+    _ttsPitch = pitch;
+    await _ttsManager?.setPitch(pitch);
+    notifyListeners();
+  }
+
+  Future<void> setTtsVoice(String? name) async {
+    _ttsVoiceName = name;
+    await _ttsManager?.setVoice(name);
+    notifyListeners();
+  }
+
+  void setTtsSleepTimerMinutes(int minutes) {
+    _ttsSleepTimerMinutes = minutes;
+    _ttsManager?.setSleepTimerMinutes(minutes);
+    notifyListeners();
+  }
+
+  Future<List<Map<String, String>>> listTtsVoices() async {
+    await ensureTtsInitialized();
+    return _ttsManager?.listVoices() ?? const [];
+  }
+
+  void pauseTtsForAudioFocus() {
+    _ttsManager?.pauseForAudioFocusLoss();
+  }
+
+  Future<void> resumeTtsAfterAudioFocus() async {
+    await _ttsManager?.resumeAfterAudioFocusGain();
   }
 
   void disposeTts() {
