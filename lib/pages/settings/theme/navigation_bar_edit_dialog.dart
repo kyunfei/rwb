@@ -377,26 +377,18 @@ class _NavBarEditDialogState extends State<NavBarEditDialog> {
     );
   }
 
-  // 导航项列表 - 参考原版 NavigationBarIconConfig.items
+  // 导航项列表：与主页三 Tab（书架 / 书城 / 我的）对齐
+  // icons map 里若仍残留旧 key（rss/ai）可忽略，不影响运行
   static const _navItems = [
     NavItem('bookshelf', '书架', Icons.menu_book),
-    NavItem('discovery', '发现', Icons.explore),
-    NavItem('rss', '订阅', Icons.rss_feed),
+    NavItem('discovery', '书城', Icons.storefront),
     NavItem('my', '我的', Icons.person),
-    NavItem('ai', '助手', Icons.smart_toy),
   ];
 
   List<Widget> _buildIconRows() {
     final colorScheme = Theme.of(context).colorScheme;
-    final items = _navItems.where((item) {
-      // 非侧边栏模式不显示AI助手
-      if (_config.layoutMode != 'sidebar' && item.key == 'ai') {
-        return false;
-      }
-      return true;
-    }).toList();
 
-    return items.map((item) {
+    return _navItems.map((item) {
       return Container(
         margin: const EdgeInsets.only(top: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
