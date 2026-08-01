@@ -276,86 +276,110 @@ void main() {
   group('Project Gutenberg fixtures', () {
     late BookSource source;
 
+    /// 真实抓取的 gutenberg.org 页面（见 test/fixtures/gutenberg/）。
+    String fixture(String name) =>
+        File('test/fixtures/gutenberg/$name').readAsStringSync();
+
     setUp(() {
       source = loadAssetSource('project_gutenberg.json');
     });
 
-    test('search rules extract title/author/url', () {
-      const html = '''
-<html><body>
-<ul>
-  <li class="booklink">
-    <a class="link" href="/ebooks/1342">
-      <span class="title">Pride and Prejudice</span>
-      <span class="subtitle">Jane Austen</span>
-      <span class="extra">English</span>
-      <img class="cover-thumb" src="/cache/epub/1342/pg1342.cover.medium.jpg"/>
-    </a>
-  </li>
-  <li class="booklink">
-    <a class="link" href="/ebooks/11">
-      <span class="title">Alice's Adventures in Wonderland</span>
-      <span class="subtitle">Lewis Carroll</span>
-    </a>
-  </li>
-</ul>
-</body></html>
-''';
+    test('search/explore rules extract title/author/url on real Top downloaded HTML', () {
       final analyzer = AnalyzeRule().setContent(
-        html,
-        baseUrl: 'https://www.gutenberg.org/ebooks/search/?query=pride',
+        fixture('search_downloads.html'),
+        baseUrl: 'https://www.gutenberg.org/ebooks/search/?sort_order=downloads',
       );
-      final books = analyzer.getElements(source.ruleSearch!.bookList!);
-      expect(books, hasLength(2));
+      final books = analyzer.getElements(source.ruleExplore!.bookList!);
+      expect(books.length, greaterThanOrEqualTo(12));
 
       final first = AnalyzeRule().setContent(
         books.first,
-        baseUrl: 'https://www.gutenberg.org/ebooks/search/?query=pride',
+        baseUrl: 'https://www.gutenberg.org/ebooks/search/?sort_order=downloads',
       );
-      expect(first.getString(source.ruleSearch!.name!), 'Pride and Prejudice');
-      expect(first.getString(source.ruleSearch!.author!), 'Jane Austen');
+      expect(first.getString(source.ruleExplore!.name!), contains('Moby'));
+      expect(first.getString(source.ruleExplore!.author!), contains('Melville'));
       expect(
-        first.getString(source.ruleSearch!.bookUrl!, isUrl: true),
-        'https://www.gutenberg.org/ebooks/1342',
+        first.getString(source.ruleExplore!.bookUrl!, isUrl: true),
+        'https://www.gutenberg.org/ebooks/2701',
       );
     });
 
-    test('bookInfo prefers plain-text tocUrl', () {
-      const html = '''
-<html><body>
-  <h1>Pride and Prejudice</h1>
-  <a itemprop="creator" href="/ebooks/author/68">Jane Austen</a>
-  <span itemprop="description">A novel of manners.</span>
-  <img class="cover" src="/cache/epub/1342/pg1342.cover.medium.jpg"/>
-  <a href="/files/1342/1342-0.txt" type="text/plain; charset=utf-8">Plain Text UTF-8</a>
-  <a href="/files/1342/1342-h/1342-h.htm" type="text/html">Read online</a>
-</body></html>
-''';
+    test('bookInfo extracts name/author/cover on real ebook page; no tocUrl', () {
       final analyzer = AnalyzeRule().setContent(
-        html,
-        baseUrl: 'https://www.gutenberg.org/ebooks/1342',
+        fixture('ebook_2701.html'),
+        baseUrl: 'https://www.gutenberg.org/ebooks/2701',
       );
-      expect(analyzer.getString(source.ruleBookInfo!.name!), 'Pride and Prejudice');
-      expect(analyzer.getString(source.ruleBookInfo!.author!), 'Jane Austen');
+      expect(analyzer.getString(source.ruleBookInfo!.name!), contains('Moby'));
       expect(
-        analyzer.getString(source.ruleBookInfo!.tocUrl!, isUrl: true),
-        'https://www.gutenberg.org/files/1342/1342-0.txt',
+        analyzer.getString(source.ruleBookInfo!.author!),
+        contains('Melville'),
+      );
+      expect(
+        analyzer.getString(source.ruleBookInfo!.coverUrl!, isUrl: true),
+        contains('pg2701.cover'),
+      );
+      // 目录应基于书页本身抽取下载链接，不再把 tocUrl 指到纯文本（纯文本无 <title>）
+      expect(source.ruleBookInfo!.tocUrl, anyOf(isNull, isEmpty));
+    });
+
+    test('toc rule yields single Full Text chapter from real ebook download links', () {
+      final analyzer = AnalyzeRule().setContent(
+        fixture('ebook_2701.html'),
+        baseUrl: 'https://www.gutenberg.org/ebooks/2701',
+      );
+      final chapters = analyzer.getElements(source.ruleToc!.chapterList!);
+      expect(chapters, hasLength(1));
+
+      final ch0 = AnalyzeRule().setContent(
+        chapters.first,
+        baseUrl: 'https://www.gutenberg.org/ebooks/2701',
+      );
+      expect(ch0.getString(source.ruleToc!.chapterName!), '全文');
+      expect(
+        ch0.getString(source.ruleToc!.chapterUrl!, isUrl: true),
+        'https://www.gutenberg.org/ebooks/2701.txt.utf-8',
       );
     });
 
-    test('content rule reads plain text body', () {
-      const text = '''
-The Project Gutenberg eBook of Pride and Prejudice
-
-*** START OF THE PROJECT GUTENBERG EBOOK PRIDE AND PREJUDICE ***
-
-It is a truth universally acknowledged.
-
-*** END OF THE PROJECT GUTENBERG EBOOK PRIDE AND PREJUDICE ***
-''';
-      final analyzer = AnalyzeRule().setContent(text);
+    test('content rule reads plain text body from real Alice fixture', () {
+      final analyzer = AnalyzeRule().setContent(fixture('pg11.txt'));
       final content = analyzer.getString(source.ruleContent!.content!);
-      expect(content, contains('truth universally acknowledged'));
+      expect(content, isNotNull);
+      expect(content!.length, greaterThan(10000));
+      expect(content, contains('Alice'));
+      // 正文应明显长于标题行，避免只抽到书名
+      expect(content, isNot(equals('Alice\'s Adventures in Wonderland')));
+    });
+
+    test('content replaceRegex strips Gutenberg boilerplate without eating body', () {
+      // 与 WebBook._applyContentReplaceLine 相同语义（pattern## → 删除匹配）
+      String applyLine(String content, String line) {
+        final idx = line.indexOf('##');
+        final pattern = idx < 0
+            ? line
+            : (idx == 0 ? line.substring(2) : line.substring(0, idx));
+        final replacement = (idx <= 0)
+            ? ''
+            : () {
+                final rest = line.substring(idx + 2);
+                final jsIdx = rest.indexOf('##');
+                return jsIdx < 0 ? rest : rest.substring(0, jsIdx);
+              }();
+        return content.replaceAll(
+          RegExp(pattern, multiLine: true, dotAll: true),
+          replacement,
+        );
+      }
+
+      var content = fixture('pg2701_head.txt');
+      for (final line in (source.ruleContent!.replaceRegex ?? '').split('\n')) {
+        if (line.trim().isEmpty) continue;
+        content = applyLine(content, line);
+      }
+      expect(content, contains('Call me Ishmael'));
+      expect(content.contains('START OF THE PROJECT'), isFalse);
+      expect(content.contains('END OF THE PROJECT'), isFalse);
+      expect(content.length, greaterThan(1000));
     });
   });
 
