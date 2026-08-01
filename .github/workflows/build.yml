@@ -98,7 +98,8 @@ jobs:
       # warning/error 一律阻断；lint 提示（info）按存量基线卡数量，只允许减少
       - name: Analyze
         env:
-          ANALYZE_BASELINE: '271'
+          # 实测 26；留 4 条余量吸收 Linux runner 与本机的平台差异
+          ANALYZE_BASELINE: '30'
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos 2>&1 | tee analyze.log
