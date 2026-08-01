@@ -37,6 +37,6 @@
   },
   "ruleContent": {
     "content": "body@text||text",
-    "replaceRegex": "^\\*\\*\\* START OF.*?\\*\\*\\*\\s*##\n\\*\\*\\* END OF.*##"
+    "replaceRegex": "^[\\s\\S]*?\\*\\*\\* START OF.*?\\*\\*\\*\\s*##\n\\*\\*\\* END OF.*##"
   }
 }

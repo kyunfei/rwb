@@ -379,6 +379,9 @@ void main() {
       expect(content, contains('Call me Ishmael'));
       expect(content.contains('START OF THE PROJECT'), isFalse);
       expect(content.contains('END OF THE PROJECT'), isFalse);
+      // 版权页整段（含许可声明与 Release date）应一并去掉，正文从书本身开始
+      expect(content.contains('This eBook is for the use of anyone'), isFalse);
+      expect(content.contains('Release date:'), isFalse);
       expect(content.length, greaterThan(1000));
     });
   });
