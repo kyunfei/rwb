@@ -1,0 +1,39 @@
+{
+  "bookSourceUrl": "https://en.wikisource.org",
+  "bookSourceName": "English Wikisource",
+  "bookSourceGroup": "English",
+  "bookSourceType": 0,
+  "enabled": true,
+  "enabledExplore": true,
+  "header": "{\"User-Agent\": \"Mozilla/5.0 (compatible; MR-Reader/1.0)\"}",
+  "bookSourceComment": "内置英文书源：英文维基文库。规则仅经本地 HTML fixture 验证，未做真实网络抓取校验。适合公有领域分章作品。",
+  "searchUrl": "https://en.wikisource.org/w/index.php?search={{key}}&title=Special:Search&ns0=1",
+  "exploreUrl": "Featured texts::https://en.wikisource.org/wiki/Wikisource:Featured_texts",
+  "ruleSearch": {
+    "bookList": "li.mw-search-result",
+    "name": ".mw-search-result-heading@tag.a@text",
+    "bookUrl": ".mw-search-result-heading@tag.a@href",
+    "intro": ".searchresult@text||.mw-search-result-data@text"
+  },
+  "ruleExplore": {
+    "bookList": "div#mw-content-text@tag.ul@tag.li@tag.a",
+    "name": "text",
+    "bookUrl": "href"
+  },
+  "ruleBookInfo": {
+    "name": "h1#firstHeading@text||h1@text",
+    "author": "span.ws-noexport@tag.a@text||#headerContainer@tag.a@text",
+    "intro": "#mw-content-text@tag.p.0@text",
+    "coverUrl": "#mw-content-text@tag.img@src",
+    "tocUrl": ""
+  },
+  "ruleToc": {
+    "chapterList": "#mw-content-text@tag.ul@tag.li@tag.a",
+    "chapterName": "text",
+    "chapterUrl": "href"
+  },
+  "ruleContent": {
+    "content": "#mw-content-text@html",
+    "replaceRegex": "##class=\"mw-editsection\".*?##\n##\\[edit\\]##\n##Jump to navigation.*?Jump to search##"
+  }
+}

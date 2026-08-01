@@ -17,6 +17,7 @@ import 'services/app_logger.dart';
 import 'services/crash_log_service.dart';
 import 'services/native/js_engine.dart';
 import 'services/storage_service.dart';
+import 'services/builtin_book_source_service.dart';
 import 'services/source_engine/proxy_service.dart';
 import 'services/cover_config_service.dart';
 import 'services/shelf/shelf_download_queue_service.dart';
@@ -55,6 +56,17 @@ Future<void> main() async {
       await StorageService.instance.init();
       if (!StorageService.instance.isInitialized) {
         debugPrint('❌ StorageService 初始化失败: ${StorageService.instance.initError}');
+      } else {
+        // 一次性注入内置英文书源（仅补缺失 URL，不覆盖用户已有源）
+        try {
+          final added =
+              await BuiltinBookSourceService.ensureEnglishSourcesSeeded();
+          if (added > 0) {
+            debugPrint('✅ 已注入 $added 个内置英文书源');
+          }
+        } catch (e) {
+          debugPrint('BuiltinBookSourceService seed error: $e');
+        }
       }
     } catch (e) {
       debugPrint('❌ Storage init error: $e');
