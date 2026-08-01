@@ -1,0 +1,13 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+linter:
+  rules:
+    # flutter_lints 未包含，但本项目已出现过对应缺陷
+    - unawaited_futures
+    - always_declare_return_types
