@@ -11,6 +11,8 @@ import '../pages/profile/profile_page.dart';
 import '../pages/profile/book_source_manage_page.dart';
 import '../pages/profile/book_source_edit_page.dart';
 import '../pages/profile/book_source_import_page.dart';
+import '../pages/profile/book_source_subscribe_page.dart';
+import '../pages/profile/book_source_health_page.dart';
 import '../pages/profile/read_record_page.dart';
 import '../pages/profile/bookmark_page.dart';
 import '../pages/profile/storage_manage_page.dart';
@@ -80,6 +82,8 @@ class AppRoutes {
   static const String bookSourceManage = '/book-source-manage';
   static const String bookSourceEdit = '/book-source-edit';
   static const String bookSourceImport = '/book-source-import';
+  static const String bookSourceSubscribe = '/book-source-subscribe';
+  static const String bookSourceHealth = '/book-source-health';
   static const String readRecord = '/read-record';
   static const String bookmark = '/bookmark';
   static const String storageManage = '/storage-manage';
@@ -300,6 +304,10 @@ class AppRoutes {
         return AppPageRoute(
           builder: (_) => BookSourceImportPage(initialText: initialText),
         );
+      case bookSourceSubscribe:
+        return AppPageRoute(builder: (_) => const BookSourceSubscribePage());
+      case bookSourceHealth:
+        return AppPageRoute(builder: (_) => const BookSourceHealthPage());
       case internalBrowser:
         final args = settings.arguments as Map<String, dynamic>?;
         final rawHeaders = args?['headers'];

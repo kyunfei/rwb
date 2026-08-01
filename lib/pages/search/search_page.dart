@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,6 +7,8 @@ import '../../providers/search_provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/book.dart';
 import '../../models/book_source.dart';
+import '../../models/book_search_exception.dart';
+import '../../models/search_source_status.dart';
 import '../../routes/app_routes.dart';
 import '../../services/cover_config_service.dart';
 import '../../services/image_decode_provider.dart';
@@ -25,6 +28,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  SearchProvider? _searchProvider;
   bool _isGridView = false;
   bool _precisionSearch = false;
   bool _showSearchProgress = true;
@@ -35,6 +39,7 @@ class _SearchPageState extends State<SearchPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<SearchProvider>();
+      _searchProvider = provider;
       // 清空上次搜索结果
       provider.clearResults();
       await provider.loadBookSources();
@@ -58,6 +63,8 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    // 退出页面时取消在飞搜索，避免旧结果涌入
+    _searchProvider?.stopSearch();
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -231,6 +238,11 @@ class _SearchPageState extends State<SearchPage> {
                                 height: 40,
                                 child: Text('分组或书源'),
                               ),
+                              const PopupMenuItem(
+                                value: 'concurrency',
+                                height: 40,
+                                child: Text('搜索并发度'),
+                              ),
                               const PopupMenuDivider(),
                               const PopupMenuItem(
                                 value: 'log',
@@ -247,31 +259,29 @@ class _SearchPageState extends State<SearchPage> {
               ),
               // 搜索进度条
               if (provider.isLoading)
-                const LinearProgressIndicator(minHeight: 2),
-              // 搜索进度显示
-              if (_showSearchProgress &&
-                  provider.searchResults.isNotEmpty &&
-                  provider.isLoading)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: DesignTokens.spacingSm,
-                  ),
-                  child: Text(
-                    '结果 ${provider.searchResults.length}',
-                    style: TextStyle(
-                      fontSize: DesignTokens.fontSummary,
-                      color: secondaryTextColor,
-                    ),
-                  ),
+                LinearProgressIndicator(
+                  minHeight: 2,
+                  value: provider.totalSourceCount == 0
+                      ? null
+                      : provider.finishedSourceCount /
+                          provider.totalSourceCount,
                 ),
+              // 搜索进度 / 摘要
+              if (_showSearchProgress &&
+                  (provider.isLoading ||
+                      provider.currentKeyword.isNotEmpty &&
+                          provider.totalSourceCount > 0))
+                _buildSearchProgressBar(provider, secondaryTextColor),
               // 内容区域
               Expanded(
-                child: provider.error != null
+                child: provider.error != null &&
+                        provider.searchResults.isEmpty &&
+                        !provider.isLoading
                     ? _buildErrorState(provider)
                     : provider.searchResults.isNotEmpty
                     ? _buildResultsView(provider)
                     : provider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? _buildSearchingState(provider)
                     : _buildEmptyState(provider),
               ),
             ],
@@ -290,6 +300,84 @@ class _SearchPageState extends State<SearchPage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSearchProgressBar(
+    SearchProvider provider,
+    Color secondaryTextColor,
+  ) {
+    final summary = provider.isLoading
+        ? '源 ${provider.finishedSourceCount}/${provider.totalSourceCount}'
+            ' · 结果 ${provider.searchResults.length}'
+            '${provider.failedSourceCount > 0 ? ' · 失败 ${provider.failedSourceCount}' : ''}'
+        : (provider.searchSummary ??
+            '结果 ${provider.searchResults.length}');
+    return InkWell(
+      onTap: () => _showSourceStatusSheet(provider),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: DesignTokens.spacingLg,
+          vertical: DesignTokens.spacingSm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                summary,
+                style: TextStyle(
+                  fontSize: DesignTokens.fontSummary,
+                  color: secondaryTextColor,
+                ),
+              ),
+            ),
+            Text(
+              '源状态',
+              style: TextStyle(
+                fontSize: DesignTokens.fontCaption,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchingState(SearchProvider provider) {
+    return Column(
+      children: [
+        const SizedBox(height: DesignTokens.spacingXxl),
+        const CircularProgressIndicator(),
+        const SizedBox(height: DesignTokens.spacingLg),
+        Text(
+          '正在搜索 ${provider.finishedSourceCount}/${provider.totalSourceCount} 个书源…',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (provider.failedSourceCount > 0) ...[
+          const SizedBox(height: DesignTokens.spacingSm),
+          Text(
+            '已有 ${provider.failedSourceCount} 个源失败（不影响其余源）',
+            style: TextStyle(
+              fontSize: DesignTokens.fontCaption,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+        const SizedBox(height: DesignTokens.spacingLg),
+        TextButton(
+          onPressed: () => _showSourceStatusSheet(provider),
+          child: const Text('查看各源状态'),
+        ),
+      ],
     );
   }
 
@@ -314,10 +402,11 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildErrorState(SearchProvider provider) {
-    return Center(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: DesignTokens.spacingXxl),
           Icon(
             Icons.error_outline,
             size: DesignTokens.emptyIconSize,
@@ -326,16 +415,158 @@ class _SearchPageState extends State<SearchPage> {
           const SizedBox(height: DesignTokens.spacingLg),
           Text(
             provider.error!,
+            textAlign: TextAlign.center,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
           const SizedBox(height: DesignTokens.spacingLg),
-          ElevatedButton(
-            onPressed: () => _showSourceFilter(provider),
-            child: const Text('选择书源'),
+          Wrap(
+            spacing: DesignTokens.spacingSm,
+            runSpacing: DesignTokens.spacingSm,
+            alignment: WrapAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () => _showSourceFilter(provider),
+                child: const Text('选择书源'),
+              ),
+              OutlinedButton(
+                onPressed: () => _showSourceStatusSheet(provider),
+                child: const Text('查看失败原因'),
+              ),
+            ],
           ),
+          const SizedBox(height: DesignTokens.spacingLg),
+          _buildSourceStatusList(provider, maxHeight: 280),
         ],
       ),
     );
+  }
+
+  void _showSourceStatusSheet(SearchProvider provider) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
+                  child: Row(
+                    children: [
+                      Text(
+                        '各源搜索状态',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const Spacer(),
+                      Text(
+                        '并发 ${provider.maxConcurrentSearches}',
+                        style: TextStyle(
+                          fontSize: DesignTokens.fontCaption,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      ...provider.sourceStatuses.map(_buildSourceStatusTile),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSourceStatusList(
+    SearchProvider provider, {
+    double? maxHeight,
+  }) {
+    final list = ListView(
+      shrinkWrap: maxHeight != null,
+      physics: maxHeight != null
+          ? const AlwaysScrollableScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      children: provider.sourceStatuses.map(_buildSourceStatusTile).toList(),
+    );
+    if (maxHeight == null) return list;
+    return SizedBox(height: maxHeight, child: list);
+  }
+
+  Widget _buildSourceStatusTile(SourceSearchStatus status) {
+    final scheme = Theme.of(context).colorScheme;
+    final Color color;
+    final IconData icon;
+    switch (status.phase) {
+      case SourceSearchPhase.pending:
+        color = scheme.outline;
+        icon = Icons.schedule;
+        break;
+      case SourceSearchPhase.searching:
+        color = scheme.primary;
+        icon = Icons.hourglass_top;
+        break;
+      case SourceSearchPhase.success:
+        color = scheme.tertiary;
+        icon = Icons.check_circle_outline;
+        break;
+      case SourceSearchPhase.noResults:
+        color = scheme.onSurfaceVariant;
+        icon = Icons.inbox_outlined;
+        break;
+      case SourceSearchPhase.failed:
+        color = scheme.error;
+        icon = _failureIcon(status.failureKind);
+        break;
+      case SourceSearchPhase.cancelled:
+        color = scheme.outline;
+        icon = Icons.stop_circle_outlined;
+        break;
+    }
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, color: color, size: 20),
+      title: Text(status.sourceName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        status.detailMessage,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: color, fontSize: DesignTokens.fontCaption),
+      ),
+      trailing: Text(
+        status.statusLabel,
+        style: TextStyle(color: color, fontSize: DesignTokens.fontCaption),
+      ),
+    );
+  }
+
+  IconData _failureIcon(BookSearchFailureKind? kind) {
+    switch (kind) {
+      case BookSearchFailureKind.network:
+        return Icons.wifi_off;
+      case BookSearchFailureKind.siteError:
+        return Icons.public_off;
+      case BookSearchFailureKind.ruleMismatch:
+        return Icons.rule;
+      case BookSearchFailureKind.timeout:
+        return Icons.timer_off;
+      case BookSearchFailureKind.unknown:
+      case null:
+        return Icons.error_outline;
+    }
   }
 
   Widget _buildEmptyState(SearchProvider provider) {
@@ -382,18 +613,49 @@ class _SearchPageState extends State<SearchPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.search,
+                  provider.currentKeyword.isNotEmpty
+                      ? Icons.search_off
+                      : Icons.search,
                   size: DesignTokens.emptyIconSize,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: DesignTokens.spacingLg),
                 Text(
-                  '输入关键词搜索',
+                  provider.currentKeyword.isNotEmpty
+                      ? '未找到「${provider.currentKeyword}」'
+                      : '输入关键词搜索',
                   style: TextStyle(
                     fontSize: DesignTokens.fontTitle,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (provider.currentKeyword.isNotEmpty) ...[
+                  const SizedBox(height: DesignTokens.spacingSm),
+                  Text(
+                    provider.searchSummary ??
+                        '各源均无匹配；点「源状态」可区分网络/规则/真无书',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: DesignTokens.fontSummary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: DesignTokens.spacingMd),
+                  TextButton(
+                    onPressed: () => _showSourceStatusSheet(provider),
+                    child: const Text('查看各源状态'),
+                  ),
+                  if (provider.sourceStatuses.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: DesignTokens.spacingMd,
+                      ),
+                      child: _buildSourceStatusList(
+                        provider,
+                        maxHeight: 240,
+                      ),
+                    ),
+                ],
                 if (provider.bookSources.isEmpty) ...[
                   const SizedBox(height: DesignTokens.spacingLg),
                   TextButton.icon(
@@ -546,11 +808,11 @@ class _SearchPageState extends State<SearchPage> {
                         color: secondaryTextColor,
                       ),
                     ),
-                    // 书源名称
+                    // 书源名称（多源命中时显示数量）
                     if (sourceName.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        sourceName,
+                        _formatSourceLabel(result),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -567,6 +829,20 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
     );
+  }
+
+  String _formatSourceLabel(Map<String, dynamic> result) {
+    final sourceName = result['sourceName']?.toString().trim() ?? '';
+    final origins = result['origins'];
+    final count = origins is List
+        ? origins.length
+        : (result['originCount'] is int
+            ? result['originCount'] as int
+            : 1);
+    if (count > 1) {
+      return '$sourceName 等 $count 个源';
+    }
+    return sourceName;
   }
 
   Widget _buildGridView(SearchProvider provider) {
@@ -661,7 +937,7 @@ class _SearchPageState extends State<SearchPage> {
                   if (sourceName.isNotEmpty) ...[
                     const SizedBox(height: 1),
                     Text(
-                      sourceName,
+                      _formatSourceLabel(result),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -907,10 +1183,59 @@ class _SearchPageState extends State<SearchPage> {
       case 'search_scope':
         _showSearchScopeDialog(provider);
         break;
+      case 'concurrency':
+        _showConcurrencyDialog(provider);
+        break;
       case 'log':
         _showLogDialog();
         break;
     }
+  }
+
+  void _showConcurrencyDialog(SearchProvider provider) {
+    var value = provider.maxConcurrentSearches.toDouble();
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('搜索并发度'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('同时请求的书源数：${value.round()}（建议 8～16）'),
+                  Slider(
+                    value: value,
+                    min: 1,
+                    max: 32,
+                    divisions: 31,
+                    label: '${value.round()}',
+                    onChanged: (v) => setDialogState(() => value = v),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    unawaited(
+                      provider.setMaxConcurrentSearches(value.round()),
+                    );
+                    Navigator.pop(context);
+                  },
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showSearchScopeDialog(SearchProvider provider) {

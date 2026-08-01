@@ -3,8 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../models/book_source.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
+import '../models/source_health.dart';
+import 'app_logger.dart';
 import 'native/js_engine.dart';
 import 'source_engine/source_engine.dart';
+import 'source_rule_step_debugger.dart';
+import 'source_rule_step_logic.dart';
 
 /// 调试状态码（与 Legado 保持一致）
 enum DebugState {
@@ -75,11 +79,17 @@ class SourceDebugService {
   String _tocSrc = '';
   String _contentSrc = '';
 
+  /// 规则分步结果（供调试页「规则」Tab 展示）
+  final List<SourceRuleStepResult> _ruleSteps = [];
+  final SourceRuleStepDebugger _ruleDebugger = SourceRuleStepDebugger();
+
   /// 获取源码
   String get searchSrc => _searchSrc;
   String get bookSrc => _bookSrc;
   String get tocSrc => _tocSrc;
   String get contentSrc => _contentSrc;
+  List<SourceRuleStepResult> get ruleSteps =>
+      List<SourceRuleStepResult>.unmodifiable(_ruleSteps);
 
   /// 是否正在调试
   bool get isDebugging => _debugTask != null && !_debugTask!.isCompleted;
@@ -140,12 +150,19 @@ class SourceDebugService {
     _bookSrc = '';
     _tocSrc = '';
     _contentSrc = '';
+    _ruleSteps.clear();
 
     // 清理 JS 侧 _javaCache，防止 OOM
     // [覆盖安装闪退修复] clearJavaCache 内部已做 warmup 检查
     try {
       JsEngine.instance.clearJavaCache();
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.instance.warn(
+        LogCategory.js,
+        '调试取消时清理 JS 缓存失败',
+        detail: '$e\n$st',
+      );
+    }
 
     if (destroy) {
       callback = null;
@@ -169,11 +186,12 @@ class SourceDebugService {
     _startTime = DateTime.now();
     _debugTask = Completer<void>();
 
-    // 清空源码缓存
+    // 清空源码缓存与规则分步结果
     _searchSrc = '';
     _bookSrc = '';
     _tocSrc = '';
     _contentSrc = '';
+    _ruleSteps.clear();
 
     // 清除规则解析缓存
     AnalyzeRule.clearCache();
@@ -250,11 +268,21 @@ class SourceDebugService {
       log('≡获取成功:${searchUrl.isNotEmpty ? searchUrl : ""}',
           state: DebugState.searchSrc.code, sourceHtml: searchHtml);
 
+      await _emitRuleSteps(
+        () => _ruleDebugger.debugSearchRules(
+          source: bookSource,
+          html: searchHtml,
+          baseUrl: searchUrl.isNotEmpty ? searchUrl : bookSource.bookSourceUrl,
+          keyword: keyword,
+        ),
+      );
+
       log('┌获取书籍列表');
       log('└列表大小:$elementCount');
 
       if (results.isEmpty) {
-        log('︽未获取到书籍', state: DebugState.error.code);
+        log('︽未获取到书籍（规则执行成功但列表为空）',
+            state: DebugState.error.code);
         return;
       }
 
@@ -344,6 +372,14 @@ class SourceDebugService {
       log('≡获取成功:$bookUrl',
           state: DebugState.bookSrc.code, sourceHtml: bookHtml);
 
+      await _emitRuleSteps(
+        () => _ruleDebugger.debugBookInfoRules(
+          source: bookSource,
+          html: bookHtml,
+          baseUrl: bookUrl,
+        ),
+      );
+
       if (book == null) {
         log('≡详情页解析失败', state: DebugState.error.code);
         return;
@@ -412,6 +448,14 @@ class SourceDebugService {
       final elementCount = webBook.lastTocElementCount;
       log('≡获取成功:$tocUrl',
           state: DebugState.tocSrc.code, sourceHtml: tocHtml);
+
+      await _emitRuleSteps(
+        () => _ruleDebugger.debugTocRules(
+          source: bookSource,
+          html: tocHtml,
+          baseUrl: tocUrl,
+        ),
+      );
 
       log('┌获取目录列表');
       log('└列表大小:$elementCount');
@@ -502,6 +546,14 @@ class SourceDebugService {
       log('≡获取成功:$chapterUrl',
           state: DebugState.contentSrc.code, sourceHtml: contentHtml);
 
+      await _emitRuleSteps(
+        () => _ruleDebugger.debugContentRules(
+          source: bookSource,
+          html: contentHtml,
+          baseUrl: chapterUrl,
+        ),
+      );
+
       if (content == null) {
         log('≡正文解析失败: 返回null', state: DebugState.error.code);
         return;
@@ -552,6 +604,31 @@ class SourceDebugService {
     }
 
     return formatted.join('\n');
+  }
+
+  Future<void> _emitRuleSteps(
+    Future<List<SourceRuleStepResult>> Function() runner,
+  ) async {
+    if (_isCancelled) return;
+    try {
+      final steps = await runner();
+      if (_isCancelled) return;
+      _ruleSteps.addAll(steps);
+      for (final step in steps) {
+        for (final line in formatRuleStepLogs(step)) {
+          log(line, state: step.success || step.skipped
+              ? DebugState.normal.code
+              : DebugState.error.code);
+        }
+      }
+    } catch (e, st) {
+      AppLogger.instance.error(
+        LogCategory.parse,
+        '规则分步调试失败',
+        detail: '$e\n$st',
+      );
+      log('⇒规则分步调试失败: $e', state: DebugState.error.code);
+    }
   }
 
   /// 输出书籍项信息

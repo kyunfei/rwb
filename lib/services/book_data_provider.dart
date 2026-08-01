@@ -185,6 +185,7 @@ class OnlineBookDataProvider implements BookDataProvider {
   @override
   Future<List<Book>> searchBooks(String keyword) async {
     final webBook = await _getWebBook();
+    // BookSearchException 等失败不再吞成 []，由调用方决定如何展示
     final results = await webBook.searchBook(keyword);
     return results.map((data) => Book.fromJson(data)).toList();
   }
