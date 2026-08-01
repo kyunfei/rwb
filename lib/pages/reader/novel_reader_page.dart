@@ -221,9 +221,9 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     // 此时若继续 addListener 会导致 provider（单例 ChangeNotifier）持有
     // 已销毁 State 的 _onProviderChanged 引用，造成内存泄漏 + 反复进出累积
     if (!mounted) return;
-    // 应用配置中的亮度和常亮
-    _applyBrightness(provider.screenBrightness);
-    _applyKeepScreenOn(provider.keepScreenOn);
+    // 应用配置中的亮度和常亮（即发即忘：不阻塞 listener 注册，与 _onProviderChanged 一致）
+    unawaited(_applyBrightness(provider.screenBrightness));
+    unawaited(_applyKeepScreenOn(provider.keepScreenOn));
     _lastKeepScreenOn = provider.keepScreenOn;
     _lastScreenBrightness = provider.screenBrightness;
     // 注册 provider 监听（配置变化时立即生效）
@@ -842,7 +842,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
 
     // 章节切换时主动隐藏文字选区菜单（选区会随 WebView reload 失效，
     // 不主动隐藏菜单会停留在旧选区位置上看起来很怪）
-    _readerWebViewController.hideSelectionMenu();
+    unawaited(_readerWebViewController.hideSelectionMenu());
 
     final loadToken = ++_chapterLoadToken;
     final chapterIndex = _currentChapterIndex;
@@ -939,8 +939,8 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           ),
         );
 
-        // 检查书签
-        _checkBookmark();
+        // 检查书签（后台刷新顶栏图标，不阻塞 WebView 首帧渲染）
+        unawaited(_checkBookmark());
 
         final restorePos = pendingToLast
             ? 1 << 30
@@ -2225,7 +2225,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     if (_showMenu) {
       _menuAnimController.forward();
       // 菜单呼出时主动隐藏文字选区菜单，避免两层菜单同时显示混乱
-      _readerWebViewController.hideSelectionMenu();
+      unawaited(_readerWebViewController.hideSelectionMenu());
     } else {
       _menuAnimController.reverse();
     }
@@ -3046,15 +3046,15 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           // 获取新书源的目录
           _dataProvider = createBookDataProvider(newBook);
           final chapters = await _dataProvider!.getChapterList(newBook);
+          if (!mounted) return;
 
-          // 更新书籍
           final updatedBook = newBook.copyWith(
             totalChapterNum: chapters.length,
           );
 
-          // 保存到书架
-          StorageService.instance.addToBookshelf(updatedBook.toJson());
-          context.read<BookshelfProvider>().loadBooks();
+          await StorageService.instance.addToBookshelf(updatedBook.toJson());
+          if (!mounted) return;
+          await context.read<BookshelfProvider>().loadBooks();
 
           // 更新状态并重新加载内容
           setState(() {
@@ -3072,14 +3072,13 @@ class _NovelReaderPageState extends State<NovelReaderPage>
               context,
             ).showSnackBar(SnackBar(content: Text('已切换到 $sourceName')));
             // 换源后当前章节的书签状态可能与旧源不同，需重新检查
-            _checkBookmark();
+            unawaited(_checkBookmark());
           }
         } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('换源失败: $e')));
-          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('换源失败: $e')));
         }
       },
     );
@@ -4889,7 +4888,7 @@ class _NovelChapterListPanelState extends State<_NovelChapterListPanel> {
                 bookUrl: book.bookUrl,
                 bookmarkId: bookmark.id,
               );
-              _loadBookmarks();
+              await _loadBookmarks();
               // 通知父页面顶栏书签图标重新检查当前章节书签状态
               widget.onBookmarksChanged?.call();
             },

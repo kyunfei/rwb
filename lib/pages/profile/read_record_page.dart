@@ -146,7 +146,7 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
     // 如果已设置跳过确认，直接删除
     if (_skipDeleteConfirm) {
       await _service.deleteRecordsByBook(record.bookName, record.bookAuthor);
-      _loadRecords();
+      await _loadRecords();
       return;
     }
 
@@ -185,7 +185,9 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
                   await prefs.setBool('skip_delete_confirm', true);
                   _skipDeleteConfirm = true;
                 }
-                Navigator.pop(context, true);
+                if (context.mounted) {
+                  Navigator.pop(context, true);
+                }
               },
               style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
               child: const Text('删除'),
@@ -197,7 +199,7 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
 
     if (confirmed == true) {
       await _service.deleteRecordsByBook(record.bookName, record.bookAuthor);
-      _loadRecords();
+      await _loadRecords();
     }
   }
 
@@ -205,7 +207,7 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
     // 如果已设置跳过确认，直接删除
     if (_skipDeleteConfirm) {
       await _service.deleteRecord(record.id);
-      _loadRecords();
+      await _loadRecords();
       return;
     }
 
@@ -244,7 +246,9 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
                   await prefs.setBool('skip_delete_confirm', true);
                   _skipDeleteConfirm = true;
                 }
-                Navigator.pop(context, true);
+                if (context.mounted) {
+                  Navigator.pop(context, true);
+                }
               },
               style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
               child: const Text('删除'),
@@ -256,7 +260,7 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
 
     if (confirmed == true) {
       await _service.deleteRecord(record.id);
-      _loadRecords();
+      await _loadRecords();
     }
   }
 
@@ -282,7 +286,7 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
 
     if (confirmed == true) {
       await _service.clearAllRecords();
-      _loadRecords();
+      await _loadRecords();
     }
   }
 
@@ -1016,8 +1020,12 @@ class _ReadRecordPageState extends State<ReadRecordPage> {
                     targetBookAuthor: record.bookAuthor,
                   );
                 }
-                Navigator.pop(context);
-                _loadRecords();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+                if (mounted) {
+                  await _loadRecords();
+                }
               },
               style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
               child: const Text('合并'),

@@ -168,7 +168,9 @@ class _DictRulePageState extends State<DictRulePage> {
               });
 
               await _saveRules();
-              Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             },
             child: const Text('保存'),
           ),
@@ -192,7 +194,9 @@ class _DictRulePageState extends State<DictRulePage> {
             onPressed: () async {
               setState(() => _rules.removeWhere((r) => r.id == rule.id));
               await _saveRules();
-              Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             },
             child: Text('确定', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),

@@ -172,7 +172,7 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               builder: (context) => JsSourceEditPage(sourceUrl: sourceUrl),
             ),
           );
-          _loadSources();
+          await _loadSources();
           return;
         }
       }
@@ -187,7 +187,7 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
         ),
       ),
     );
-    _loadSources();
+    await _loadSources();
   }
 
   /// 显示模板选择对话框（底部弹出式，分两大类）
@@ -275,7 +275,7 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
     );
 
     if (selected != null) {
-      _createFromTemplate(selected);
+      await _createFromTemplate(selected);
     }
   }
 
@@ -361,15 +361,16 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
             ? '' // 空白JS模板
             : await rootBundle.loadString(template.assetPath);
         if (!mounted) return;
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => JsSourceEditPage(initialJsCode: jsCode),
           ),
-        ).then((_) => _loadSources());
+        );
+        await _loadSources();
       } else if (template.id == 'json_custom' || template.assetPath.isEmpty) {
         // 自定义空模板：直接进入空白编辑器
-        _navigateToEditPage();
+        await _navigateToEditPage();
       } else {
         // JSON模板：直接加载JSON创建书源
         final jsonStr = await rootBundle.loadString(template.assetPath);
@@ -378,7 +379,7 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
         json['bookSourceUrl'] = '';
         json['bookSourceName'] = '';
         final templateSource = BookSource.fromJson(json);
-        _navigateToEditPage(templateSource: templateSource);
+        await _navigateToEditPage(templateSource: templateSource);
       }
     } catch (e) {
       // 模板加载失败，直接创建空白书源
@@ -387,7 +388,7 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
           SnackBar(content: Text('模板加载失败: $e，将创建空白书源')),
         );
       }
-      _navigateToEditPage();
+      await _navigateToEditPage();
     }
   }
 
@@ -1162,7 +1163,9 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
                 value: source.enabled,
                 onChanged: (value) async {
                   await _toggleSourceEnabled(source);
-                  Navigator.pop(context);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
                 },
               ),
               SwitchListTile(
@@ -1170,7 +1173,9 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
                 value: source.enabledExplore,
                 onChanged: (value) async {
                   await _toggleSourceExplore(source);
-                  Navigator.pop(context);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
                 },
               ),
               const SizedBox(height: DesignTokens.spacingLg),

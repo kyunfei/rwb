@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
@@ -994,12 +995,11 @@ class _DetailPageState extends State<DetailPage> {
 
           // 保存到书架
           if (_isInBookshelf) {
-            StorageService.instance.addToBookshelf(updatedBook.toJson());
-            final provider = context.read<BookshelfProvider>();
-            provider.loadBooks();
+            await StorageService.instance.addToBookshelf(updatedBook.toJson());
+            if (!mounted) return;
+            await context.read<BookshelfProvider>().loadBooks();
           }
 
-          // 更新状态
           setState(() {
             _book = updatedBook;
             _chapters = chapters;
@@ -1009,6 +1009,7 @@ class _DetailPageState extends State<DetailPage> {
             );
           });
 
+          if (!mounted) return;
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('已切换到 $sourceName')));
@@ -1154,7 +1155,7 @@ class _DetailPageState extends State<DetailPage> {
                           _book = updatedBook;
                         });
                         // 刷新书架
-                        bookshelfProvider.loadBooks();
+                        await bookshelfProvider.loadBooks();
                       },
                       child: Text(
                         '确定',
@@ -1192,15 +1193,16 @@ class _DetailPageState extends State<DetailPage> {
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty) {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.addCustomGroup(controller.text);
                 if (!mounted) return;
-                Navigator.pop(context);
+                navigator.pop();
                 if (!success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('分组已达上限(64个)或名称已存在')),
                   );
                 }
-                // 重新打开分组选择对话框
                 _showChangeGroupDialog();
               }
             },
@@ -1244,18 +1246,19 @@ class _DetailPageState extends State<DetailPage> {
           FilledButton(
             onPressed: () async {
               if (controller.text.isNotEmpty && controller.text != oldName) {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 final success = await provider.renameCustomGroup(
                   oldName,
                   controller.text,
                 );
                 if (!mounted) return;
-                Navigator.pop(context);
+                navigator.pop();
                 if (!success) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('分组名称已存在')));
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('分组名称已存在')),
+                  );
                 }
-                // 重新打开分组选择对话框
                 _showChangeGroupDialog();
               } else {
                 Navigator.pop(context);
@@ -1574,11 +1577,12 @@ class _DetailPageState extends State<DetailPage> {
     );
 
     if (!handled && mounted) {
-      // 跳转到搜索页面搜索书名
-      Navigator.pushNamed(
-        context,
-        AppRoutes.search,
-        arguments: {'keyword': book.displayName},
+      unawaited(
+        Navigator.pushNamed(
+          context,
+          AppRoutes.search,
+          arguments: {'keyword': book.displayName},
+        ),
       );
     }
   }
@@ -1594,7 +1598,8 @@ class _DetailPageState extends State<DetailPage> {
     );
 
     if (!handled && mounted) {
-      Clipboard.setData(ClipboardData(text: book.displayName));
+      await Clipboard.setData(ClipboardData(text: book.displayName));
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('书名已复制')));
@@ -1612,11 +1617,12 @@ class _DetailPageState extends State<DetailPage> {
     );
 
     if (!handled && mounted) {
-      // 跳转到搜索页面搜索作者
-      Navigator.pushNamed(
-        context,
-        AppRoutes.search,
-        arguments: {'keyword': book.displayAuthor},
+      unawaited(
+        Navigator.pushNamed(
+          context,
+          AppRoutes.search,
+          arguments: {'keyword': book.displayAuthor},
+        ),
       );
     }
   }
@@ -1632,7 +1638,8 @@ class _DetailPageState extends State<DetailPage> {
     );
 
     if (!handled && mounted) {
-      Clipboard.setData(ClipboardData(text: book.displayAuthor));
+      await Clipboard.setData(ClipboardData(text: book.displayAuthor));
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('作者已复制')));
@@ -1788,10 +1795,11 @@ class _DetailPageState extends State<DetailPage> {
 
     // 没有书源定制按钮或回调返回false，显示默认菜单
     final isOnline = book?.originType == BookOriginType.online;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
+    unawaited(
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.5,
         minChildSize: 0.3,
         maxChildSize: 0.8,
@@ -1848,6 +1856,7 @@ class _DetailPageState extends State<DetailPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -912,7 +912,7 @@ class _ChapterListPageState extends State<ChapterListPage> {
                 bookUrl: widget.bookUrl,
                 bookmarkId: bookmark.id,
               );
-              _loadBookmarks();
+              await _loadBookmarks();
             },
             child: const Text('删除'),
           ),

@@ -622,7 +622,7 @@ class JsEngine {
   /// 解析规则代码，剥离 @js: 前缀和 <js></js> 标签
   ///
   /// 只保留 @js: 作为唯一前缀声明，其他引擎类型声明已移除
-  _EngineResolveResult resolveEngine(String ruleCode, {JsEngineType? sourceEngine}) {
+  _EngineResolveResult _resolveEngine(String ruleCode, {JsEngineType? sourceEngine}) {
     String code = ruleCode;
 
     // 1. 剥离 @js: 前缀
@@ -846,7 +846,7 @@ class JsEngine {
   dynamic executeSync(String jsCode, dynamic content, {String? baseUrl, JsEngineType? sourceEngine, Map<String, dynamic>? variables, String? ruleStep}) {
     // 先提取 JS 代码（去掉 <js></js> 标签或 @js: 前缀）
     final extracted = _extractJsCode(jsCode) ?? jsCode;
-    final resolved = resolveEngine(extracted, sourceEngine: sourceEngine);
+    final resolved = _resolveEngine(extracted, sourceEngine: sourceEngine);
 
     const engineTag = 'QuickJS';
     final codePreview = resolved.code;
@@ -931,7 +931,7 @@ class JsEngine {
     }
 
     final extracted = _extractJsCode(jsCode) ?? jsCode;
-    final resolved = resolveEngine(extracted, sourceEngine: sourceEngine);
+    final resolved = _resolveEngine(extracted, sourceEngine: sourceEngine);
 
     return _evalLock.synchronized(() {
       _evalBusy = true;
@@ -1158,7 +1158,7 @@ if (evalResult.isError) {
 
     // 先提取 JS 代码（去掉 <js></js> 标签或 @js: 前缀）
     final extracted = _extractJsCode(jsCode) ?? jsCode;
-    final resolved = resolveEngine(extracted, sourceEngine: sourceEngine);
+    final resolved = _resolveEngine(extracted, sourceEngine: sourceEngine);
 
     // 显式增加 QuickJS 执行计数（统一计数入口）
     AppLogger.instance.incrementQuickjsCount();
@@ -1219,7 +1219,7 @@ if (evalResult.isError) {
 
     // 先提取 JS 代码
     final extracted = _extractJsCode(jsCode) ?? jsCode;
-    final resolved = resolveEngine(extracted, sourceEngine: sourceEngine);
+    final resolved = _resolveEngine(extracted, sourceEngine: sourceEngine);
 
     return _evalLock.synchronized(() async {
       try {
@@ -1298,7 +1298,7 @@ return __returnValue;
     Map<String, dynamic>? env,
     JsEngineType? sourceEngine,
   }) async {
-    final resolved = resolveEngine(ruleCode, sourceEngine: sourceEngine);
+    final resolved = _resolveEngine(ruleCode, sourceEngine: sourceEngine);
     var code = resolved.code;
 
     return _evalLock.synchronized(() =>
@@ -1557,7 +1557,6 @@ return __returnValue;
           } catch (e) {
             AppLogger.instance.logJsError('QuickJS', '[网络标记] 处理失败: $e');
             // 网络标记处理失败，注入空响应避免卡死
-            final cacheKey = evalResultStr;
             try {
               final jsonStr = evalResultStr.substring('__NEED_NETWORK__:'.length);
               final request = jsonDecode(jsonStr) as Map<String, dynamic>;
@@ -2119,6 +2118,8 @@ return __returnValue;
     multiLine: true,
   );
 
+  // 预留：processJsRule 重路径的 HTTP 预缓存（batchEvaluate 刻意跳过）
+  // ignore: unused_element
   Future<void> _preCacheBridgeCalls(String jsCode, {Map<String, dynamic>? env}) async {
     if (_jsRuntime == null) return;
     // 快速预检：无桥接调用时直接跳过，避免不必要的正则扫描

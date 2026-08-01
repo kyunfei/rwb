@@ -574,7 +574,7 @@ function nextContentUrl(result) {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = await _showDiscardDialog();
-        if (shouldPop && mounted) Navigator.pop(context);
+        if (shouldPop && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
         appBar: AppBar(
