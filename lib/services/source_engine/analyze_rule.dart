@@ -3319,36 +3319,45 @@ class _ElementSelector {
   ///   2. 区间格式为 start:end 或 start:end:step，start 为 0 可省略，end 为 -1 可省略
   ///   3. 索引、区间两端及间隔都支持负数
   ///   4. 特殊用法 tag.div[-1:0] 可在任意地方让列表反向
+  ///
+  /// 选择模式下必须保留展开顺序（含反向区间），不能按索引升序重排；
+  /// 去重保留首次出现（对齐 LinkedHashSet 语义）。
   List<dynamic> apply(List<dom.Element> elements) {
     if (elements.isEmpty) return [];
     if (indexes.isEmpty && rangeExpression == null) return elements.toList();
 
     final len = elements.length;
-    final indexSet = <int>{};
+    final ordered = <int>[];
+    final seen = <int>{};
+
+    void addIndex(int index) {
+      if (seen.add(index)) {
+        ordered.add(index);
+      }
+    }
 
     // 处理单索引列表（对齐 legado indexDefault 分支）
     for (final index in indexes) {
       final fixed = _normalizeIndex(index, len);
       if (fixed != null) {
-        indexSet.add(fixed);
+        addIndex(fixed);
       }
     }
 
     // 处理范围表达式（对齐 legado indexes Triple 分支）
     if (rangeExpression != null) {
-      _expandRangeExpression(rangeExpression!, len, indexSet);
+      _expandRangeExpression(rangeExpression!, len, addIndex);
     }
 
     // 根据筛选方式返回结果（对齐 legado split == '!' 排除 / split == '.' 选择）
     if (exclude) {
       return [
         for (var i = 0; i < len; i++)
-          if (!indexSet.contains(i)) elements[i],
+          if (!seen.contains(i)) elements[i],
       ];
     }
 
-    final sorted = indexSet.toList()..sort();
-    return [for (final i in sorted) elements[i]];
+    return [for (final i in ordered) elements[i]];
   }
 
   /// 规范化索引（负索引转正，越界返回 null）
@@ -3359,9 +3368,13 @@ class _ElementSelector {
     return null;
   }
 
-  /// 展开范围表达式到 indexSet
+  /// 展开范围表达式，按规则书写顺序回调索引
   /// 对齐 legado ElementsSingle 的区间展开逻辑（line 339-381）
-  void _expandRangeExpression(String expr, int len, Set<int> indexSet) {
+  void _expandRangeExpression(
+    String expr,
+    int len,
+    void Function(int index) addIndex,
+  ) {
     for (final item in expr.split(',')) {
       final trimmed = item.trim();
       if (trimmed.isEmpty) continue;
@@ -3374,7 +3387,7 @@ class _ElementSelector {
         if (raw == null) continue;
         final fixed = _normalizeIndex(raw, len);
         if (fixed != null) {
-          indexSet.add(fixed);
+          addIndex(fixed);
         }
         continue;
       }
@@ -3412,7 +3425,7 @@ class _ElementSelector {
 
       // 两端相同或 step 过大，区间只有一个数（对齐 legado line 359-363）
       if (startX == endX || stepX >= len) {
-        indexSet.add(startX);
+        addIndex(startX);
         continue;
       }
 
@@ -3429,20 +3442,20 @@ class _ElementSelector {
       }
 
       if (step == 0) {
-        indexSet.add(startX);
+        addIndex(startX);
         continue;
       }
 
       // 展开区间（对齐 legado line 370）
       // legado: if (end > start) start..end step step else start downTo end step step
-      // 允许列表反向（特殊用法 [-1:0]）
+      // 允许列表反向（特殊用法 [-1:0]）——顺序即结果顺序
       if (endX > startX) {
         for (var i = startX; i <= endX; i += step) {
-          indexSet.add(i);
+          addIndex(i);
         }
       } else {
         for (var i = startX; i >= endX; i -= step) {
-          indexSet.add(i);
+          addIndex(i);
         }
       }
     }
