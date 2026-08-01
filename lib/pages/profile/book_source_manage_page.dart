@@ -9,7 +9,10 @@ import 'package:share_plus/share_plus.dart';
 import '../../utils/share_helper.dart';
 import '../../models/book_source.dart';
 import '../../providers/discovery_provider.dart';
+import '../../routes/app_routes.dart';
 import '../../services/book_source_import_service.dart';
+import '../../services/source_import_logic.dart';
+import '../../services/source_subscribe_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/android_switch.dart';
@@ -861,11 +864,30 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.rss_feed),
+              title: const Text('书源订阅'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, AppRoutes.bookSourceSubscribe)
+                    .then((_) => _loadSources());
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.qr_code_scanner),
               title: const Text('二维码导入'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: 实现二维码扫描
+                Navigator.pushNamed(context, AppRoutes.bookSourceImport)
+                    .then((_) => _loadSources());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: const Text('健康检查'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, AppRoutes.bookSourceHealth)
+                    .then((_) => _loadSources());
               },
             ),
             const Divider(),
@@ -960,9 +982,13 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
     );
 
     if (confirmed == true && controller.text.trim().isNotEmpty) {
+      final text = controller.text.trim();
       try {
-        final result =
-            await BookSourceImportService().importText(controller.text);
+        final result = await BookSourceImportService().importText(text);
+        // 网络 URL 导入时记住订阅地址，便于一键更新
+        if (looksLikeSubscribeUrl(text)) {
+          await SourceSubscribeService().add(text, importNow: false);
+        }
         await _loadSources();
         if (!mounted) return;
         _showImportResult(result);
@@ -1185,6 +1211,24 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
+                        icon: const Icon(Icons.bug_report),
+                        label: const Text('调试'),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.bookSourceDebug,
+                            arguments: {
+                              'sourceUrl': source.bookSourceUrl,
+                              'source': source,
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: DesignTokens.spacingMd),
+                    Expanded(
+                      child: OutlinedButton.icon(
                         icon: const Icon(Icons.delete),
                         label: const Text('删除书源'),
                         style: OutlinedButton.styleFrom(
@@ -1345,6 +1389,14 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               case 'import_url':
                 _importFromUrl();
                 break;
+              case 'subscribe':
+                Navigator.pushNamed(context, AppRoutes.bookSourceSubscribe)
+                    .then((_) => _loadSources());
+                break;
+              case 'health':
+                Navigator.pushNamed(context, AppRoutes.bookSourceHealth)
+                    .then((_) => _loadSources());
+                break;
               case 'export':
                 _exportSources();
                 break;
@@ -1377,6 +1429,18 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
               padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: DesignTokens.spacingMd),
               height: DesignTokens.topBarHeight,
               child: Row(children: [Icon(Icons.cloud_download, size: 18), SizedBox(width: DesignTokens.spacingMd), Text('网络导入')]),
+            ),
+            const PopupMenuItem(
+              value: 'subscribe',
+              padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: DesignTokens.spacingMd),
+              height: DesignTokens.topBarHeight,
+              child: Row(children: [Icon(Icons.rss_feed, size: 18), SizedBox(width: DesignTokens.spacingMd), Text('书源订阅')]),
+            ),
+            const PopupMenuItem(
+              value: 'health',
+              padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: DesignTokens.spacingMd),
+              height: DesignTokens.topBarHeight,
+              child: Row(children: [Icon(Icons.health_and_safety_outlined, size: 18), SizedBox(width: DesignTokens.spacingMd), Text('健康检查')]),
             ),
             const PopupMenuItem(
               value: 'export',

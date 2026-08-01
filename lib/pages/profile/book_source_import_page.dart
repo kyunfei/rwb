@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/book_source_import_service.dart';
+import '../../services/source_import_logic.dart';
+import '../../services/source_subscribe_service.dart';
 import '../../utils/design_tokens.dart';
 
 /// 书源导入页面
@@ -29,6 +31,7 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   final _textController = TextEditingController();
   final _jsController = TextEditingController();
   bool _isImporting = false;
+  bool _rememberSubscribe = true;
   ScaffoldMessengerState? _messenger;
 
   @override
@@ -151,11 +154,25 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
     try {
       final service = BookSourceImportService();
       BookSourceImportResult result;
+      Object? jsonError;
       // 先尝试 JSON 格式，失败则按 JS 书源导入
       try {
         result = await service.importText(text);
-      } catch (_) {
-        result = await service.importJsText(text);
+      } catch (e) {
+        jsonError = e;
+        try {
+          result = await service.importJsText(text);
+        } catch (jsError) {
+          throw Exception('JSON导入失败: $jsonError；JS导入失败: $jsError');
+        }
+      }
+      // 网络 URL 成功导入后记住订阅，便于一键更新
+      if (_rememberSubscribe && looksLikeSubscribeUrl(text.trim())) {
+        try {
+          await SourceSubscribeService().add(text.trim(), importNow: false);
+        } catch (e) {
+          debugPrint('记住订阅地址失败: $e');
+        }
       }
       _showResult(result);
       _hideCurrentSnackBar();
@@ -248,6 +265,16 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
             onSubmitted: (_) => _importFromUrl(),
           ),
           const SizedBox(height: DesignTokens.spacingMd),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('记住为订阅源'),
+            subtitle: const Text('导入后可在「书源订阅」中一键更新'),
+            value: _rememberSubscribe,
+            onChanged: _isImporting
+                ? null
+                : (v) => setState(() => _rememberSubscribe = v),
+          ),
+          const SizedBox(height: DesignTokens.spacingMd),
           FilledButton.icon(
             onPressed: _isImporting ? null : _importFromUrl,
             icon: const Icon(Icons.download),
@@ -266,6 +293,7 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
                     '• 支持 Legado 格式的书源 JSON\n'
                     '• 地址应返回 JSON 数组或单个书源对象\n'
                     '• 也支持包含 {"sourceUrls": ["url1", ...]} 的订阅格式\n'
+                    '• 重复导入按 bookSourceUrl 去重更新\n'
                     '• .js 格式的 JS 书源请使用文本导入',
                     style: TextStyle(fontSize: 13, height: 1.6),
                   ),

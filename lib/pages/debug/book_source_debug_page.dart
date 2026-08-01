@@ -13,6 +13,7 @@ import '../../models/book_source.dart';
 import '../../routes/app_routes.dart';
 import '../../services/app_logger.dart';
 import '../../services/crash_log_service.dart';
+import '../../models/source_health.dart';
 import '../../services/source_debug_service.dart';
 import '../../services/storage_service.dart';
 
@@ -424,7 +425,11 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
     return Scaffold(
       backgroundColor: isDark ? null : Colors.white,
       appBar: _buildAppBar(context),
-      body: _currentTab == 0 ? _buildDebugBody() : _buildLogViewerBody(),
+      body: switch (_currentTab) {
+        0 => _buildDebugBody(),
+        1 => _buildRuleStepsBody(),
+        _ => _buildLogViewerBody(),
+      },
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentTab,
         onTap: (index) => setState(() => _currentTab = index),
@@ -433,6 +438,11 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
             icon: Icon(Icons.bug_report_outlined),
             activeIcon: Icon(Icons.bug_report),
             label: '调试',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_tree_outlined),
+            activeIcon: Icon(Icons.account_tree),
+            label: '规则',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.article_outlined),
@@ -647,18 +657,164 @@ class _BookSourceDebugPageState extends State<BookSourceDebugPage>
             right: 0,
             top: 0,
             child: Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: isDark ? Colors.lightBlue[300] : const Color(0xFF1976D2),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: isDark
+                          ? Colors.lightBlue[300]
+                          : const Color(0xFF1976D2),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      SourceDebugService.instance.cancelDebug();
+                      setState(() => _isLoading = false);
+                    },
+                    child: const Text('取消调试'),
+                  ),
+                ],
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildRuleStepsBody() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final steps = SourceDebugService.instance.ruleSteps;
+    if (steps.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _isLoading
+                ? '正在执行规则分步…'
+                : '运行调试后，这里会展示每一层规则的表达式、匹配结果与失败原因',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.black54,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final showStageHeader = <bool>[
+      for (var i = 0; i < steps.length; i++)
+        i == 0 || steps[i].stage != steps[i - 1].stage,
+    ];
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+      itemCount: steps.length,
+      itemBuilder: (context, index) {
+        final step = steps[index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showStageHeader[index]) ...[
+              if (index > 0) const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6, top: 4),
+                child: Text(
+                  '▼ ${step.stage}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.lightBlue[200]
+                        : const Color(0xFF1565C0),
+                  ),
+                ),
+              ),
+            ],
+            _buildRuleStepCard(step, isDark),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRuleStepCard(SourceRuleStepResult step, bool isDark) {
+    final Color border;
+    if (step.skipped) {
+      border = isDark ? Colors.grey[700]! : Colors.grey[300]!;
+    } else if (step.success) {
+      border = isDark ? Colors.green[700]! : Colors.green[200]!;
+    } else {
+      border = isDark ? Colors.red[700]! : Colors.red[200]!;
+    }
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(8),
+        color: isDark ? Colors.grey[900] : Colors.grey[50],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                step.skipped
+                    ? Icons.remove_circle_outline
+                    : (step.success ? Icons.check_circle : Icons.error_outline),
+                size: 16,
+                color: step.skipped
+                    ? Colors.grey
+                    : (step.success ? Colors.green : Colors.red),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  step.field,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (step.matchCount != null)
+                Text(
+                  '${step.matchCount} 项',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.black54,
+                  ),
+                ),
+            ],
+          ),
+          if (step.expression != null && step.expression!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            SelectableText(
+              step.expression!,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: isDark ? Colors.grey[300] : Colors.black87,
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+          SelectableText(
+            step.error != null
+                ? '失败: ${step.error}'
+                : (step.skipped ? '未配置' : step.resultPreview),
+            style: TextStyle(
+              fontSize: 12,
+              color: step.error != null
+                  ? (isDark ? Colors.red[300] : Colors.red[700])
+                  : (isDark ? Colors.grey[400] : Colors.black54),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
