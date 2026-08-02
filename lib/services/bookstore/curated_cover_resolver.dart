@@ -12,13 +12,21 @@ import 'curated_match.dart';
 
 /// 策展封面惰性解析：占位 → 后台搜索真封面 → 本地缓存。
 ///
-/// 并发上限刻意压低：一屏可能挂 20+ 本书，每本若再打几十个源会把网络打爆。
-/// 默认最多同时解析 [maxConcurrentBooks] 本书，每本最多探 [maxSourcesPerBook] 个源。
+/// 每次「解析」都是对书源站点的真实搜索（HTTP + 同步 HTML 解析），成本与「打开
+/// 一本书」同一量级，换来的却只是一张缩略图。真机实测（294 个书源、策展资产里
+/// 497/551 本缺封面）证明它会长期占满网络与 UI isolate，把用户点书触发的
+/// CuratedBookOpener 搜索从数秒拖到 31 秒——预算定时器和帧都被封面请求饿死。
+///
+/// 所以这里所有上限都按「宁可少几张封面，也不能拖慢交互」取值：单源超时短、
+/// 每本试的源少、队列与会话总量都有硬顶、连续失败即熔断、且能被点书路径抢占。
 class CuratedCoverResolver {
   CuratedCoverResolver({
     this.maxConcurrentBooks = 2,
-    this.maxSourcesPerBook = 4,
-    this.perSourceTimeout = const Duration(seconds: 12),
+    this.maxSourcesPerBook = 2,
+    this.perSourceTimeout = const Duration(seconds: 4),
+    this.maxQueueLength = 24,
+    this.maxBooksPerSession = 60,
+    this.failureCircuitThreshold = 6,
     BookSourceSearcher? searcher,
     CoverCacheStore? cacheStore,
   })  : _searcher = searcher ?? _defaultSearcher,
@@ -28,9 +36,37 @@ class CuratedCoverResolver {
   final int maxConcurrentBooks;
 
   /// 单本书最多尝试的书源数；找到封面即停。
+  ///
+  /// 2 而不是 4：串行重试的最坏耗时是 [maxSourcesPerBook] × [perSourceTimeout]，
+  /// 4×12s=48s 一本书是荒谬的。权重排序后头两个源都没有封面时，第 3、4 个源
+  /// 补上封面的边际概率远低于它们占用的网络成本。
   final int maxSourcesPerBook;
 
+  /// 单源搜索超时。4s 而不是 12s：这是装饰用的缩略图，等不到就算了。
+  /// 交互路径 CuratedBookOpener 给 12 个源的总墙钟预算才 8s，装饰性封面的
+  /// 单源预算没有理由超过它。
   final Duration perSourceTimeout;
+
+  /// 等待队列长度硬上限，超出直接丢弃。
+  ///
+  /// 页面每次 rebuild / 切 Tab 都会重新请求当前可见的书，原来的无界队列切几次
+  /// Tab 就能堆几百个 job。24 约等于两屏的待办量；被丢掉的书下次真正滚进视口
+  /// 时还会再来一次，不会永久丢失。
+  final int maxQueueLength;
+
+  /// 单次会话最多真正发起搜索的书籍数。
+  ///
+  /// 60 约等于一个分类 Tab 的全量。烧到这个数还在缺封面，说明是资产缺 coverUrl
+  /// 的系统性问题，不是偶发未命中，继续搜只是白费网络。
+  final int maxBooksPerSession;
+
+  /// 连续多少个 job 拿不到封面就熔断整个会话。
+  ///
+  /// 6 个连续失败意味着已经白试了 6×[maxSourcesPerBook]=12 次源请求，足以说明
+  /// 要么网络不通、要么这批书源整体不返回封面。此时继续排队只会持续饿死交互。
+  /// 导入/启用新书源后可用 [resetCircuit] 重新开闸。
+  final int failureCircuitThreshold;
+
   final BookSourceSearcher _searcher;
   final CoverCacheStore _cache;
 
@@ -38,7 +74,57 @@ class CuratedCoverResolver {
   final Set<String> _inflight = {};
   final Set<String> _failed = {};
   final Queue<_CoverJob> _queue = Queue();
+
+  /// 已在 [_queue] 里排队的 key。页面每帧都会重新 requestCovers，没有这层去重
+  /// 同一本书会在队列里堆好几份（[_pump] 只在出队时才发现重复）。
+  final Set<String> _queued = {};
+
   int _active = 0;
+  int _startedJobs = 0;
+  int _consecutiveFailures = 0;
+  bool _circuitOpen = false;
+  int _pauseDepth = 0;
+
+  /// 暂停期间不启动新 job。
+  bool get isPaused => _pauseDepth > 0;
+
+  /// 熔断后本次会话彻底不再解析封面，直到 [resetCircuit]。
+  bool get isCircuitOpen => _circuitOpen;
+
+  int get queueLength => _queue.length;
+
+  /// 本次会话已真正发起过搜索的书籍数（受 [maxBooksPerSession] 约束）。
+  int get startedJobCount => _startedJobs;
+
+  int get activeJobCount => _active;
+
+  int get consecutiveFailureCount => _consecutiveFailures;
+
+  /// 暂停启动新的封面搜索；点书这类交互路径进入时调用，独占网络。
+  ///
+  /// 用引用计数而不是 bool：重叠的 pause/resume（例如连点两本书）不会被先返回
+  /// 的那一个提前放回运行态。
+  void pause() {
+    _pauseDepth++;
+  }
+
+  /// 与 [pause] 配对；计数归零时继续消费队列。
+  void resume() {
+    if (_pauseDepth == 0) return;
+    _pauseDepth--;
+    if (_pauseDepth == 0) _pump();
+  }
+
+  /// 重置熔断、会话配额与「这本书试过了」的记忆。
+  ///
+  /// 供「导入/启用了一批新书源」这类显式动作调用：上一批源不给封面的结论不该
+  /// 锁死整个进程生命周期。
+  void resetCircuit() {
+    _circuitOpen = false;
+    _consecutiveFailures = 0;
+    _startedJobs = 0;
+    _failed.clear();
+  }
 
   /// 内存 + 持久化缓存中的封面 URL；无则 null。
   String? cachedCoverUrl(CuratedBook book) {
@@ -54,15 +140,19 @@ class CuratedCoverResolver {
     return null;
   }
 
-  /// 入队解析；已有封面 / 已失败 / 已在飞则跳过。
+  /// 入队解析；已有封面 / 已失败 / 已在飞 / 已排队 / 已熔断 / 已到量则跳过。
   void enqueue({
     required CuratedBook book,
     required List<BookSource> sources,
     void Function(String coverUrl)? onResolved,
   }) {
     if (book.hasCover) return;
+    if (_circuitOpen) return;
     final key = cacheKey(book.name, book.author);
-    if (_memory.containsKey(key) || _failed.contains(key) || _inflight.contains(key)) {
+    if (_memory.containsKey(key) ||
+        _failed.contains(key) ||
+        _inflight.contains(key) ||
+        _queued.contains(key)) {
       final cached = _memory[key];
       if (cached != null && cached.isNotEmpty) {
         onResolved?.call(cached);
@@ -76,14 +166,22 @@ class CuratedCoverResolver {
       return;
     }
 
+    final picked = _pickSources(sources);
+    // 书源还没异步加载完（或全被禁用）时，既不要消耗会话配额也不要把书记成
+    // 失败——否则源就绪前的几帧就能把整个会话额度烧光、还把书永久拉黑。
+    if (picked.isEmpty) return;
+    if (_startedJobs >= maxBooksPerSession) return;
+    if (_queue.length >= maxQueueLength) return;
+
     _queue.add(
       _CoverJob(
         key: key,
         book: book,
-        sources: _pickSources(sources),
+        sources: picked,
         onResolved: onResolved,
       ),
     );
+    _queued.add(key);
     _pump();
   }
 
@@ -121,13 +219,21 @@ class CuratedCoverResolver {
   }
 
   void _pump() {
+    if (_circuitOpen || isPaused) return;
     while (_active < maxConcurrentBooks && _queue.isNotEmpty) {
+      if (_startedJobs >= maxBooksPerSession) {
+        // 配额用尽，队列里剩下的永远不会被执行，早点释放掉。
+        _clearQueue();
+        return;
+      }
       final job = _queue.removeFirst();
+      _queued.remove(job.key);
       if (_inflight.contains(job.key) || _memory.containsKey(job.key)) {
         continue;
       }
       _inflight.add(job.key);
       _active++;
+      _startedJobs++;
       unawaited(_runJob(job).whenComplete(() {
         _inflight.remove(job.key);
         _active--;
@@ -136,14 +242,20 @@ class CuratedCoverResolver {
     }
   }
 
+  void _clearQueue() {
+    _queue.clear();
+    _queued.clear();
+  }
+
   Future<void> _runJob(_CoverJob job) async {
-    if (job.sources.isEmpty) {
-      _failed.add(job.key);
-      return;
-    }
     final keyword =
         buildCuratedSearchKeyword(job.book.name, job.book.author);
     for (final source in job.sources) {
+      // 被点书路径抢占、或已熔断时不再开下一个请求。已经发出的那一个没法真取消
+      // （WebBook 的 Future 不可中断，timeout 只是不再等它的结果），所以抢占粒度
+      // 是「最多再欠一个已发出的请求」，而不是立即静默。
+      // 这种中途放弃不算失败、也不写 _failed：下次这本书真正可见时可以重来。
+      if (isPaused || _circuitOpen) return;
       try {
         final results = await _searcher(source, keyword)
             .timeout(perSourceTimeout);
@@ -156,6 +268,7 @@ class CuratedCoverResolver {
         if (cover != null && cover.isNotEmpty) {
           _memory[job.key] = cover;
           await _cache.write(job.key, cover);
+          _consecutiveFailures = 0;
           job.onResolved?.call(cover);
           return;
         }
@@ -164,6 +277,20 @@ class CuratedCoverResolver {
       }
     }
     _failed.add(job.key);
+    _noteJobFailure();
+  }
+
+  /// 一个 job 试完所有源都没拿到封面。连续失败到阈值就整会话停手：网络不通或
+  /// 这批源不返回封面时，继续排队只是持续白烧网络和 UI isolate。
+  void _noteJobFailure() {
+    _consecutiveFailures++;
+    if (_consecutiveFailures < failureCircuitThreshold) return;
+    _circuitOpen = true;
+    _clearQueue();
+    debugPrint(
+      '策展封面解析熔断：连续 $_consecutiveFailures 本没拿到封面，'
+      '本次会话停止封面搜索（导入新书源后可 resetCircuit 重开）',
+    );
   }
 
   /// 从单源结果里挑最匹配且带封面的 URL（纯逻辑，便于测）。
