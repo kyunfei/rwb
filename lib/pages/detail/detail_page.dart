@@ -84,7 +84,10 @@ class _DetailPageState extends State<DetailPage> {
         // 局部变量捕获：避免 await 期间 _dataProvider 被修改导致不一致
         final dataProvider = createBookDataProvider(book);
         if (book.originType == BookOriginType.online) {
-          final detailedBook = await dataProvider.getBookInfo(book.bookUrl);
+          final detailedBook = await dataProvider.getBookInfo(
+            book.bookUrl,
+            fallbackBook: book,
+          );
           // await 后页面可能已退出
           if (!mounted) return;
           if (detailedBook != null) {
@@ -156,7 +159,10 @@ class _DetailPageState extends State<DetailPage> {
         var book = initialBook;
         final dataProvider = createBookDataProvider(book);
         if (book.originType == BookOriginType.online) {
-          final detailedBook = await dataProvider.getBookInfo(book.bookUrl);
+          final detailedBook = await dataProvider.getBookInfo(
+            book.bookUrl,
+            fallbackBook: book,
+          );
           // await 后页面可能已退出
           if (!mounted) return;
           if (detailedBook != null) {
