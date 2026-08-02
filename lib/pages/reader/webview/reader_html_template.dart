@@ -46,8 +46,9 @@ class ReaderHtmlTemplate {
     bool isRichHtml = false,
   }) {
     // 纯文本路径：先清掉 formatKeepImg 留下的 <img>，再判西文/切段（避免 URL 干扰）
-    final plainContent =
-        isRichHtml ? content : ReaderTextCleaner.cleanForDisplay(content);
+    final plainContent = isRichHtml
+        ? content
+        : ReaderTextCleaner.cleanForDisplay(content, chapterTitle: title);
     final latinDominant =
         !isRichHtml && ReaderTypography.isPredominantlyLatin(plainContent);
     final css = _generateCss(
@@ -79,7 +80,11 @@ class ReaderHtmlTemplate {
       // EPUB 模式：不生成应用自身标题，让 EPUB 自带标题（h1.chapter-title 等）展示
       titleHtml = '';
     } else {
-      paragraphsHtml = buildParagraphsHtml(plainContent, provider);
+      paragraphsHtml = buildParagraphsHtml(
+        plainContent,
+        provider,
+        chapterTitle: title,
+      );
       titleHtml = buildTitleHtml(title, provider, chapterIndex);
     }
 
@@ -849,10 +854,14 @@ ${ReaderTypography.paragraphWrapCss}
   /// 避免整页 reload 丢失当前滚动位置。
   static String buildParagraphsHtml(
     String content,
-    ReaderProvider provider,
-  ) {
+    ReaderProvider provider, {
+    String chapterTitle = '',
+  }) {
     // 滚动追加/预挂章节也走此处；幂等，generate() 里已清洗过也无妨
-    final cleaned = ReaderTextCleaner.cleanForDisplay(content);
+    final cleaned = ReaderTextCleaner.cleanForDisplay(
+      content,
+      chapterTitle: chapterTitle,
+    );
     final rules = provider.highlightRules.where((r) => r.enabled).toList();
     final paragraphs = _splitToParagraphs(cleaned);
     final buf = StringBuffer();

@@ -671,9 +671,15 @@ class _NovelReaderPageState extends State<NovelReaderPage>
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           final provider = context.read<ReaderProvider>();
-          final displayContent = ChineseConverter.convert(
-            _processedContent(_content),
-            provider.chineseConverterType,
+          final displayContent = ReaderTextCleaner.cleanForDisplay(
+            ChineseConverter.convert(
+              _processedContent(_content),
+              provider.chineseConverterType,
+            ),
+            chapterTitle: ChineseConverter.convert(
+              _chapterTitle,
+              provider.chineseConverterType,
+            ),
           );
           return SafeArea(
             child: Padding(
@@ -1645,6 +1651,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           : ReaderHtmlTemplate.buildParagraphsHtml(
               processedContent,
               provider,
+              chapterTitle: displayTitle,
             );
 
       // 6. 调用 JS 追加到 DOM（不触发 reload）
@@ -1805,6 +1812,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           : ReaderHtmlTemplate.buildParagraphsHtml(
               processedContent,
               provider,
+              chapterTitle: displayTitle,
             );
 
       // 6. 调用 JS 前置到 DOM 顶部（不触发 reload，JS 同步调整 scrollTop）

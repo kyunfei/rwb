@@ -94,5 +94,81 @@ More prose after the marker.
       expect(out, contains('old library'));
       expect(out, contains('—'));
     });
+
+    group('cleanForDisplay duplicate chapter title', () {
+      const title = '第1章 雪地遇袭';
+
+      test('removes identical duplicate on first line', () {
+        const raw = '第1章 雪地遇袭\n午后，大周皇朝北部天空……';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '午后，大周皇朝北部天空……');
+      });
+
+      test('tolerates whitespace differences on first line', () {
+        const raw = '第1章  雪地遇袭\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '正文');
+      });
+
+      test('tolerates full-width digits and punctuation', () {
+        const raw = '第１章：雪地遇袭\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '正文');
+      });
+
+      test('tolerates chinese chapter numeral in title vs arabic in body line', () {
+        const raw = '第1章 雪地遇袭\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: '第一章 雪地遇袭',
+        );
+        expect(out, '正文');
+      });
+
+      test('strips title prefix when body continues on same line', () {
+        const raw = '第1章 雪地遇袭午后，大周皇朝北部天空……';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '午后，大周皇朝北部天空……');
+      });
+
+      test('does not strip when first line merely shares opening words', () {
+        const raw = '第1章 雪地遇袭后的局势急转直下。\n第二段';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, raw);
+      });
+
+      test('does not strip duplicate title text in middle of chapter', () {
+        const raw = '午后，大周皇朝北部天空……\n第1章 雪地遇袭\n后文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, raw);
+      });
+
+      test('catalog title with 正文 prefix still matches body line', () {
+        const raw = '第1章 雪地遇袭\n正文段';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: '正文 第1章 雪地遇袭',
+        );
+        expect(out, '正文段');
+      });
+    });
   });
 }

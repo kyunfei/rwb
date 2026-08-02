@@ -30,12 +30,63 @@ class ReaderTextCleaner {
   ///
   /// 书源侧 formatKeepImg 会刻意保留 `<img>`；纯文本分页路径会对全文 HTML
   /// 转义，行内真图又会牵动分栏测量，故显示时先换成短占位，缓存原文不动。
-  static String cleanForDisplay(String raw) {
+  ///
+  /// [chapterTitle] 非空时，若正文开头重复了章节标题（书源正文容器常自带标题），
+  /// 仅在显示层去掉首段重复，不改缓存。
+  static String cleanForDisplay(
+    String raw, {
+    String chapterTitle = '',
+  }) {
     if (raw.isEmpty) return '';
-    return raw.replaceAll(
+    var text = raw.replaceAll(
       RegExp(r'<img\b[^>]*/?>', caseSensitive: false),
       imagePlaceholder,
     );
+    if (chapterTitle.trim().isNotEmpty) {
+      text = stripLeadingDuplicateChapterTitle(text, chapterTitle);
+    }
+    return text;
+  }
+
+  /// 若正文开头首行重复了 [chapterTitle]，去掉该重复部分（仅显示用）。
+  ///
+  /// 只处理开头首行；章节中间同名文字不动。
+  static String stripLeadingDuplicateChapterTitle(
+    String content,
+    String chapterTitle,
+  ) {
+    if (content.isEmpty || chapterTitle.trim().isEmpty) return content;
+
+    final start = _indexAfterLeadingBlankLines(content);
+    if (start >= content.length) return content;
+
+    final firstBreak = _indexOfLineBreak(content, start);
+    final firstLine = content.substring(start, firstBreak);
+    final afterFirstLine = firstBreak < content.length
+        ? content.substring(_indexAfterLineBreak(content, firstBreak))
+        : '';
+
+    // 整行与标题等价 → 去掉整行（最常见：标题独占首行）
+    if (_linesMatchAsDuplicateTitle(firstLine, chapterTitle)) {
+      return afterFirstLine;
+    }
+
+    // 首行「标题 + 正文连写」：仅当标题形如章节名时才剥前缀，避免短标题误伤叙事句
+    if (_looksLikeChapterHeading(chapterTitle)) {
+      final cut = _flexibleTitlePrefixEnd(firstLine, chapterTitle);
+      if (cut != null && cut < firstLine.length) {
+        final remainder = firstLine.substring(cut);
+        if (remainder.trim().isNotEmpty) {
+          // 保留首行后的换行符，避免与下一行粘连
+          final lineSuffix = firstBreak < content.length
+              ? content.substring(firstBreak)
+              : '';
+          return remainder + lineSuffix;
+        }
+      }
+    }
+
+    return content;
   }
 
   /// 将章节正文转为适合 TTS 的纯文本。
@@ -71,6 +122,256 @@ class ReaderTextCleaner {
     text = text.replaceAll(RegExp(r'[ \t\f\v]+'), ' ');
     text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     return text.trim();
+  }
+
+  static bool _linesMatchAsDuplicateTitle(String line, String chapterTitle) {
+    final lineKey = _normalizeTitleKey(line);
+    if (lineKey.isEmpty) return false;
+    for (final titleKey in _titleCompareKeys(chapterTitle)) {
+      if (lineKey == titleKey) return true;
+    }
+    return false;
+  }
+
+  /// 标题比较用归一化：空白、常见标点、全角 ASCII、章号中文数字等差异忽略。
+  static String _normalizeTitleKey(String input) {
+    var s = input.replaceAll(RegExp(r'<[^>]+>'), '');
+    s = _fullWidthAsciiToHalf(s);
+    s = _normalizeDiChapterNumerals(s);
+    s = s.replaceAll(RegExp(r'[\s\u00a0\u3000\u200b-\u200d\ufeff]+'), '');
+    s = s.replaceAll(
+      RegExp(
+        r'[：:·\-—_，,。.、!！?？;；:()\（\）\[\]【】《》「」『』""'
+        r"''`~@#\$%^&*+=|\\/<>]",
+      ),
+      '',
+    );
+    return s.toLowerCase();
+  }
+
+  static Iterable<String> _titleCompareKeys(String chapterTitle) sync* {
+    final primary = _normalizeTitleKey(chapterTitle);
+    if (primary.isEmpty) return;
+    yield primary;
+    final withoutPrefix = primary.replaceFirst(
+      RegExp(r'^(正文|默认|番外|外传|最新章节)+'),
+      '',
+    );
+    if (withoutPrefix.isNotEmpty && withoutPrefix != primary) {
+      yield withoutPrefix;
+    }
+  }
+
+  static bool _looksLikeChapterHeading(String title) {
+    final t = title.trim();
+    if (RegExp(r'第.{1,20}章', caseSensitive: false).hasMatch(t)) return true;
+    if (RegExp(r'chapter\s*\d+', caseSensitive: false).hasMatch(t)) {
+      return true;
+    }
+    if (RegExp(r'^\s*第?\s*\d+\s*[、.．]', caseSensitive: false).hasMatch(t)) {
+      return true;
+    }
+    return _normalizeTitleKey(t).length >= 12;
+  }
+
+  /// 在 [line] 开头柔性对齐 [chapterTitle]，返回应保留的正文起始下标；无法对齐则 null。
+  static int? _flexibleTitlePrefixEnd(String line, String chapterTitle) {
+    for (final titleKey in _titleCompareKeys(chapterTitle)) {
+      if (titleKey.isEmpty) continue;
+      final lineKey = _normalizeTitleKey(line);
+      if (!lineKey.startsWith(titleKey) || lineKey.length <= titleKey.length) {
+        continue;
+      }
+      final normBuf = StringBuffer();
+      var i = 0;
+      while (i < line.length && normBuf.length < titleKey.length) {
+        final ch = line[i];
+        if (_isIgnorableSeparator(ch)) {
+          i++;
+          continue;
+        }
+        normBuf.write(_normalizeTitleKey(ch));
+        i++;
+      }
+      if (normBuf.toString() != titleKey) continue;
+      while (i < line.length && _isIgnorableSeparator(line[i])) {
+        i++;
+      }
+      if (i >= line.length) continue;
+      // 同行去标题：要求标题与正文之间有分隔，或正文首字像新段落起笔（避免「雪地遇袭后的…」误删）
+      if (!_sameLineTitleBodyBoundaryOk(line, i)) continue;
+      return i;
+    }
+    return null;
+  }
+
+  static bool _sameLineTitleBodyBoundaryOk(String line, int bodyStart) {
+    if (bodyStart <= 0 || bodyStart >= line.length) return false;
+    final beforeBody = line.substring(0, bodyStart);
+    if (RegExp(r'[\s\u3000，,。.、:：!！?？;；]$').hasMatch(beforeBody)) {
+      return true;
+    }
+    final firstBody = line.substring(bodyStart).trimLeft();
+    if (firstBody.isEmpty) return false;
+    final starter = String.fromCharCode(firstBody.runes.first);
+    if (RegExp(r'[a-zA-Z]').hasMatch(starter)) return true;
+    return _sameLineBodyStarters.contains(starter);
+  }
+
+  /// 书源正文紧接标题后常见起笔（偏保守，不在此集合则不剥同行前缀）。
+  static const Set<String> _sameLineBodyStarters = {
+    '午',
+    '夜',
+    '天',
+    '他',
+    '她',
+    '我',
+    '你',
+    '这',
+    '那',
+    '当',
+    '此',
+    '正',
+    '忽',
+    '却',
+    '说',
+    '话',
+    '在',
+    '从',
+    '到',
+    '向',
+    '与',
+    '和',
+    '而',
+    '但',
+    '已',
+    '又',
+    '再',
+    '只',
+    '便',
+    '于',
+    '由',
+    '被',
+    '让',
+    '把',
+    '虽',
+    '若',
+    '如',
+    '似',
+    '仿',
+    '两',
+    '三',
+    '四',
+    '五',
+    '六',
+    '七',
+    '八',
+    '九',
+    '十',
+    '百',
+    '千',
+    '万',
+    '一',
+    '二',
+    '“',
+    '「',
+    '『',
+    '【',
+    '—',
+    '…',
+  };
+
+  static bool _isIgnorableSeparator(String ch) {
+    if (ch.trim().isEmpty) return true;
+    return RegExp(r'[：:·\-—_，,。.、!！?？;；:()\（\）\[\]【】《》「」『』""'
+            r"''`~@#\$%^&*+=|\\/<>]")
+        .hasMatch(ch);
+  }
+
+  static String _fullWidthAsciiToHalf(String input) {
+    final buf = StringBuffer();
+    for (final rune in input.runes) {
+      if (rune >= 0xFF01 && rune <= 0xFF5E) {
+        buf.writeCharCode(rune - 0xFEE0);
+      } else {
+        buf.writeCharCode(rune);
+      }
+    }
+    return buf.toString();
+  }
+
+  static String _normalizeDiChapterNumerals(String input) {
+    return input.replaceAllMapped(
+      RegExp(r'第([一二三四五六七八九十百千万零〇两]+)章'),
+      (match) {
+        final digits = _chineseNumeralToInt(match.group(1)!);
+        return digits == null ? match.group(0)! : '第$digits章';
+      },
+    );
+  }
+
+  static int? _chineseNumeralToInt(String chinese) {
+    if (chinese.isEmpty) return null;
+    const digit = {
+      '零': 0,
+      '〇': 0,
+      '一': 1,
+      '二': 2,
+      '两': 2,
+      '三': 3,
+      '四': 4,
+      '五': 5,
+      '六': 6,
+      '七': 7,
+      '八': 8,
+      '九': 9,
+    };
+    if (chinese.length == 1 && digit.containsKey(chinese)) {
+      return digit[chinese];
+    }
+    if (chinese == '十') return 10;
+    if (chinese.startsWith('十') && chinese.length == 2) {
+      return 10 + (digit[chinese[1]] ?? 0);
+    }
+    if (chinese.endsWith('十') && chinese.length == 2) {
+      return (digit[chinese[0]] ?? 0) * 10;
+    }
+    if (chinese.length == 3 &&
+        chinese[1] == '十' &&
+        digit.containsKey(chinese[0]) &&
+        digit.containsKey(chinese[2])) {
+      return digit[chinese[0]]! * 10 + digit[chinese[2]]!;
+    }
+    if (chinese.endsWith('百') && chinese.length == 2) {
+      return (digit[chinese[0]] ?? 0) * 100;
+    }
+    return null;
+  }
+
+  static int _indexAfterLeadingBlankLines(String content) {
+    var i = 0;
+    while (i < content.length) {
+      final breakAt = _indexOfLineBreak(content, i);
+      final line = content.substring(i, breakAt);
+      if (line.trim().isNotEmpty) return i;
+      if (breakAt >= content.length) return content.length;
+      i = _indexAfterLineBreak(content, breakAt);
+    }
+    return content.length;
+  }
+
+  static int _indexOfLineBreak(String content, int from) {
+    for (var i = from; i < content.length; i++) {
+      if (content[i] == '\n' || content[i] == '\r') return i;
+    }
+    return content.length;
+  }
+
+  static int _indexAfterLineBreak(String content, int breakAt) {
+    var i = breakAt;
+    if (i < content.length && content[i] == '\r') i++;
+    if (i < content.length && content[i] == '\n') i++;
+    return i;
   }
 
   static String _stripHtml(String input) {
