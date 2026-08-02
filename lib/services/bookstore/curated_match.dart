@@ -188,6 +188,25 @@ CuratedMatchScore scoreCuratedMatch({
   );
 }
 
+/// 当前结果是否已足以提前结束点书搜索（无需再等其余源）。
+///
+/// 仅当 [decideCuratedOpen] 已能给出「直达详情」时返回 true。
+/// [CuratedOpenAction.showSearchResults] / [CuratedOpenAction.notFound]
+/// 仍可能被后续更好结果改写，故继续等。
+bool canStopCuratedOpenSearch({
+  required String curatedName,
+  required String curatedAuthor,
+  required List<Map<String, dynamic>> results,
+}) {
+  if (results.isEmpty) return false;
+  final decision = decideCuratedOpen(
+    curatedName: curatedName,
+    curatedAuthor: curatedAuthor,
+    results: results,
+  );
+  return decision.action == CuratedOpenAction.openDetail;
+}
+
 /// 根据多源搜索结果决定：直达详情 / 展示候选 / 未找到。
 CuratedOpenDecision decideCuratedOpen({
   required String curatedName,
