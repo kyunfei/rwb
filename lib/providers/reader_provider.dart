@@ -17,6 +17,61 @@ enum TapZoneAction {
   nextChapter,
 }
 
+/// 九宫格点击区默认动作：左列上一页 / 中列召唤菜单 / 右列下一页。
+///
+/// 原默认除中列外全是 [TapZoneAction.none]，等于点屏幕左右两侧什么都不发生，
+/// 真机上表现为「只有滑动才能翻页」。中列保持召唤菜单，不动既有习惯。
+List<List<TapZoneAction>> defaultTapZoneActions() => [
+      for (var i = 0; i < 3; i++)
+        [
+          TapZoneAction.previousPage,
+          TapZoneAction.showMenu,
+          TapZoneAction.nextPage,
+        ],
+    ];
+
+/// 把存档里的点击区配置还原成 3×3 矩阵；缺失/损坏/整块无动作时退回默认。
+///
+/// 「整块无动作」必须当成没配过：那是旧默认持久化的结果，而不是用户特意把
+/// 整屏点击都关掉——真要关也不会连菜单一起关。
+@visibleForTesting
+List<List<TapZoneAction>> normalizeTapZoneActions(List<dynamic>? stored) {
+  if (stored == null || stored.length != 3) return defaultTapZoneActions();
+  final parsed = <List<TapZoneAction>>[];
+  for (final row in stored) {
+    if (row is! List || row.length != 3) return defaultTapZoneActions();
+    parsed.add(
+      row.map((cell) {
+        if (cell is int && cell >= 0 && cell < TapZoneAction.values.length) {
+          return TapZoneAction.values[cell];
+        }
+        return TapZoneAction.none;
+      }).toList(),
+    );
+  }
+  final hasAction = parsed
+      .any((row) => row.any((cell) => cell != TapZoneAction.none));
+  if (!hasAction) return defaultTapZoneActions();
+  // 与旧默认逐格相同也当没配过：老用户的存档里就是这一份，不认它的话
+  // 「点边缘没反应」永远修不好，而特意把矩阵配成正好等于旧默认的人几乎不存在。
+  if (_isLegacyDefaultTapZones(parsed)) return defaultTapZoneActions();
+  return parsed;
+}
+
+bool _isLegacyDefaultTapZones(List<List<TapZoneAction>> m) {
+  const legacy = [
+    [TapZoneAction.none, TapZoneAction.none, TapZoneAction.none],
+    [TapZoneAction.none, TapZoneAction.showMenu, TapZoneAction.none],
+    [TapZoneAction.none, TapZoneAction.showMenu, TapZoneAction.none],
+  ];
+  for (var r = 0; r < 3; r++) {
+    for (var c = 0; c < 3; c++) {
+      if (m[r][c] != legacy[r][c]) return false;
+    }
+  }
+  return true;
+}
+
 @visibleForTesting
 String readerParagraphIndentString(
   dynamic value, {
@@ -68,11 +123,7 @@ class ReaderProvider extends ChangeNotifier {
   bool _loadEpubFonts = true;
   Map<String, String> _fontOverrides = {};
   TapZoneAction _centerTapAction = TapZoneAction.showMenu;
-  List<List<TapZoneAction>> _tapZoneActions = [
-    [TapZoneAction.none, TapZoneAction.none, TapZoneAction.none],
-    [TapZoneAction.none, TapZoneAction.showMenu, TapZoneAction.none],
-    [TapZoneAction.none, TapZoneAction.showMenu, TapZoneAction.none],
-  ];
+  List<List<TapZoneAction>> _tapZoneActions = defaultTapZoneActions();
 
   // 书签服务
   final ReaderBookmarkService _bookmarkService = ReaderBookmarkService();
@@ -200,19 +251,8 @@ class ReaderProvider extends ChangeNotifier {
           centerActionIndex < TapZoneAction.values.length) {
         _centerTapAction = TapZoneAction.values[centerActionIndex];
       }
-      final tapActions = config['tapZoneActions'] as List?;
-      if (tapActions != null) {
-        _tapZoneActions = tapActions.map((row) {
-          final rowList = row as List;
-          return rowList.map((cell) {
-            final idx = cell as int;
-            if (idx >= 0 && idx < TapZoneAction.values.length) {
-              return TapZoneAction.values[idx];
-            }
-            return TapZoneAction.none;
-          }).toList();
-        }).toList();
-      }
+      _tapZoneActions =
+          normalizeTapZoneActions(config['tapZoneActions'] as List?);
       if (_isNightMode) {
         _backgroundColor = const Color(0xFF1A1A1A);
         _textColor = Colors.white70;
