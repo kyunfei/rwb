@@ -168,5 +168,35 @@ void main() {
     test('搜索关键词只用书名', () {
       expect(ChangeSourceMatch.searchKeyword(' 夜无疆 '), '夜无疆');
     });
+
+    test('书架脏数据「书名：/作者：」前缀要洗掉，否则搜不到也匹配不上', () {
+      expect(ChangeSourceMatch.cleanBookName('书名：夜无疆'), '夜无疆');
+      expect(ChangeSourceMatch.cleanAuthor('作者：辰东'), '辰东');
+      expect(ChangeSourceMatch.searchKeyword('书名：夜无疆'), '夜无疆');
+      expect(
+        ChangeSourceMatch.isSameBook(
+          targetName: '书名：夜无疆',
+          targetAuthor: '作者：辰东',
+          candidateName: '夜无疆',
+          candidateAuthor: '辰东',
+        ),
+        isTrue,
+      );
+
+      final selected = ChangeSourceMatch.selectSourceEntries(
+        targetName: '书名：夜无疆',
+        targetAuthor: '作者：辰东',
+        hits: [
+          {
+            'sourceUrl': 'http://a.com',
+            'sourceName': '源A',
+            'name': '夜无疆',
+            'author': '辰东',
+            'lastChapter': '第1章',
+          },
+        ],
+      );
+      expect(selected, hasLength(1));
+    });
   });
 }

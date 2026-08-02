@@ -159,7 +159,9 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
                     children: [
                       Text('换源', style: Theme.of(context).textTheme.titleLarge),
                       Text(
-                        '${widget.bookName} - ${widget.bookAuthor}',
+                        '${ChangeSourceMatch.cleanBookName(widget.bookName)}'
+                        ' - '
+                        '${ChangeSourceMatch.cleanAuthor(widget.bookAuthor)}',
                         style: Theme.of(context).textTheme.bodySmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

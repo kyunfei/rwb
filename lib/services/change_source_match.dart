@@ -7,12 +7,46 @@ import 'search/search_text_normalizer.dart';
 class ChangeSourceMatch {
   ChangeSourceMatch._();
 
-  /// 搜索关键词：只用书名。作者拼进 keyword 容易让站点返回杂书。
-  static String searchKeyword(String bookName) => bookName.trim();
+  static final RegExp _nameLabel = RegExp(
+    r'^\s*(书\s*名|作品名|小说名)\s*[：:]\s*',
+  );
+  static final RegExp _authorLabel = RegExp(
+    r'^\s*(作\s*者|著\s*者|译\s*者|文|著)\s*[：:]\s*',
+  );
+
+  /// 去掉站点/旧规则塞进字段的「书名：」「作者：」标签，再 trim。
+  static String cleanBookName(String raw) {
+    var s = raw.trim();
+    for (var i = 0; i < 2; i++) {
+      final next = s.replaceFirst(_nameLabel, '');
+      if (next == s) break;
+      s = next.trim();
+    }
+    return s;
+  }
+
+  static String cleanAuthor(String raw) {
+    var s = raw.trim();
+    for (var i = 0; i < 2; i++) {
+      final next = s.replaceFirst(_authorLabel, '');
+      if (next == s) break;
+      s = next.trim();
+    }
+    return s;
+  }
+
+  /// 搜索关键词：只用洗净后的书名。作者拼进 keyword 容易让站点返回杂书。
+  static String searchKeyword(String bookName) => cleanBookName(bookName);
+
+  static String _normName(String raw) =>
+      SearchTextNormalizer.normalize(cleanBookName(raw));
+
+  static String _normAuthor(String raw) =>
+      SearchTextNormalizer.normalize(cleanAuthor(raw));
 
   /// 结果是否算「同一本书」。
   ///
-  /// - 归一化书名必须全等
+  /// - 归一化书名必须全等（先剥「书名：」类标签）
   /// - 目标有作者时：结果作者须全等，或结果作者为空（站点常漏作者，降权而非否决）
   /// - 目标无作者时：只按书名
   static bool isSameBook({
@@ -21,14 +55,14 @@ class ChangeSourceMatch {
     required String candidateName,
     required String candidateAuthor,
   }) {
-    final tn = SearchTextNormalizer.normalize(targetName);
-    final cn = SearchTextNormalizer.normalize(candidateName);
+    final tn = _normName(targetName);
+    final cn = _normName(candidateName);
     if (tn.isEmpty || cn.isEmpty || tn != cn) return false;
 
-    final ta = SearchTextNormalizer.normalize(targetAuthor);
+    final ta = _normAuthor(targetAuthor);
     if (ta.isEmpty) return true;
 
-    final ca = SearchTextNormalizer.normalize(candidateAuthor);
+    final ca = _normAuthor(candidateAuthor);
     return ca.isEmpty || ca == ta;
   }
 
@@ -84,10 +118,10 @@ class ChangeSourceMatch {
     Map<String, dynamic> b, {
     required String targetAuthor,
   }) {
-    final ta = SearchTextNormalizer.normalize(targetAuthor);
+    final ta = _normAuthor(targetAuthor);
     if (ta.isNotEmpty) {
-      final aAuthor = SearchTextNormalizer.normalize(a['author']?.toString());
-      final bAuthor = SearchTextNormalizer.normalize(b['author']?.toString());
+      final aAuthor = _normAuthor(a['author']?.toString() ?? '');
+      final bAuthor = _normAuthor(b['author']?.toString() ?? '');
       final aExact = aAuthor == ta;
       final bExact = bAuthor == ta;
       if (aExact != bExact) return aExact;
