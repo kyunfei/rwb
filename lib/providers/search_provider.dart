@@ -30,7 +30,14 @@ class SearchProvider extends ChangeNotifier {
             initialSources.map((source) => source.bookSourceUrl).toSet();
 
   static const String _prefsConcurrentKey = 'searchMaxConcurrent';
+  static const String _prefsSelectedSourcesKey = 'searchSelectedSourceUrls';
   static const int defaultMaxConcurrent = 12;
+
+  /// 首次使用时自动选中的书源数量上限。
+  ///
+  /// 从公开源池导入动辄几百个源，全选会让每次搜索都拖着一大堆死源等超时；
+  /// 只选头部若干个，按质量排序（见 [pickDefaultSourceUrls]）。用户仍可自行全选。
+  static const int defaultAutoSelectLimit = 50;
 
   int _maxConcurrentSearches;
   final Duration _perSourceTimeout;
@@ -38,6 +45,10 @@ class SearchProvider extends ChangeNotifier {
 
   List<BookSource> _bookSources;
   Set<String> _selectedSourceUrls;
+
+  /// 进入「只搜某一个源」的路由前的多源选择，返回时用来还原。
+  Set<String>? _selectionBeforeSingleSourceRoute;
+  bool _selectionRestored = false;
   final SearchAggregator _aggregator = SearchAggregator();
   final Map<String, SourceSearchStatus> _sourceStatuses = {};
   bool _isLoading = false;
@@ -92,6 +103,9 @@ class SearchProvider extends ChangeNotifier {
   }
 
   Future<void> loadBookSources() async {
+    // 必须先还原用户上次的选择，再决定是否套用默认值：否则下面「为空就填默认」
+    // 会先把默认值写回 prefs，把用户手选的结果冲掉。
+    await _restoreSelectedSources();
     final sourcesData = StorageService.instance.getAllBookSources();
     _bookSources = [];
     for (final data in sourcesData) {
@@ -111,12 +125,70 @@ class SearchProvider extends ChangeNotifier {
         )
         .toList();
 
+    // 丢掉已删除书源的残留选中项，否则选中数会虚高、且永远搜不到那些源
+    final available =
+        _bookSources.map((source) => source.bookSourceUrl).toSet();
+    _selectedSourceUrls.removeWhere((url) => !available.contains(url));
+
     if (_selectedSourceUrls.isEmpty && _bookSources.isNotEmpty) {
-      _selectedSourceUrls =
-          _bookSources.take(5).map((source) => source.bookSourceUrl).toSet();
+      _selectedSourceUrls = pickDefaultSourceUrls(_bookSources).toSet();
+      await _saveSelectedSources();
     }
 
     notifyListeners();
+  }
+
+  /// 挑默认选中的书源：按质量降序取前 [limit] 个。
+  ///
+  /// 排序依据 weight（书源自带的质量分，阅读/Legado 会随使用情况维护它）、
+  /// respondTime（越小越快）、customOrder（用户置顶）。
+  /// 原先是 `take(5)`——按存储顺序取前五个，等于随机；导入几百个源后
+  /// 极易全落在死源上，表现为「搜什么都没结果」。
+  static List<String> pickDefaultSourceUrls(
+    List<BookSource> sources, {
+    int limit = defaultAutoSelectLimit,
+  }) {
+    final ranked = List<BookSource>.of(sources);
+    ranked.sort((a, b) {
+      final byWeight = b.weight.compareTo(a.weight);
+      if (byWeight != 0) return byWeight;
+      final byResp = a.respondTime.compareTo(b.respondTime);
+      if (byResp != 0) return byResp;
+      return a.customOrder.compareTo(b.customOrder);
+    });
+    return ranked
+        .take(limit < 1 ? 1 : limit)
+        .map((source) => source.bookSourceUrl)
+        .toList();
+  }
+
+  Future<void> _saveSelectedSources() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _prefsSelectedSourcesKey,
+        _selectedSourceUrls.toList(),
+      );
+    } catch (e) {
+      debugPrint('保存搜索书源选择失败: $e');
+    }
+  }
+
+  /// 从 prefs 还原选中的书源，整个生命周期只做一次。
+  ///
+  /// 原先这个选择只活在内存里，每次冷启动都退回默认值，用户手选等于白选。
+  Future<void> _restoreSelectedSources() async {
+    if (_selectionRestored) return;
+    _selectionRestored = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getStringList(_prefsSelectedSourcesKey);
+      if (saved != null && saved.isNotEmpty) {
+        _selectedSourceUrls = saved.toSet();
+      }
+    } catch (e) {
+      debugPrint('读取搜索书源选择失败: $e');
+    }
   }
 
   Future<void> loadSearchHistory() async {
@@ -162,20 +234,25 @@ class SearchProvider extends ChangeNotifier {
       _selectedSourceUrls.add(sourceUrl);
     }
     notifyListeners();
+    unawaited(_saveSelectedSources());
   }
 
   void selectAllSources() {
     _selectedSourceUrls =
         _bookSources.map((source) => source.bookSourceUrl).toSet();
     notifyListeners();
+    unawaited(_saveSelectedSources());
   }
 
   void deselectAllSources() {
     _selectedSourceUrls.clear();
     notifyListeners();
+    unawaited(_saveSelectedSources());
   }
 
   void selectSingleSource(String sourceUrl) {
+    // 单源路由是临时态，先记住原选择，返回时还原；这期间不落盘
+    _selectionBeforeSingleSourceRoute ??= Set<String>.of(_selectedSourceUrls);
     _singleSourceRouteActive = true;
     _selectedSourceUrls = {
       if (_bookSources.any((s) => s.bookSourceUrl == sourceUrl)) sourceUrl,
@@ -186,9 +263,11 @@ class SearchProvider extends ChangeNotifier {
   void restoreMultiSourceSelectionAfterSingleSourceRoute() {
     if (!_singleSourceRouteActive) return;
     _singleSourceRouteActive = false;
-    _selectedSourceUrls = _bookSources
-        .map((source) => source.bookSourceUrl)
-        .toSet();
+    // 原先这里还原成「全部书源」，等于每次从单源搜索返回都把用户的选择冲掉。
+    final previous = _selectionBeforeSingleSourceRoute;
+    _selectionBeforeSingleSourceRoute = null;
+    _selectedSourceUrls = previous ??
+        pickDefaultSourceUrls(_bookSources).toSet();
     notifyListeners();
   }
 
@@ -199,6 +278,7 @@ class SearchProvider extends ChangeNotifier {
         .map((s) => s.bookSourceUrl)
         .toSet();
     notifyListeners();
+    unawaited(_saveSelectedSources());
   }
 
   /// 切换分组选中状态（全选/取消全选）
@@ -218,6 +298,7 @@ class SearchProvider extends ChangeNotifier {
       }
     }
     notifyListeners();
+    unawaited(_saveSelectedSources());
   }
 
   Future<void> search(String keyword, {bool precisionSearch = false}) async {
