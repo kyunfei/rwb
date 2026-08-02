@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "banners": [
+    {
+      "id": "banner-fanren",
+      "tagline": "凡人流开山之作，历久弥新",
+      "bookId": "book-fanren"
+    },
+    {
+      "id": "banner-doupocangqiong",
+      "tagline": "三十年河东，三十年河西",
+      "bookId": "book-doupocangqiong"
+    },
+    {
+      "id": "banner-zhetian",
+      "tagline": "遮天，长生之路",
+      "bookId": "book-zhetian"
+    }
+  ],
+  "shortcuts": [
+    {
+      "id": "sc-recommend",
+      "title": "推荐",
+      "icon": "recommend",
+      "listId": "list-recommend"
+    },
+    {
+      "id": "sc-collect",
+      "title": "收藏",
+      "icon": "favorite",
+      "listId": "list-collect"
+    },
+    {
+      "id": "sc-rating",
+      "title": "评分",
+      "icon": "star",
+      "listId": "list-rating"
+    },
+    {
+      "id": "sc-complete",
+      "title": "完结",
+      "icon": "done_all",
+      "listId": "list-complete"
+    },
+    {
+      "id": "sc-hotupdate",
+      "title": "热更",
+      "icon": "local_fire_department",
+      "listId": "list-hotupdate"
+    }
+  ],
+  "featuredSections": [
+    {
+      "id": "section-hot-serial",
+      "title": "热门连载",
+      "bookIds": [
+        "book-fanren",
+        "book-doupocangqiong",
+        "book-zhetian",
+        "book-guichui",
+        "book-daomubiji"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-xuanhuan",
+      "title": "玄幻",
+      "bookIds": ["book-doupocangqiong", "book-zhetian", "book-wudong"]
+    },
+    {
+      "id": "cat-dushi",
+      "title": "都市",
+      "bookIds": ["book-guichui", "book-zuiqiang", "book-dushi"]
+    },
+    {
+      "id": "cat-xianxia",
+      "title": "仙侠",
+      "bookIds": ["book-fanren", "book-yizhichuan", "book-xiuzhen"]
+    },
+    {
+      "id": "cat-lishi",
+      "title": "历史",
+      "bookIds": ["book-qingyuannian", "book-lishi2", "book-lishi3"]
+    },
+    {
+      "id": "cat-kehuan",
+      "title": "科幻",
+      "bookIds": ["book-santi", "book-kehuan2", "book-kehuan3"]
+    },
+    {
+      "id": "cat-youxi",
+      "title": "游戏",
+      "bookIds": ["book-quanzhi", "book-youxi2", "book-youxi3"]
+    },
+    {
+      "id": "cat-junshi",
+      "title": "军事",
+      "bookIds": ["book-liangjian", "book-junshi2", "book-junshi3"]
+    },
+    {
+      "id": "cat-xuanyi",
+      "title": "悬疑",
+      "bookIds": ["book-daomubiji", "book-xuanyi2", "book-xuanyi3"]
+    },
+    {
+      "id": "cat-nvpin",
+      "title": "女频",
+      "bookIds": ["book-zhiyin", "book-nvpin2", "book-nvpin3"]
+    }
+  ],
+  "rankings": [
+    {
+      "id": "rank-hot",
+      "title": "热门榜",
+      "bookIds": [
+        "book-fanren",
+        "book-doupocangqiong",
+        "book-zhetian",
+        "book-guichui",
+        "book-santi"
+      ]
+    },
+    {
+      "id": "rank-complete",
+      "title": "完结榜",
+      "bookIds": [
+        "book-doupocangqiong",
+        "book-fanren",
+        "book-quanzhi",
+        "book-daomubiji",
+        "book-liangjian"
+      ]
+    },
+    {
+      "id": "rank-new",
+      "title": "新书榜",
+      "bookIds": [
+        "book-wudong",
+        "book-zuiqiang",
+        "book-yizhichuan",
+        "book-kehuan2",
+        "book-nvpin2"
+      ]
+    }
+  ],
+  "lists": [
+    {
+      "id": "list-recommend",
+      "title": "编辑力荐",
+      "subtitle": "口碑与热度兼备的长青书",
+      "bookIds": ["book-fanren", "book-santi", "book-daomubiji", "book-zhetian"]
+    },
+    {
+      "id": "list-collect",
+      "title": "收藏必看",
+      "subtitle": "书架里总该有一本",
+      "bookIds": ["book-doupocangqiong", "book-guichui", "book-quanzhi"]
+    },
+    {
+      "id": "list-rating",
+      "title": "高分精选",
+      "subtitle": "评分居高不下的佳作",
+      "bookIds": ["book-santi", "book-fanren", "book-qingyuannian"]
+    },
+    {
+      "id": "list-complete",
+      "title": "完结佳作",
+      "subtitle": "不用追更，一口气读完",
+      "bookIds": ["book-doupocangqiong", "book-liangjian", "book-daomubiji"]
+    },
+    {
+      "id": "list-hotupdate",
+      "title": "热更追读",
+      "subtitle": "正在连载、更新活跃",
+      "bookIds": ["book-zhetian", "book-wudong", "book-zuiqiang"]
+    }
+  ],
+  "books": [
+    {
+      "id": "book-fanren",
+      "name": "凡人修仙传",
+      "author": "忘语",
+      "category": "仙侠",
+      "intro": "一个普通山村穷小子，偶然之下，跨入到一个江湖小门派，虽然资质平庸，但依靠自身努力和合理算计最后修炼成仙的故事。"
+    },
+    {
+      "id": "book-doupocangqiong",
+      "name": "斗破苍穹",
+      "author": "天蚕土豆",
+      "category": "玄幻",
+      "intro": "这里是属于斗气的世界，没有花俏艳丽的魔法，有的，仅仅是繁衍到巅峰的斗气！"
+    },
+    {
+      "id": "book-zhetian",
+      "name": "遮天",
+      "author": "辰东",
+      "category": "玄幻",
+      "intro": "冰冷与黑暗并存的宇宙深处，九具庞大的龙尸拉着一口青铜古棺，亘古长存。"
+    },
+    {
+      "id": "book-guichui",
+      "name": "鬼吹灯",
+      "author": "天下霸唱",
+      "category": "都市",
+      "intro": "一部关于盗墓的传奇小说，讲述胡八一、王胖子、Shirley杨的寻墓冒险。"
+    },
+    {
+      "id": "book-daomubiji",
+      "name": "盗墓笔记",
+      "author": "南派三叔",
+      "category": "悬疑",
+      "intro": "五十年前，一群长沙土夫子盗掘战国古墓，不料意外挖出了战国帛书，惊现一个尘封千年的惊天秘密。"
+    },
+    {
+      "id": "book-wudong",
+      "name": "武动乾坤",
+      "author": "天蚕土豆",
+      "category": "玄幻",
+      "intro": "修炼一途，乃窃阴阳，夺造化，转涅盘，握生死，掌轮回。"
+    },
+    {
+      "id": "book-zuiqiang",
+      "name": "最强兵王",
+      "author": "七品",
+      "category": "都市",
+      "intro": "他是兵王中的王者，他是杀手中的杀手，因报恩而进入校园，开启一段传奇。"
+    },
+    {
+      "id": "book-dushi",
+      "name": "都市之最强狂兵",
+      "author": "烈焰滔滔",
+      "category": "都市",
+      "intro": "一代兵王回归都市，守护身边的人，掀起一片腥风血雨。"
+    },
+    {
+      "id": "book-yizhichuan",
+      "name": "一念永恒",
+      "author": "耳根",
+      "category": "仙侠",
+      "intro": "一念成沧海，一念化桑田。一念斩千魔，一念诛万仙。"
+    },
+    {
+      "id": "book-xiuzhen",
+      "name": "修真聊天群",
+      "author": "圣骑士的传说",
+      "category": "仙侠",
+      "intro": "某天，宋书航意外加入了一个仙侠中二病资深患者的交流群，从此开启了脑洞大开的修真生活。"
+    },
+    {
+      "id": "book-qingyuannian",
+      "name": "庆余年",
+      "author": "猫腻",
+      "category": "历史",
+      "intro": "积善之家，必有余庆，留余庆，留余庆，忽遇恩人；幸娘亲，幸娘亲，积得阴功。"
+    },
+    {
+      "id": "book-lishi2",
+      "name": "明朝那些事儿",
+      "author": "当年明月",
+      "category": "历史",
+      "intro": "以史料为基础，以小说的笔法写历史，语言幽默风趣。"
+    },
+    {
+      "id": "book-lishi3",
+      "name": "回到明朝当王爷",
+      "author": "月关",
+      "category": "历史",
+      "intro": "现代人杨凌穿越到明朝，凭借超前的知识和智慧成就一番事业。"
+    },
+    {
+      "id": "book-santi",
+      "name": "三体",
+      "author": "刘慈欣",
+      "category": "科幻",
+      "intro": "地球文明向宇宙发出第一声啼鸣，取得了探寻外星文明的突破性进展。"
+    },
+    {
+      "id": "book-kehuan2",
+      "name": "球状闪电",
+      "author": "刘慈欣",
+      "category": "科幻",
+      "intro": "一个关于球状闪电的科幻故事，探索未知物理现象与人类命运。"
+    },
+    {
+      "id": "book-kehuan3",
+      "name": "超新星纪元",
+      "author": "刘慈欣",
+      "category": "科幻",
+      "intro": "一场超新星爆发让成人世界消亡，孩子们如何重建文明。"
+    },
+    {
+      "id": "book-quanzhi",
+      "name": "全职高手",
+      "author": "蝴蝶蓝",
+      "category": "游戏",
+      "intro": "网游荣耀中被誉为教科书级别的顶尖高手叶修，因为种种原因遭到俱乐部的驱逐。"
+    },
+    {
+      "id": "book-youxi2",
+      "name": "网游之近战法师",
+      "author": "盖世猴哥",
+      "category": "游戏",
+      "intro": "一个另类法师的传奇网游故事。"
+    },
+    {
+      "id": "book-youxi3",
+      "name": "超级兵工厂",
+      "author": "八宝饭",
+      "category": "游戏",
+      "intro": "游戏与现实交织的热血征程。"
+    },
+    {
+      "id": "book-liangjian",
+      "name": "亮剑",
+      "author": "都梁",
+      "category": "军事",
+      "intro": "李云龙、赵刚两个性格截然不同的人，共同带领独立团在战场上亮剑。"
+    },
+    {
+      "id": "book-junshi2",
+      "name": "士兵突击",
+      "author": "兰晓龙",
+      "category": "军事",
+      "intro": "一个普通士兵许三多的成长故事，不抛弃、不放弃。"
+    },
+    {
+      "id": "book-junshi3",
+      "name": "我是特种兵",
+      "author": "红豆相思",
+      "category": "军事",
+      "intro": "特种兵成长与战斗的热血传奇。"
+    },
+    {
+      "id": "book-xuanyi2",
+      "name": "心理罪",
+      "author": "雷米",
+      "category": "悬疑",
+      "intro": "方木凭借出色的犯罪心理画像能力，协助警方侦破多起离奇案件。"
+    },
+    {
+      "id": "book-xuanyi3",
+      "name": "十宗罪",
+      "author": "蜘蛛",
+      "category": "悬疑",
+      "intro": "根据真实案例改编的罪案小说集。"
+    },
+    {
+      "id": "book-zhiyin",
+      "name": "知否知否应是绿肥红瘦",
+      "author": "关心则乱",
+      "category": "女频",
+      "intro": "宅门里的庶女成长记，人情冷暖与家族沉浮。"
+    },
+    {
+      "id": "book-nvpin2",
+      "name": "甄嬛传",
+      "author": "流潋紫",
+      "category": "女频",
+      "intro": "从天真少女到深宫宠妃的权谋之路。"
+    },
+    {
+      "id": "book-nvpin3",
+      "name": "花千骨",
+      "author": "Fresh果果",
+      "category": "女频",
+      "intro": "花千骨与白子画跨越师徒、正邪的旷世奇恋。"
+    }
+  ]
+}
