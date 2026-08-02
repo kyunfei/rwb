@@ -2158,11 +2158,15 @@ class WebBook {
     return !const {'false', 'no', 'not', '0', '0.0'}.contains(normalized);
   }
 
+  /// [followUndeclaredNextPage] 为 false 时不做「源没写 nextContentUrl 就从
+  /// HTML 推导分页」的兜底。健康检查只需判断正文规则能不能抽到东西，串 N 个
+  /// 请求会把慢的分页源顶穿单步 25s 预算，判成不健康——那是判定漂移，不是变慢。
   Future<String?> getContent(String chapterUrl,
       {Book? book, Chapter? chapter,
       String? nextChapterUrl,
       Set<String>? visitedUrls,
-      int depth = 0}) async {
+      int depth = 0,
+      bool followUndeclaredNextPage = true}) async {
     final contentRule = source.ruleContent;
     if (contentRule == null) return null;
 
@@ -2390,7 +2394,9 @@ class WebBook {
           }
           content = sb.toString();
         }
-      } else if (content != null && content.isNotEmpty) {
+      } else if (followUndeclaredNextPage &&
+          content != null &&
+          content.isNotEmpty) {
         // ===== 兜底翻页（源规则没写 nextContentUrl）=====
         // 分页站点把一章切成多页，源没写规则时以前只读第一页，剩下的正文静默丢失。
         // 这里从 HTML 里推导下一分页 URL，只有过了 content_next_page.dart 的

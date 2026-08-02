@@ -231,6 +231,9 @@ class SourceHealthCheckService {
           book: book,
           chapter: current,
           nextChapterUrl: nextChapterUrl,
+          // 只判「正文规则抽不抽得到东西」，不必把分页站点的每一页都拉下来：
+          // 那会在 25s 单步预算里串 N 个请求，把本来健康的慢源判成不健康
+          followUndeclaredNextPage: false,
         );
         if (content == null || content.trim().isEmpty) {
           throw Exception('正文为空');

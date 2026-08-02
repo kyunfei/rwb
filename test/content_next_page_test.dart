@@ -496,5 +496,18 @@ void main() {
       expect(content, isNot(contains('第二页正文')));
       expect(requested, <String>['/book/1/100.html']);
     });
+
+    // 健康检查只判「正文规则抽不抽得到东西」。让它串 N 个请求会在 25s 单步预算里
+    // 把慢的分页源判成不健康，那是判定漂移而不是变慢，所以给它留了关闸开关。
+    test('followUndeclaredNextPage=false 时只发一个请求，正文按第一页算', () async {
+      final content = await WebBook(sourceWithoutNextRule()).getContent(
+        '$base/book/1/100.html',
+        followUndeclaredNextPage: false,
+      );
+
+      expect(content, contains('第一页正文'));
+      expect(content, isNot(contains('第二页正文')));
+      expect(requested, <String>['/book/1/100.html']);
+    });
   });
 }
