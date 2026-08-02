@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../pages/reader/reader_font_options.dart';
+
 class ReaderSettingsSheet extends StatefulWidget {
   final double fontSize;
   final double lineHeight;
@@ -853,27 +855,23 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: _panelColor,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _sheetOption('默认字体', _fontFamily.isEmpty, () => _setFont('')),
-            _sheetOption(
-              'Serif',
-              _fontFamily == 'serif',
-              () => _setFont('serif'),
-            ),
-            _sheetOption(
-              'Sans Serif',
-              _fontFamily == 'sans-serif',
-              () => _setFont('sans-serif'),
-            ),
-            _sheetOption(
-              'Monospace',
-              _fontFamily == 'monospace',
-              () => _setFont('monospace'),
-            ),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final opt in kReaderFontOptions)
+                _sheetOption(
+                  opt.label,
+                  _fontFamily == opt.cssFamily,
+                  () => _setFont(opt.cssFamily),
+                ),
+            ],
+          ),
         ),
       ),
     );

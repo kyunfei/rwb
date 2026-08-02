@@ -30,6 +30,13 @@ Future<void> main() async {
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // 手机端锁定竖屏：自动横屏对阅读无帮助，且易误触打乱分页布局
+    if (!kIsWeb) {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+      ]);
+    }
+
     // [修复 Bug #4] 初始化时序保护
     // 之前 CrashLogService.init() 在 try-catch 外，且在 Hive 之前调用
     // 虽然其内部 _loadErrorCounters/_loadCrashLogs 有 try/catch 吞异常，
@@ -134,7 +141,7 @@ class DanShenqiApp extends StatelessWidget {
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           return MaterialApp(
-            title: 'mr',
+            title: '书趣阁',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,

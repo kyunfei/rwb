@@ -380,8 +380,8 @@ class _MainPageState extends State<MainPage> {
                   ),
                   _buildNavItem(
                     1,
-                    Icons.storefront_outlined,
-                    Icons.storefront,
+                    Icons.library_books_outlined,
+                    Icons.library_books,
                     iconSize,
                     '书城',
                   ),
@@ -499,8 +499,8 @@ class _MainPageState extends State<MainPage> {
               Expanded(
                 child: _buildStandardNavItem(
                   1,
-                  Icons.storefront_outlined,
-                  Icons.storefront,
+                  Icons.library_books_outlined,
+                  Icons.library_books,
                   '书城',
                 ),
               ),
@@ -694,7 +694,7 @@ class _MainPageState extends State<MainPage> {
                 padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                 children: [
                   _buildSidebarItem(0, Icons.menu_book, '书架'),
-                  _buildSidebarItem(1, Icons.storefront, '书城'),
+                  _buildSidebarItem(1, Icons.library_books, '书城'),
                   _buildSidebarItem(2, Icons.person, '我的'),
                   const Divider(),
                   _buildSidebarItem(3, Icons.settings, '我的设置'),

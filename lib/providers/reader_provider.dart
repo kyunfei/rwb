@@ -240,7 +240,7 @@ class ReaderProvider extends ChangeNotifier {
       if (modeIndex != null && modeIndex < PageMode.values.length) {
         _pageMode = PageMode.values[modeIndex];
       }
-      _fontFamily = config['fontFamily'] as String? ?? '';
+      _fontFamily = _migrateFontFamily(config['fontFamily'] as String? ?? '');
       _loadEpubFonts = config['loadEpubFonts'] as bool? ?? true;
       final overrides = config['fontOverrides'] as Map?;
       if (overrides != null) {
@@ -522,6 +522,22 @@ class ReaderProvider extends ChangeNotifier {
     _fontFamily = family;
     _saveToStorage();
     notifyListeners();
+  }
+
+  /// 旧版只有 serif / sans-serif / monospace 三个英文短名，映射到新中文栈。
+  static String _migrateFontFamily(String raw) {
+    switch (raw) {
+      case 'serif':
+        return '"Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", '
+            '"SimSun", "宋体", serif';
+      case 'sans-serif':
+        return '"Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", '
+            '"Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif';
+      case 'monospace':
+        return 'ui-monospace, "Cascadia Mono", Consolas, monospace';
+      default:
+        return raw;
+    }
   }
 
   void setLoadEpubFonts(bool load) {

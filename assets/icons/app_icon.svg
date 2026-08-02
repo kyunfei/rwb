@@ -1,4 +1,12 @@
-<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" fill="#6200EE"/>
-  <text x="24" y="28" font-family="Arial" font-size="20" fill="white" text-anchor="middle">蛋</text>
+<svg width="108" height="108" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <rect width="108" height="108" rx="24" fill="#0F5C5C"/>
+  <!-- book cover -->
+  <path d="M28 30h22c6 0 10 3 10 8v42c0-4-4-7-10-7H28V30z" fill="#C45C3E"/>
+  <path d="M80 30H58c-6 0-10 3-10 8v42c0-4 4-7 10-7h22V30z" fill="#A84830"/>
+  <!-- pages -->
+  <path d="M50 38c4-2 8-2 12 0v34c-4-2-8-2-12 0V38z" fill="#F4EDE3"/>
+  <path d="M38 40h8v28h-8z" fill="#F7F1E8" opacity="0.9"/>
+  <path d="M62 40h8v28h-8z" fill="#F7F1E8" opacity="0.9"/>
+  <!-- bookmark -->
+  <path d="M52 30h4v18l-2-2-2 2V30z" fill="#D4A84B"/>
 </svg>

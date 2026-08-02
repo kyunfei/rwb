@@ -544,13 +544,11 @@ class _ProfilePageState extends State<ProfilePage>
       context: context,
       builder: (context) {
         return const AboutDialog(
-          applicationName: '蛋的神器',
+          applicationName: '书趣阁',
           applicationVersion: '1.0.0',
-          applicationIcon: Icon(Icons.book, size: 48),
+          applicationIcon: Icon(Icons.menu_book, size: 48),
           children: [
-            Text('一款支持小说、漫画、视频、音频的多媒体阅读器'),
-            SizedBox(height: 8),
-            Text('nojs.py 引擎版本: 1.0.0'),
+            Text('个人用小说阅读器：多源搜书、书架与离线阅读。'),
           ],
         );
       },
