@@ -42,11 +42,75 @@ class ReaderTextCleaner {
       RegExp(r'<img\b[^>]*/?>', caseSensitive: false),
       imagePlaceholder,
     );
+    text = stripSitePageMarkerLines(text, chapterTitle: chapterTitle);
     if (chapterTitle.trim().isNotEmpty) {
       text = stripLeadingDuplicateChapterTitle(text, chapterTitle);
     }
     return text;
   }
+
+  /// 去掉站点分页角标行，如「第1章 永夜 (第1/3页)」「(第2/3页)」「本章共3页」。
+  ///
+  /// 笔趣阁类站点把一章切成多页，每页页首都带这么一行。剥掉标题前缀只会剩下
+  /// 「(第1/3页)」这种垃圾，所以整行去掉。合并多页正文后这些行会落在正文中间，
+  /// 故不限首行——叙事句不可能整行只是一个页码角标，误伤风险极低。
+  static String stripSitePageMarkerLines(
+    String content, {
+    String chapterTitle = '',
+  }) {
+    if (content.isEmpty || !content.contains(RegExp(r'[/／页]'))) {
+      return content;
+    }
+    final lines = content.split('\n');
+    final kept = <String>[];
+    var removed = 0;
+    for (final line in lines) {
+      if (_isSitePageMarkerLine(line, chapterTitle)) {
+        removed++;
+        continue;
+      }
+      kept.add(line);
+    }
+    if (removed == 0) return content;
+    return kept.join('\n');
+  }
+
+  static bool _isSitePageMarkerLine(String line, String chapterTitle) {
+    final plain = line.replaceAll(RegExp(r'<[^>]+>'), '').trim();
+    if (plain.isEmpty || plain.length > 40) return false;
+    if (_looksLikePageMarker(plain)) return true;
+    // 「标题 + 角标」：只有角标部分是纯页码时才算页头，避免误删正文
+    if (chapterTitle.trim().isEmpty) return false;
+    final titleEnd = _titleAlignEnd(plain, chapterTitle);
+    if (titleEnd == null) return false;
+    return _looksLikePageMarker(plain.substring(titleEnd));
+  }
+
+  /// 判断一段文本是否只是页码角标（去掉外层括号后比对）。
+  static bool _looksLikePageMarker(String input) {
+    var s = _fullWidthAsciiToHalf(input).trim();
+    for (var i = 0; i < 3 && s.length >= 2; i++) {
+      final open = s[0];
+      final close = s[s.length - 1];
+      const pairs = {'(': ')', '[': ']', '【': '】', '（': '）'};
+      if (pairs[open] == close) {
+        s = s.substring(1, s.length - 1).trim();
+      } else {
+        break;
+      }
+    }
+    if (s.isEmpty) return false;
+    // 必须带「页」或斜杠，否则「(1)」这类分部标记也会被吃掉
+    if (!s.contains('页') && !s.contains('/')) return false;
+    return _pageMarkerPatterns.any((re) => re.hasMatch(s));
+  }
+
+  static final List<RegExp> _pageMarkerPatterns = [
+    RegExp(r'^第?\s*\d{1,3}\s*/\s*\d{1,3}\s*页?$'),
+    RegExp(r'^第\s*\d{1,3}\s*页$'),
+    RegExp(r'^(本章)?共\s*\d{1,3}\s*页$'),
+    RegExp(r'^page\s*\d{1,3}\s*(/\s*\d{1,3})?$', caseSensitive: false),
+  ];
 
   /// 若正文开头首行重复了 [chapterTitle]，去掉该重复部分（仅显示用）。
   ///
@@ -176,6 +240,23 @@ class ReaderTextCleaner {
 
   /// 在 [line] 开头柔性对齐 [chapterTitle]，返回应保留的正文起始下标；无法对齐则 null。
   static int? _flexibleTitlePrefixEnd(String line, String chapterTitle) {
+    final aligned = _titleAlignEnd(line, chapterTitle);
+    if (aligned == null) return null;
+    var i = aligned;
+    while (i < line.length && _isIgnorableSeparator(line[i])) {
+      i++;
+    }
+    if (i >= line.length) return null;
+    // 同行去标题：要求标题与正文之间有分隔，或正文首字像新段落起笔（避免「雪地遇袭后的…」误删）
+    if (!_sameLineTitleBodyBoundaryOk(line, i)) return null;
+    return i;
+  }
+
+  /// 在 [line] 开头对齐 [chapterTitle]，返回标题末字之后的下标；对不上则 null。
+  ///
+  /// 与 [_flexibleTitlePrefixEnd] 的区别：不跳过标题后的分隔符、不判定正文边界，
+  /// 供「标题 + 页码角标」这类整行判定复用。
+  static int? _titleAlignEnd(String line, String chapterTitle) {
     for (final titleKey in _titleCompareKeys(chapterTitle)) {
       if (titleKey.isEmpty) continue;
       final lineKey = _normalizeTitleKey(line);
@@ -194,12 +275,6 @@ class ReaderTextCleaner {
         i++;
       }
       if (normBuf.toString() != titleKey) continue;
-      while (i < line.length && _isIgnorableSeparator(line[i])) {
-        i++;
-      }
-      if (i >= line.length) continue;
-      // 同行去标题：要求标题与正文之间有分隔，或正文首字像新段落起笔（避免「雪地遇袭后的…」误删）
-      if (!_sameLineTitleBodyBoundaryOk(line, i)) continue;
       return i;
     }
     return null;

@@ -170,5 +170,99 @@ More prose after the marker.
         expect(out, '正文段');
       });
     });
+
+    // 真机上 m.bingfengzw.net 的《夜无疆》第 1 章正文首行就是
+    // 「第1章 永夜 (第1/3页)」，剥标题前缀只会剩下「(第1/3页)」，所以整行去掉。
+    group('cleanForDisplay 站点分页角标', () {
+      const title = '第1章 永夜';
+
+      test('真机原文：标题 + 括号页码角标整行去掉', () {
+        const raw = '第1章 永夜 (第1/3页)\n那一天太阳落下再也没有升起……';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '那一天太阳落下再也没有升起……');
+      });
+
+      test('标题与角标之间没有空格也去掉', () {
+        const raw = '第1章 永夜(第1/3页)\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '正文');
+      });
+
+      test('全角括号与全角斜杠也去掉', () {
+        const raw = '第1章 永夜（第１／３页）\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '正文');
+      });
+
+      test('裸角标行去掉：合并多页后会落在正文中间', () {
+        const raw = '上页末句。\n(第2/3页)\n下页首句。';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '上页末句。\n下页首句。');
+      });
+
+      test('多页合并后每页页头都去掉', () {
+        const raw = '第1章 永夜 (第1/3页)\n甲\n第1章 永夜 (第2/3页)\n乙\n'
+            '第1章 永夜 (第3/3页)\n丙';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '甲\n乙\n丙');
+      });
+
+      test('本章共N页 / 第N页 也算角标', () {
+        const raw = '本章共3页\n第2页\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, '正文');
+      });
+
+      test('没有标题参数时裸角标行也能去掉', () {
+        const raw = '(第1/3页)\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(raw);
+        expect(out, '正文');
+      });
+
+      test('不误删：正文里正常出现的页数说法', () {
+        const raw = '他翻到第3页，看见一行小字。\n那本书共300页，厚得像砖。';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, raw);
+      });
+
+      test('不误删：括号里不是页码的角标', () {
+        const raw = '第1章 永夜 (上)\n正文';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, raw);
+      });
+
+      test('不误删：分数式比分不带页字也不算角标', () {
+        const raw = '比分是 2/3，他并不甘心。\n下一段';
+        final out = ReaderTextCleaner.cleanForDisplay(
+          raw,
+          chapterTitle: title,
+        );
+        expect(out, raw);
+      });
+    });
   });
 }
