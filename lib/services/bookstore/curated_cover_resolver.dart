@@ -84,6 +84,7 @@ class CuratedCoverResolver {
   int _consecutiveFailures = 0;
   bool _circuitOpen = false;
   int _pauseDepth = 0;
+  int? _lastSourceSignature;
 
   /// 暂停期间不启动新 job。
   bool get isPaused => _pauseDepth > 0;
@@ -190,6 +191,17 @@ class CuratedCoverResolver {
     required List<BookSource> sources,
     void Function(String bookId, String coverUrl)? onResolved,
   }) {
+    // 书源池一变（导入了一批、或启用/停用了几个）就自动开闸：熔断的结论是「这批
+    // 源不给封面」，换了一批源它就不再成立，否则用户导入新源后本次会话里封面永远
+    // 不会再出现。放在这里而不是让导入页去调，是因为入口有好几个（网络导入、文件
+    // 导入、订阅刷新、逐个启用），每个都记得调一次不现实。
+    final signature = _sourcePoolSignature(sources);
+    if (signature != _lastSourceSignature) {
+      _lastSourceSignature = signature;
+      if (_circuitOpen || _startedJobs >= maxBooksPerSession) {
+        resetCircuit();
+      }
+    }
     for (final book in books) {
       enqueue(
         book: book,
@@ -203,6 +215,16 @@ class CuratedCoverResolver {
 
   static String cacheKey(String name, String author) =>
       SearchTextNormalizer.dedupeKey(name, author);
+
+  /// 只认「可搜索的源有没有变」，不逐个比 URL：书源列表有几百条，这个方法每批
+  /// 可见书都会走一次。计数变化足以覆盖导入与启用/停用，等量替换会漏判但无害。
+  static int _sourcePoolSignature(List<BookSource> sources) {
+    var usable = 0;
+    for (final s in sources) {
+      if (s.enabled && (s.searchUrl?.trim().isNotEmpty ?? false)) usable++;
+    }
+    return Object.hash(sources.length, usable);
+  }
 
   List<BookSource> _pickSources(List<BookSource> sources) {
     final enabled = sources

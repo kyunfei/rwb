@@ -198,7 +198,12 @@ class _DiscoveryPageState extends State<DiscoveryPage>
       ),
     );
     if (retry == true && mounted) {
-      await _onCuratedBookTap(book);
+      // 不能在这里直接调：本对话框是在 _onCuratedBookTap 的 try 里被 await 的，
+      // 此刻 _openingBook 还是 true，重试会被入口那句「正在打开就返回」静默吞掉。
+      // 推到下一帧，等 finally 复位完再发起。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_onCuratedBookTap(book));
+      });
     }
   }
 

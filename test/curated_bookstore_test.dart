@@ -585,6 +585,66 @@ void main() {
       expect(calls, hasLength(3), reason: '熔断后新入队被拒绝');
     });
 
+    test('导入/启用新书源后自动开闸：熔断不该锁死整个会话', () async {
+      final calls = <String>[];
+      final resolver = coverlessResolver(
+        calls: calls,
+        failureCircuitThreshold: 2,
+      );
+
+      resolver.prefetchVisible(
+        [book(0), book(1), book(2), book(3)],
+        sources: [src('http://a')],
+      );
+      await drain();
+      expect(resolver.isCircuitOpen, isTrue);
+      final burned = calls.length;
+
+      // 同一批源再来一次：仍然熔断，不许自己悄悄复活。
+      resolver.prefetchVisible([book(4)], sources: [src('http://a')]);
+      await drain();
+      expect(calls, hasLength(burned), reason: '源池没变就不该开闸');
+      expect(resolver.isCircuitOpen, isTrue);
+
+      // 多了一个源 → 上一批源不给封面的结论失效，开闸重试。
+      resolver.prefetchVisible(
+        [book(5)],
+        sources: [src('http://a'), src('http://b')],
+      );
+      await drain();
+      expect(
+        calls.length,
+        greaterThan(burned),
+        reason: '导入新源后应重新开始解析封面',
+      );
+    });
+
+    test('会话配额烧光后换一批源也能重来', () async {
+      final calls = <String>[];
+      final resolver = coverlessResolver(
+        calls: calls,
+        maxBooksPerSession: 2,
+      );
+
+      resolver.prefetchVisible(
+        [book(0), book(1), book(2), book(3)],
+        sources: [src('http://a')],
+      );
+      await drain();
+      expect(calls, hasLength(2), reason: '会话配额只允许 2 本');
+
+      resolver.prefetchVisible([book(4)], sources: [src('http://a')]);
+      await drain();
+      expect(calls, hasLength(2), reason: '源池没变，配额不恢复');
+
+      resolver.prefetchVisible(
+        [book(5)],
+        sources: [src('http://a'), src('http://b')],
+      );
+      await drain();
+      expect(calls, hasLength(3), reason: '源池变了，配额重置');
+    });
+
     test('拿到封面会清零连续失败计数，不会被零星失败熔断', () async {
       final calls = <String>[];
       final resolver = CuratedCoverResolver(
