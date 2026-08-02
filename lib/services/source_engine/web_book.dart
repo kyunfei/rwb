@@ -13,6 +13,7 @@ import '../source_request_failure.dart';
 import 'analyze_rule.dart';
 import 'analyze_url.dart' as legado_url;
 import 'charset_utils.dart';
+import 'http_redirect.dart';
 import 'web_proxy.dart';
 import '../native/js_advanced_service.dart';
 import '../native/js_engine.dart';
@@ -144,9 +145,10 @@ class HttpClient {
     sendTimeout: const Duration(seconds: 30),
     // 接受所有状态码，不抛异常（书源网站可能返回 301/302/403/503 等）
     validateStatus: (status) => status != null && status < 600,
-    // 跟随重定向
-    followRedirects: true,
-    maxRedirects: 5,
+    // 关闭 dart:io 自动跟随：它对 POST 的 301/302 本就不跟，GET 的跟随
+    // 也与 OkHttp 语义不完全一致。统一在 execute 内按 http_redirect 策略手写跟随。
+    followRedirects: false,
+    maxRedirects: 0,
     // 响应类型默认 plain
     responseType: ResponseType.plain,
   ));
@@ -207,33 +209,18 @@ class HttpClient {
         // 降级方案：使用 Dio
         // 一律取原始字节自行解码。若交给 Dio 按 plain 处理，它只会按 UTF-8 解，
         // 未在书源里声明 charset 的 GBK 站点会整篇乱码。
-        final options = Options(
+        //
+        // 重定向：dart:io HttpClient 只对 GET/HEAD 自动跟随；POST+301 会被当成
+        // 最终响应，书源搜索因此批量失败。这里按 OkHttp 语义手写跟随，最终响应
+        // 仍走同一条 charset 解码链。
+        return await _executeWithRedirects(
+          url: url,
           method: method,
           headers: headers,
-          responseType: ResponseType.bytes,
-          receiveTimeout: readTimeout,
-          sendTimeout: connectTimeout,
-        );
-
-        final response = await _dio.request<List<int>>(
-          url,
-          data: body,
-          options: options,
-        );
-        final rawBytes = Uint8List.fromList(response.data ?? <int>[]);
-        final headerMap = response.headers.map.map(
-          (key, value) => MapEntry(key, value.first),
-        );
-
-        return StrResponse(
-          url: response.realUri.toString(),
-          body: CharsetUtils.decodeResponse(
-            rawBytes,
-            _resolveCharset(charset, headerMap, rawBytes),
-          ),
-          statusCode: response.statusCode ?? 200,
-          headers: headerMap,
-          raw: response,
+          body: body,
+          charset: charset,
+          connectTimeout: connectTimeout,
+          readTimeout: readTimeout,
         );
       } on DioException catch (e) {
         // 判断是否为可重试的瞬时网络错误
@@ -298,6 +285,172 @@ class HttpClient {
 
     // 理论上不会走到这里（循环内所有路径都有 return），但编译器需要兜底
     return StrResponse(url: url, body: '', statusCode: 0, headers: {});
+  }
+
+  /// 按 [http_redirect] 策略手写跟随 3xx，最终响应仍走字节解码链。
+  Future<StrResponse> _executeWithRedirects({
+    required String url,
+    required String method,
+    Map<String, String>? headers,
+    String? body,
+    String? charset,
+    Duration? connectTimeout,
+    Duration? readTimeout,
+  }) async {
+    var currentUrl = url;
+    var currentMethod = method.toUpperCase();
+    var currentBody = body;
+    var currentHeaders = Map<String, String>.from(headers ?? {});
+    final visited = <String>{};
+
+    for (var hop = 0; hop <= kMaxRedirects; hop++) {
+      if (!visited.add(currentUrl)) {
+        return StrResponse(
+          url: currentUrl,
+          body: '',
+          statusCode: 301,
+          headers: const {},
+          error: SourceRequestException(
+            kind: SourceRequestErrorKind.httpStatus,
+            statusCode: 301,
+            userMessage: redirectLimitUserMessage(
+              maxRedirects: kMaxRedirects,
+              isLoop: true,
+            ),
+          ),
+        );
+      }
+
+      final options = Options(
+        method: currentMethod,
+        headers: currentHeaders,
+        responseType: ResponseType.bytes,
+        followRedirects: false,
+        receiveTimeout: readTimeout,
+        sendTimeout: connectTimeout,
+      );
+
+      final response = await _dio.request<List<int>>(
+        currentUrl,
+        data: currentBody,
+        options: options,
+      );
+      final status = response.statusCode ?? 0;
+      final headerMap = response.headers.map.map(
+        (key, value) => MapEntry(key, value.first),
+      );
+
+      if (!isRedirectStatus(status)) {
+        final rawBytes = Uint8List.fromList(response.data ?? <int>[]);
+        return StrResponse(
+          url: response.realUri.toString(),
+          body: CharsetUtils.decodeResponse(
+            rawBytes,
+            _resolveCharset(charset, headerMap, rawBytes),
+          ),
+          statusCode: status == 0 ? 200 : status,
+          headers: headerMap,
+          raw: response,
+        );
+      }
+
+      final location = response.headers.value('location') ??
+          headerMap.entries
+              .firstWhere(
+                (e) => e.key.toLowerCase() == 'location',
+                orElse: () => const MapEntry('', ''),
+              )
+              .value;
+      if (location.isEmpty) {
+        // 3xx 但没有 Location：当作最终响应交给上层（仍走解码链）
+        final rawBytes = Uint8List.fromList(response.data ?? <int>[]);
+        return StrResponse(
+          url: response.realUri.toString(),
+          body: CharsetUtils.decodeResponse(
+            rawBytes,
+            _resolveCharset(charset, headerMap, rawBytes),
+          ),
+          statusCode: status,
+          headers: headerMap,
+          raw: response,
+        );
+      }
+
+      if (hop >= kMaxRedirects) {
+        return StrResponse(
+          url: currentUrl,
+          body: '',
+          statusCode: status,
+          headers: headerMap,
+          raw: response,
+          error: SourceRequestException(
+            kind: SourceRequestErrorKind.httpStatus,
+            statusCode: status,
+            userMessage: redirectLimitUserMessage(
+              maxRedirects: kMaxRedirects,
+              isLoop: false,
+            ),
+          ),
+        );
+      }
+
+      final nextUrl = resolveRedirectLocation(currentUrl, location);
+      if (nextUrl.isEmpty) {
+        final rawBytes = Uint8List.fromList(response.data ?? <int>[]);
+        return StrResponse(
+          url: response.realUri.toString(),
+          body: CharsetUtils.decodeResponse(
+            rawBytes,
+            _resolveCharset(charset, headerMap, rawBytes),
+          ),
+          statusCode: status,
+          headers: headerMap,
+          raw: response,
+        );
+      }
+
+      if (visited.contains(nextUrl)) {
+        return StrResponse(
+          url: currentUrl,
+          body: '',
+          statusCode: status,
+          headers: headerMap,
+          raw: response,
+          error: SourceRequestException(
+            kind: SourceRequestErrorKind.httpStatus,
+            statusCode: status,
+            userMessage: redirectLimitUserMessage(
+              maxRedirects: kMaxRedirects,
+              isLoop: true,
+            ),
+          ),
+        );
+      }
+
+      currentHeaders =
+          stripCredentialsOnCrossHost(currentHeaders, currentUrl, nextUrl);
+      if (shouldSwitchToGet(status)) {
+        currentMethod = 'GET';
+        currentBody = null;
+        currentHeaders = stripEntityHeaders(currentHeaders);
+      }
+      currentUrl = nextUrl;
+    }
+
+    return StrResponse(
+      url: currentUrl,
+      body: '',
+      statusCode: 301,
+      headers: const {},
+      error: SourceRequestException(
+        kind: SourceRequestErrorKind.httpStatus,
+        statusCode: 301,
+        userMessage: redirectLimitUserMessage(
+          maxRedirects: kMaxRedirects,
+          isLoop: false,
+        ),
+      ),
+    );
   }
 
   /// 解析响应实际编码，优先级：书源声明 > Content-Type 头 > HTML meta 嗅探 > UTF-8
@@ -811,11 +964,16 @@ class WebBook {
             '<!-- URL: ${parsed.url} -->\n'
             '<!-- 状态码: ${response.statusCode} -->\n'
             '<!-- 书源: ${source.bookSourceName} -->';
+        final redirectErr = response.error;
+        final message = redirectErr is SourceRequestException
+            ? redirectErr.userMessage
+            : '站点返回 HTTP ${response.statusCode}';
         throw BookSearchException(
           kind: BookSearchFailureKind.siteError,
-          message: '站点返回 HTTP ${response.statusCode}',
+          message: message,
           sourceName: source.bookSourceName,
           statusCode: response.statusCode,
+          cause: redirectErr,
         );
       }
 
@@ -1040,6 +1198,8 @@ class WebBook {
       if (!response.isSuccessful) {
         AppLogger.instance.error(LogCategory.network, '发现站点报错',
             detail: 'URL: ${parsed.url}\n状态码: ${response.statusCode}');
+        final redirectErr = response.error;
+        if (redirectErr is SourceRequestException) throw redirectErr;
         throw SourceRequestException.httpStatus(response.statusCode);
       }
 
@@ -1244,6 +1404,8 @@ class WebBook {
       }
 
       if (!response.isSuccessful) {
+        final redirectErr = response.error;
+        if (redirectErr is SourceRequestException) throw redirectErr;
         throw SourceRequestException.httpStatus(response.statusCode);
       }
 
