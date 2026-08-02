@@ -196,11 +196,15 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
   Future<void> _showResultAndPop(BookSourceImportResult result) async {
     if (!mounted) return;
     final total = result.added + result.updated + result.unchanged;
+    final convertedHint = result.myBookshelf2Converted > 0
+        ? '识别为 阅读2.0 格式并已转换 ${result.myBookshelf2Converted} 个\n'
+        : '';
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('导入成功'),
         content: Text(
+          '$convertedHint'
           '共处理 $total 条书源\n'
           '新增 ${result.added} 条\n'
           '更新 ${result.updated} 条\n'
@@ -319,6 +323,7 @@ class _BookSourceImportPageState extends State<BookSourceImportPage>
                   const SizedBox(height: DesignTokens.spacingSm),
                   const Text(
                     '• 支持格式：Legado 书源 JSON（单个对象，或书源数组）\n'
+                    '• 兼容「阅读 2.0 / MyBookshelf 2.x」扁平书源，导入时自动转换\n'
                     '• 链接打开后应直接是 JSON 文本，而不是网页/登录页\n'
                     '• 也支持 {"sourceUrls":["链接1","链接2"]} 订阅格式\n'
                     '• 导入成功会提示：新增几条、更新几条、跳过几条\n'

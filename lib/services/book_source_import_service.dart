@@ -9,6 +9,7 @@ import '../models/rules/search_rule.dart';
 import '../models/rules/explore_rule.dart';
 import '../models/rules/toc_rule.dart';
 import '../models/rules/content_rule.dart';
+import 'mybookshelf_source_adapter.dart';
 import 'source_import_failure.dart';
 import 'storage_service.dart';
 
@@ -21,11 +22,15 @@ class BookSourceImportResult {
   final int updated;
   final int unchanged;
 
+  /// 本次导入中识别为「阅读 2.0 / MyBookshelf 2.x」并已转换为 Legado 3.x 的条数。
+  final int myBookshelf2Converted;
+
   const BookSourceImportResult({
     required this.sources,
     required this.added,
     required this.updated,
     required this.unchanged,
+    this.myBookshelf2Converted = 0,
   });
 }
 
@@ -40,7 +45,8 @@ class BookSourceImportService {
         _fetchText = fetchText ?? _defaultFetchText;
 
   Future<BookSourceImportResult> importText(String text) async {
-    final sources = await parseText(text);
+    final parsed = await _parseImport(text);
+    final sources = parsed.sources;
     if (sources.isEmpty) {
       throw SourceImportException.emptySources();
     }
@@ -64,6 +70,7 @@ class BookSourceImportService {
       added: added,
       updated: updated,
       unchanged: unchanged,
+      myBookshelf2Converted: parsed.myBookshelf2Converted,
     );
   }
 
@@ -225,8 +232,18 @@ class BookSourceImportService {
 
   Future<List<BookSource>> parseText(String text,
       {Set<String>? visitedUrls}) async {
+    final parsed = await _parseImport(text, visitedUrls: visitedUrls);
+    return parsed.sources;
+  }
+
+  Future<({List<BookSource> sources, int myBookshelf2Converted})> _parseImport(
+    String text, {
+    Set<String>? visitedUrls,
+  }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return [];
+    if (trimmed.isEmpty) {
+      return (sources: <BookSource>[], myBookshelf2Converted: 0);
+    }
     if (_isHttpUrl(trimmed)) {
       return _parseUrl(trimmed, visitedUrls ?? <String>{});
     }
@@ -243,28 +260,38 @@ class BookSourceImportService {
       throw SourceImportException.notJson(snippet: trimmed);
     }
 
-    return _parseDecoded(decoded, visitedUrls ?? <String>{});
+    final adapted = adaptMyBookshelfPayload(decoded);
+    final nested =
+        await _parseDecoded(adapted.data, visitedUrls ?? <String>{});
+    return (
+      sources: nested.sources,
+      myBookshelf2Converted:
+          adapted.convertedCount + nested.myBookshelf2Converted,
+    );
   }
 
-  Future<List<BookSource>> _parseUrl(
+  Future<({List<BookSource> sources, int myBookshelf2Converted})> _parseUrl(
       String rawUrl, Set<String> visitedUrls) async {
     final withoutUserAgent = rawUrl.endsWith('#requestWithoutUA');
     final url = withoutUserAgent
         ? rawUrl.substring(0, rawUrl.length - '#requestWithoutUA'.length)
         : rawUrl;
-    if (!visitedUrls.add(url)) return [];
+    if (!visitedUrls.add(url)) {
+      return (sources: <BookSource>[], myBookshelf2Converted: 0);
+    }
     final text = await _fetchText(url, withoutUserAgent);
     if (text.trim().isEmpty) {
       throw SourceImportException.emptySources();
     }
-    return parseText(text, visitedUrls: visitedUrls);
+    return _parseImport(text, visitedUrls: visitedUrls);
   }
 
-  Future<List<BookSource>> _parseDecoded(
+  Future<({List<BookSource> sources, int myBookshelf2Converted})> _parseDecoded(
       dynamic decoded, Set<String> visitedUrls) async {
     if (decoded is List) {
       final result = <BookSource>[];
       var skippedInvalid = 0;
+      var converted = 0;
       for (final item in decoded) {
         if (item is Map) {
           try {
@@ -274,7 +301,9 @@ class BookSourceImportService {
             debugPrint('跳过无效书源条目: ${e.userMessage}');
           }
         } else if (item is String && _isHttpUrl(item)) {
-          result.addAll(await _parseUrl(item, visitedUrls));
+          final nested = await _parseUrl(item, visitedUrls);
+          result.addAll(nested.sources);
+          converted += nested.myBookshelf2Converted;
         }
       }
       if (result.isEmpty && skippedInvalid > 0) {
@@ -282,19 +311,31 @@ class BookSourceImportService {
           '数组内 $skippedInvalid 条均缺少 bookSourceUrl 或 bookSourceName',
         );
       }
-      return _deduplicate(result);
+      return (
+        sources: _deduplicate(result),
+        myBookshelf2Converted: converted,
+      );
     }
 
     if (decoded is Map) {
       final sourceUrls = decoded['sourceUrls'];
       if (sourceUrls is List) {
         final result = <BookSource>[];
+        var converted = 0;
         for (final url in sourceUrls.whereType<String>()) {
-          result.addAll(await _parseUrl(url, visitedUrls));
+          final nested = await _parseUrl(url, visitedUrls);
+          result.addAll(nested.sources);
+          converted += nested.myBookshelf2Converted;
         }
-        return _deduplicate(result);
+        return (
+          sources: _deduplicate(result),
+          myBookshelf2Converted: converted,
+        );
       }
-      return [_sourceFromMap(decoded)];
+      return (
+        sources: [_sourceFromMap(decoded)],
+        myBookshelf2Converted: 0,
+      );
     }
     throw SourceImportException.invalidStructure('书源必须是 JSON 对象、数组或网络地址');
   }
