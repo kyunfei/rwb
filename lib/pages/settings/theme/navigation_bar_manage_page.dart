@@ -39,7 +39,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
         name: '默认',
         isNight: false,
         isBuiltin: true,
-        layoutMode: 'floating',
+        layoutMode: 'standard',
         effectMode: 'glass',
         opacity: 72,
       ));
@@ -49,7 +49,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
         name: '默认',
         isNight: true,
         isBuiltin: true,
-        layoutMode: 'floating',
+        layoutMode: 'standard',
         effectMode: 'glass',
         opacity: 72,
       ));
@@ -469,7 +469,7 @@ class _NavigationBarManagePageState extends State<NavigationBarManagePage> {
       name: _getNextConfigName(),
       isNight: _isNightMode,
       isBuiltin: false,
-      layoutMode: 'floating',
+      layoutMode: 'standard',
       effectMode: 'glass',
       opacity: 100,
     );

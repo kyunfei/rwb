@@ -19,7 +19,7 @@ class NavigationBarConfig {
     required this.name,
     required this.isNight,
     this.isBuiltin = false,
-    this.layoutMode = 'floating',
+    this.layoutMode = 'standard',
     this.effectMode = 'glass',
     this.opacity = 72,
     this.borderColor,

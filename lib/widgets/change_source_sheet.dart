@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/book_source.dart';
+import '../../services/change_source_match.dart';
 import '../../services/source_engine/web_book.dart';
 import '../../services/storage_service.dart';
 
@@ -66,14 +67,15 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
     });
 
     try {
-      // 获取所有启用的书源
       final sourcesData = StorageService.instance.getAllBookSources();
       final sources = <BookSource>[];
-      
+
       for (final data in sourcesData) {
         try {
           final source = BookSource.fromJson(data);
-          if (source.enabled && source.searchUrl != null && source.searchUrl!.isNotEmpty) {
+          if (source.enabled &&
+              source.searchUrl != null &&
+              source.searchUrl!.isNotEmpty) {
             sources.add(source);
           }
         } catch (e) {
@@ -89,28 +91,25 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
         return;
       }
 
-      // 使用书名+作者搜索
-      final keyword = '${widget.bookName} ${widget.bookAuthor}'.trim();
-      
-      // 并发搜索所有书源
+      // 只用书名搜；作者留给本地过滤，避免站点把「书名 作者」当成杂搜
+      final keyword = ChangeSourceMatch.searchKeyword(widget.bookName);
       final futures = <Future<void>>[];
-      final results = <Map<String, dynamic>>[];
-      
+      final hits = <Map<String, dynamic>>[];
+
       for (final source in sources) {
         futures.add(() async {
           try {
-            final searchResult = await WebBook(source).searchBook(keyword)
+            final searchResult = await WebBook(source)
+                .searchBook(keyword)
                 .timeout(const Duration(seconds: 15));
-            
+
             for (final book in searchResult) {
-              // 检查是否匹配（书名相似）
-              final bookName = (book['name'] as String?)?.trim() ?? '';
-              if (_isNameMatch(widget.bookName, bookName)) {
-                book['sourceUrl'] = source.bookSourceUrl;
-                book['sourceName'] = source.bookSourceName;
-                book['searchTime'] = DateTime.now().millisecondsSinceEpoch;
-                results.add(book);
-              }
+              // 拷一份再写元数据，避免改到引擎内部缓存对象
+              final row = Map<String, dynamic>.from(book);
+              row['sourceUrl'] = source.bookSourceUrl;
+              row['sourceName'] = source.bookSourceName;
+              row['searchTime'] = DateTime.now().millisecondsSinceEpoch;
+              hits.add(row);
             }
           } catch (e) {
             debugPrint('搜索书源 ${source.bookSourceName} 失败: $e');
@@ -120,20 +119,17 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
 
       await Future.wait(futures);
 
-      // 按书源名排序，当前书源排第一
-      results.sort((a, b) {
-        final aUrl = a['sourceUrl'] as String?;
-        final bUrl = b['sourceUrl'] as String?;
-        
-        if (aUrl == widget.currentSourceUrl) return -1;
-        if (bUrl == widget.currentSourceUrl) return 1;
-        
-        return (a['sourceName'] as String? ?? '').compareTo(b['sourceName'] as String? ?? '');
-      });
+      final results = ChangeSourceMatch.selectSourceEntries(
+        targetName: widget.bookName,
+        targetAuthor: widget.bookAuthor,
+        hits: hits,
+        currentSourceUrl: widget.currentSourceUrl,
+      );
 
       setState(() {
-        _searchResults.clear();
-        _searchResults.addAll(results);
+        _searchResults
+          ..clear()
+          ..addAll(results);
         _isLoading = false;
       });
     } catch (e) {
@@ -142,31 +138,6 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
         _error = '搜索失败: $e';
       });
     }
-  }
-
-  bool _isNameMatch(String name1, String name2) {
-    // 简单的名称匹配检查
-    final n1 = name1.toLowerCase().replaceAll(RegExp(r'\s+'), '');
-    final n2 = name2.toLowerCase().replaceAll(RegExp(r'\s+'), '');
-    
-    // 完全匹配
-    if (n1 == n2) return true;
-    
-    // 包含关系
-    if (n1.contains(n2) || n2.contains(n1)) return true;
-    
-    // 相似度检查（至少80%相似）
-    if (n1.isNotEmpty && n2.isNotEmpty) {
-      final longer = n1.length > n2.length ? n1 : n2;
-      final shorter = n1.length > n2.length ? n2 : n1;
-      int matchCount = 0;
-      for (int i = 0; i < shorter.length; i++) {
-        if (longer.contains(shorter[i])) matchCount++;
-      }
-      if (matchCount / shorter.length > 0.8) return true;
-    }
-    
-    return false;
   }
 
   @override
@@ -269,8 +240,6 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
         final result = _searchResults[index];
         final sourceUrl = result['sourceUrl'] as String?;
         final sourceName = result['sourceName'] as String? ?? '未知';
-        final bookName = result['name'] as String? ?? '';
-        final author = result['author'] as String? ?? '';
         final lastChapter = result['lastChapter'] as String? ?? '';
         final isCurrentSource = sourceUrl == widget.currentSourceUrl;
 
@@ -285,15 +254,20 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
                 child: Text(
                   sourceName,
                   style: TextStyle(
-                    fontWeight: isCurrentSource ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isCurrentSource ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ),
               if (isCurrentSource)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -306,17 +280,9 @@ class _ChangeSourceSheetState extends State<ChangeSourceSheet> {
                 ),
             ],
           ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (bookName.isNotEmpty && bookName != widget.bookName)
-                Text('书名: $bookName', style: const TextStyle(fontSize: 12)),
-              if (author.isNotEmpty && author != widget.bookAuthor)
-                Text('作者: $author', style: const TextStyle(fontSize: 12)),
-              if (lastChapter.isNotEmpty)
-                Text('最新: $lastChapter', style: const TextStyle(fontSize: 12)),
-            ],
-          ),
+          subtitle: lastChapter.isEmpty
+              ? null
+              : Text('最新: $lastChapter', style: const TextStyle(fontSize: 12)),
           trailing: isCurrentSource
               ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
               : null,

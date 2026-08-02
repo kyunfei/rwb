@@ -72,7 +72,9 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
   String? _nightTitleFontFamily;
 
   // 底栏配置
-  String _navBarLayoutMode = 'floating'; // floating, standard, sidebar
+  // 默认贴底标准栏（简中文字 + 颜色区分）。旧版默认是圆形悬浮胶囊，
+  // 加载时若仍是 floating 会一次性迁到 standard。
+  String _navBarLayoutMode = 'standard'; // floating, standard, sidebar
   String _navBarEffectMode = 'glass'; // solid, glass, frosted
   int _navBarOpacity = 72;
   int? _navBarBorderColor;
@@ -438,7 +440,20 @@ class AppProvider extends ChangeNotifier with WidgetsBindingObserver {
     _nightTitleFontFamily = await _loadFont(_nightTitleFontPath, 'night_title');
 
     // 加载底栏配置
-    _navBarLayoutMode = prefs.getString('navBarLayoutMode') ?? 'floating';
+    final storedLayout = prefs.getString('navBarLayoutMode');
+    final migrated = prefs.getBool('navBarLayoutMigratedToStandard') ?? false;
+    if (!migrated && (storedLayout == null || storedLayout == 'floating')) {
+      // 旧默认是圆形悬浮胶囊（仅图标）。一次性迁到贴底标准栏；
+      // 之后用户若在设置里改回悬浮，不再自动覆盖。
+      _navBarLayoutMode = 'standard';
+      await prefs.setString('navBarLayoutMode', 'standard');
+      await prefs.setBool('navBarLayoutMigratedToStandard', true);
+    } else {
+      _navBarLayoutMode = storedLayout ?? 'standard';
+      if (!migrated) {
+        await prefs.setBool('navBarLayoutMigratedToStandard', true);
+      }
+    }
     _navBarEffectMode = prefs.getString('navBarEffectMode') ?? 'glass';
     _navBarOpacity = prefs.getInt('navBarOpacity') ?? 72;
     final borderColorValue = prefs.getInt('navBarBorderColor');

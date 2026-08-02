@@ -97,21 +97,16 @@ class ReaderHtmlTemplate {
         ? '$css\n$epubFallbackCss\n/* === EPUB 自带 CSS === */\n$epubCss'
         : (isRichHtml ? '$css\n$epubFallbackCss' : css);
 
-    // 滚动模式：初始章节标题放进 #reader-content-a 内部第一个位置
-    // - prependChapter 才能正确插入到初始标题之前，避免顶部出现两个标题
-    //   （否则初始标题在 #reader-root 顶部「悬浮」，prepend 的新章节标题在
-    //    #reader-content-a 内，滚到顶部时两个标题同时可见）
-    // - initChapterObserver 用 contentA.querySelectorAll 查找标题，放进去后
-    //   初始章节标题才能被 IntersectionObserver 注册，滚动时正确触发
-    //   onChapterVisible 回调
-    // 分页模式：保持原结构（标题在 #reader-root 顶部，#reader-stage 外），
-    //   因为 #reader-content-a 是 absolute 定位的 column 容器，标题放进去
-    //   会被当成 column 内容影响分页计算
+    // 章节标题一律放进正文流（#reader-content-* 内），不要挂在 #reader-stage 外：
+    // - 滚动：prependChapter / IntersectionObserver 依赖内容区内的标题
+    // - 分页：标题参与 column 分页，只占每章第 1 页顶部；第 2 页起顶部不再重复
+    //   （底部 Flutter 页脚仍会显示章节名）。以前 stage 外常驻标题会导致每页顶栏都有
+    //   大号章节名。
     // EPUB 模式：titleHtml 为空（不显示应用标题），paragraphsHtml 已含
     //   data-chapter-index wrapper，章节监测不受影响
-    final contentAInner =
-        isScrollMode ? '$titleHtml\n        $paragraphsHtml' : paragraphsHtml;
-    final rootTitle = isScrollMode ? '' : titleHtml;
+    final contentInner = titleHtml.isEmpty
+        ? paragraphsHtml
+        : '$titleHtml\n        $paragraphsHtml';
 
     return '''
 <!DOCTYPE html>
@@ -126,13 +121,12 @@ class ReaderHtmlTemplate {
 </head>
 <body>
   <div id="reader-root">
-    $rootTitle
     <div id="reader-stage">
       <div id="reader-content-a" class="reader-content">
-        $contentAInner
+        $contentInner
       </div>
       <div id="reader-content-b" class="reader-content">
-        $paragraphsHtml
+        $contentInner
       </div>
     </div>
   </div>
@@ -462,10 +456,9 @@ ${generateHighlightCss(provider)}
 }
 
 /* ============ 分页模式 ============ */
-/* #reader-root 是 flex 纵向容器：标题占自然高度，#reader-stage flex:1
-   撑满剩余空间。#reader-stage 是 a/b 的定位容器（position:relative +
-   overflow:hidden）。这样标题和正文不会重叠（之前 a/b absolute top:0
-   会覆盖标题）。 */
+/* 章节标题已在正文流内（只占第 1 页），#reader-root / #reader-stage
+   都撑满安全区。#reader-stage 是 a/b 的定位容器（position:relative +
+   overflow:hidden）。 */
 body.reader-paged {
   position: relative;
   overflow: hidden;
@@ -473,8 +466,6 @@ body.reader-paged {
 
 body.reader-paged #reader-root {
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: var(--reader-safe-width);
   height: var(--reader-safe-height);
   overflow: hidden;
@@ -482,12 +473,8 @@ body.reader-paged #reader-root {
 
 body.reader-paged #reader-stage {
   position: relative;
-  /* flex:1 让 stage 占满 #reader-root 内 .reader-title 之外的剩余高度。
-     不设 height:100%，避免与 flex:1 冲突（两者都试图设高度，flex 容器内
-     height:100% 行为不一致，部分 WebView 上会导致 stage 高度计算错误） */
-  flex: 1 1 0;
   width: 100%;
-  min-height: 0; /* flex 子项默认 min-height:auto 会阻止收缩，导致溢出 */
+  height: 100%;
   overflow: hidden;
   /* perspective：让子元素 .reader-content 的 rotateY 有立体感（C3 修复）
      - 仅 simulation 模式生效，slide/cover 的 transform 是 2D 平移不受影响
