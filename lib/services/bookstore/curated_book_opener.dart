@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../models/book.dart';
 import '../../models/book_source.dart';
 import '../../models/curated_bookstore.dart';
@@ -88,22 +90,39 @@ class CuratedBookOpener {
       initialSources: scoped,
     );
 
+    // 点书是最容易「点了没反应」的交互，出问题时必须能从日志看出时间花在哪一段，
+    // 否则只能靠截图猜。三条日志分别对应：提前收敛 / 预算到期 / 全部源跑完。
+    final clock = Stopwatch()..start();
+    void mark(String what) => debugPrint(
+          '⏱️ 点书[${book.name}] $what @${clock.elapsedMilliseconds}ms '
+          '结果=${provider.searchResults.length}',
+        );
+
     final gate = Completer<void>();
+    // stopSearch() 内部会 notifyListeners()，而 notifyListeners 是同步派发的：
+    // 它会立刻重入下面的 onChanged。若此时 gate 还没落定，onChanged 又会去调
+    // stopSearch —— 真机实测这样递归了两千多层、白烧掉 21 秒，8 秒预算触发后
+    // 整个回调都陷在递归里，点书要等 29 秒才出详情页。
+    // 所以任何 stopSearch 之前必须先把 gate 落定，让重入在第一行就返回。
+    var concluded = false;
     void conclude() {
+      concluded = true;
       if (!gate.isCompleted) {
         gate.complete();
       }
     }
 
     void onChanged() {
+      if (concluded) return;
       if (canStopCuratedOpenSearch(
         curatedName: book.name,
         curatedAuthor: book.author,
         results: provider.searchResults,
       )) {
+        mark('提前收敛');
+        conclude();
         // stopSearch 递增 generation：进行中的 worker 返回后丢弃写入，未启动的源不再开跑。
         provider.stopSearch();
-        conclude();
       }
     }
 
@@ -117,16 +136,21 @@ class CuratedBookOpener {
       searchError = e;
     });
     final budgetTimer = Timer(timeBudget, () {
-      provider.stopSearch();
+      mark('预算到期');
       conclude();
+      provider.stopSearch();
     });
 
     try {
       await Future.any<void>([
-        searchSettled.whenComplete(conclude),
+        searchSettled.whenComplete(() {
+          mark('全部源跑完');
+          conclude();
+        }),
         gate.future,
       ]);
     } finally {
+      mark('open 返回');
       budgetTimer.cancel();
       provider.removeListener(onChanged);
       if (provider.isLoading) {

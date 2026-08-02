@@ -922,6 +922,13 @@ class WebBook {
       );
     }
 
+    // 分段计时：多源搜索里只要有一个源的解析长时间不让出事件循环，整个 isolate
+    // 的定时器都会被饿死（点书的搜索预算就是这么失效的）。出问题时必须能一眼看出
+    // 是哪个源、卡在网络还是卡在解析。
+    final clock = Stopwatch()..start();
+    var requestMs = 0;
+    final jsCountBefore = AppLogger.instance.quickjsExecutionCount;
+
     // 加载书源 JS 库
     await _loadJsLib();
 
@@ -935,6 +942,7 @@ class WebBook {
 
     try {
       final response = await _executeRequest(parsed, keyword: keyword);
+      requestMs = clock.elapsedMilliseconds;
       final html = response.body;
 
       lastSearchHtml = html;
@@ -1118,7 +1126,12 @@ class WebBook {
         );
       }
 
-      debugPrint('📖 最终结果数量: ${dedupedResults.length}');
+      debugPrint(
+        '⏱️ 源[${source.bookSourceName}] 请求 ${requestMs}ms '
+        '解析 ${clock.elapsedMilliseconds - requestMs}ms '
+        '元素 ${bookElements.length} 条 → 结果 ${dedupedResults.length} 条 '
+        'JS ${AppLogger.instance.quickjsExecutionCount - jsCountBefore} 次',
+      );
       return dedupedResults;
     } on BookSearchException {
       rethrow;
@@ -1131,7 +1144,8 @@ class WebBook {
         cause: e,
       );
     } catch (e, stackTrace) {
-      debugPrint('❌ 搜索失败: $e');
+      debugPrint('⏱️ 源[${source.bookSourceName}] 失败 请求 ${requestMs}ms '
+          '解析 ${clock.elapsedMilliseconds - requestMs}ms: $e');
       debugPrint('❌ 堆栈: $stackTrace');
       throw BookSearchException(
         kind: BookSearchFailureKind.unknown,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mr/models/book_source.dart';
 import 'package:mr/models/curated_bookstore.dart';
@@ -414,6 +415,48 @@ void main() {
 
       expect(result.decision.action, CuratedOpenAction.notFound);
       expect(sw.elapsed, lessThan(const Duration(seconds: 2)));
+      if (!hang.isCompleted) {
+        hang.complete(const []);
+      }
+    });
+
+    test('提前收敛不触发监听重入：stopSearch 的通知不得再回到判定里', () async {
+      // stopSearch() 末尾会 notifyListeners()，而 notifyListeners 是同步派发的。
+      // 若收敛判定在 stopSearch 之后才落定，通知会立刻重入判定并再次 stopSearch，
+      // 一路递归到爆栈；StackOverflowError 又被 ChangeNotifier 的 try/catch 吞掉
+      // 转成 FlutterError，所以只看返回值和耗时的用例发现不了——真机上这段递归
+      // 白烧了 21 秒，点书要等 29 秒。这里直接盯 FlutterError 有没有被报出来。
+      final errors = <Object>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = (details) => errors.add(details.exception);
+      addTearDown(() => FlutterError.onError = previous);
+
+      final hang = Completer<List<Map<String, dynamic>>>();
+      final opener = CuratedBookOpener(
+        maxConcurrentSearches: 2,
+        sourceLimit: 6,
+        timeBudget: const Duration(seconds: 5),
+        searcher: (source, keyword) async {
+          if (source.bookSourceUrl == 'http://hit') {
+            return [
+              {'name': '三体', 'author': '刘慈欣', 'bookUrl': 'http://hit/b'},
+            ];
+          }
+          return hang.future;
+        },
+      );
+
+      final result = await opener.open(
+        const CuratedBook(id: '1', name: '三体', author: '刘慈欣'),
+        sources: [
+          src('http://hit', weight: 100),
+          src('http://slow1', weight: 90),
+          src('http://slow2', weight: 80),
+        ],
+      );
+
+      expect(result.decision.action, CuratedOpenAction.openDetail);
+      expect(errors, isEmpty, reason: '收敛路径报了 Flutter 错误（很可能是递归爆栈）');
       if (!hang.isCompleted) {
         hang.complete(const []);
       }
