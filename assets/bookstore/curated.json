@@ -74,7 +74,7 @@
     "b550",
     "b077",
     "b039",
-    "b229",
+    "b230",
     "b551"
    ]
   },
@@ -100,10 +100,10 @@
    "id": "section-fresh",
    "title": "刚刚更新",
    "bookIds": [
-    "b063",
     "b207",
-    "b104",
+    "b064",
     "b208",
+    "b104",
     "b209",
     "b210",
     "b211",
@@ -138,12 +138,12 @@
    "id": "cat-xuanhuan",
    "title": "玄幻",
    "bookIds": [
-    "b063",
     "b207",
-    "b209",
+    "b064",
+    "b208",
     "b210",
-    "b214",
-    "b216",
+    "b211",
+    "b215",
     "b006",
     "b008",
     "b009",
@@ -176,7 +176,7 @@
     "b053",
     "b280",
     "b281",
-    "b084",
+    "b085",
     "b282",
     "b283",
     "b284",
@@ -189,7 +189,7 @@
     "b288",
     "b289",
     "b290",
-    "b223",
+    "b224",
     "b291",
     "b292",
     "b293",
@@ -201,9 +201,9 @@
    "id": "cat-xiuzhen",
    "title": "修真",
    "bookIds": [
-    "b215",
-    "b222",
-    "b224",
+    "b216",
+    "b223",
+    "b225",
     "b057",
     "b202",
     "b296",
@@ -264,11 +264,11 @@
    "id": "cat-dushi",
    "title": "都市",
    "bookIds": [
-    "b208",
-    "b211",
-    "b213",
-    "b218",
+    "b209",
+    "b212",
+    "b214",
     "b219",
+    "b220",
     "b004",
     "b002",
     "b007",
@@ -306,7 +306,7 @@
     "b346",
     "b347",
     "b348",
-    "b083",
+    "b084",
     "b349",
     "b124",
     "b094",
@@ -325,9 +325,9 @@
    "id": "cat-chuanyue",
    "title": "穿越",
    "bookIds": [
-    "b212",
-    "b220",
-    "b227",
+    "b213",
+    "b221",
+    "b228",
     "b358",
     "b074",
     "b359",
@@ -698,12 +698,12 @@
     "b027",
     "b004",
     "b093",
-    "b063",
-    "b060",
+    "b064",
     "b057",
+    "b060",
     "b094",
     "b095",
-    "b062",
+    "b063",
     "b078",
     "b096",
     "b097",
@@ -712,7 +712,7 @@
     "b068",
     "b071",
     "b056",
-    "b064",
+    "b062",
     "b075",
     "b061",
     "b079",
@@ -725,11 +725,11 @@
     "b102",
     "b103",
     "b104",
+    "b083",
     "b082",
     "b059",
-    "b087",
     "b105",
-    "b083",
+    "b084",
     "b074",
     "b089",
     "b076"
@@ -866,7 +866,7 @@
     "b176",
     "b093",
     "b177",
-    "b086",
+    "b087",
     "b178",
     "b070",
     "b179",
@@ -907,10 +907,10 @@
    "id": "rank-lastupdate",
    "title": "最近更新",
    "bookIds": [
-    "b063",
     "b207",
-    "b104",
+    "b064",
     "b208",
+    "b104",
     "b209",
     "b210",
     "b211",
@@ -925,33 +925,33 @@
     "b220",
     "b221",
     "b222",
-    "b068",
     "b223",
+    "b068",
+    "b224",
     "b004",
     "b022",
-    "b224",
-    "b055",
     "b225",
+    "b055",
     "b226",
     "b227",
     "b228",
+    "b229",
     "b098",
     "b186",
-    "b229",
     "b230",
-    "b206",
     "b231",
+    "b206",
     "b232",
+    "b233",
     "b093",
     "b057",
     "b096",
-    "b233",
-    "b202",
     "b234",
-    "b103",
-    "b064",
-    "b183",
+    "b202",
     "b235",
+    "b103",
+    "b062",
+    "b183",
     "b236",
     "b237",
     "b238",
@@ -1043,7 +1043,7 @@
     "b176",
     "b093",
     "b177",
-    "b086",
+    "b087",
     "b178",
     "b070",
     "b179",
@@ -1122,19 +1122,22 @@
    "id": "b001",
    "name": "大圣传",
    "author": "说梦者",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/516/516s.jpg"
   },
   {
    "id": "b002",
    "name": "美食供应商",
    "author": "会做菜的猫",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16337/16337s.jpg"
   },
   {
    "id": "b003",
    "name": "合体双修",
    "author": "我是墨水",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4310/4310s.jpg"
   },
   {
    "id": "b004",
@@ -1148,84 +1151,98 @@
    "id": "b005",
    "name": "造化之门",
    "author": "鹅是老五",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/126/126s.jpg"
   },
   {
    "id": "b006",
    "name": "万相之王",
    "author": "天蚕土豆",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21583/21583s.jpg"
   },
   {
    "id": "b007",
    "name": "权力巅峰",
    "author": "梦入洪荒",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/45/45s.jpg"
   },
   {
    "id": "b008",
    "name": "八荒剑神",
    "author": "云泪天雨",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16073/16073s.jpg"
   },
   {
    "id": "b009",
    "name": "逆天邪神",
    "author": "火星引力",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10354/10354s.jpg"
   },
   {
    "id": "b010",
    "name": "诸天万界",
    "author": "虾米XL",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3537/3537s.jpg"
   },
   {
    "id": "b011",
    "name": "全职高手",
    "author": "蝴蝶蓝",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3083/3083s.jpg"
   },
   {
    "id": "b012",
    "name": "武炼巅峰",
    "author": "莫默",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/188/188s.jpg"
   },
   {
    "id": "b013",
    "name": "武逆",
    "author": "只是小虾米",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/260/260s.jpg"
   },
   {
    "id": "b014",
    "name": "天珠变",
    "author": "唐家三少",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2836/2836s.jpg"
   },
   {
    "id": "b015",
    "name": "乡村艳妇",
    "author": "叱咤风云",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4397/4397s.jpg"
   },
   {
    "id": "b016",
    "name": "我的盗墓生涯",
    "author": "道门老九",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6998/6998s.jpg"
   },
   {
    "id": "b017",
    "name": "神道丹尊",
    "author": "孤单地飞",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16151/16151s.jpg"
   },
   {
    "id": "b018",
    "name": "蛊真人",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2912/2912s.jpg"
   },
   {
    "id": "b019",
@@ -1239,67 +1256,78 @@
    "id": "b020",
    "name": "我欲封天",
    "author": "耳根",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/427/427s.jpg"
   },
   {
    "id": "b021",
    "name": "百炼飞升录",
    "author": "虚眞",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3547/3547s.jpg"
   },
   {
    "id": "b022",
    "name": "九星霸体诀",
    "author": "平凡魔术师",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16019/16019s.jpg"
   },
   {
    "id": "b023",
    "name": "当医生开了外挂",
    "author": "手握寸关尺",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18949/18949s.jpg"
   },
   {
    "id": "b024",
    "name": "元尊",
    "author": "天蚕土豆",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17050/17050s.jpg"
   },
   {
    "id": "b025",
    "name": "明朝伪君子",
    "author": "贼眉鼠眼",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/601/601s.jpg"
   },
   {
    "id": "b026",
    "name": "赤心巡天",
    "author": "情何以甚",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20006/20006s.jpg"
   },
   {
    "id": "b027",
    "name": "万古神帝",
    "author": "飞天鱼",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16110/16110s.jpg"
   },
   {
    "id": "b028",
    "name": "我的冰山美女老婆",
    "author": "霉干菜烧饼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17082/17082s.jpg"
   },
   {
    "id": "b029",
    "name": "铁血强国",
    "author": "流泪的鱼wyj",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15698/15698s.jpg"
   },
   {
    "id": "b030",
    "name": "官榜",
    "author": "隐为者",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/622/622s.jpg"
   },
   {
    "id": "b031",
@@ -1313,43 +1341,50 @@
    "id": "b032",
    "name": "最强医圣",
    "author": "左耳思念",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16377/16377s.jpg"
   },
   {
    "id": "b033",
    "name": "炎武战神",
    "author": "xiao少爷",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3681/3681s.jpg"
   },
   {
    "id": "b034",
    "name": "斗破苍穹",
    "author": "天蚕土豆",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2321/2321s.jpg"
   },
   {
    "id": "b035",
    "name": "伏天氏",
    "author": "净无痕",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17343/17343s.jpg"
   },
   {
    "id": "b036",
    "name": "帝玄天",
    "author": "暮雨尘埃",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3555/3555s.jpg"
   },
   {
    "id": "b037",
    "name": "明朝败家子",
    "author": "上山打老虎额",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17605/17605s.jpg"
   },
   {
    "id": "b038",
    "name": "仙韵传",
    "author": "沁园居士",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16939/16939s.jpg"
   },
   {
    "id": "b039",
@@ -1357,13 +1392,14 @@
    "author": "辰东",
    "category": "玄幻",
    "intro": "那一天太阳落下再也没有升起……",
-   "coverUrl": "https://www.mayiwsk.com/files/article/image/98/98200/98200s.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23739/23739s.jpg"
   },
   {
    "id": "b040",
    "name": "重生之官道",
    "author": "录事参军",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2645/2645s.jpg"
   },
   {
    "id": "b041",
@@ -1377,55 +1413,64 @@
    "id": "b042",
    "name": "重生之衙内",
    "author": "不信天上掉馅饼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2661/2661s.jpg"
   },
   {
    "id": "b043",
    "name": "开局签到荒古圣体",
    "author": "J神",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20402/20402s.jpg"
   },
   {
    "id": "b044",
    "name": "琴帝",
    "author": "唐家三少",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2472/2472s.jpg"
   },
   {
    "id": "b045",
    "name": "灵域",
    "author": "逆苍天",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/108/108s.jpg"
   },
   {
    "id": "b046",
    "name": "回到明朝当王爷",
    "author": "月关",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2400/2400s.jpg"
   },
   {
    "id": "b047",
    "name": "龙血战神",
    "author": "风青阳",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/645/645s.jpg"
   },
   {
    "id": "b048",
    "name": "吞噬星空",
    "author": "我吃西红柿",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2840/2840s.jpg"
   },
   {
    "id": "b049",
    "name": "重生之都市仙尊",
    "author": "周炎植",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17808/17808s.jpg"
   },
   {
    "id": "b050",
    "name": "特种神医",
    "author": "步行天下",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4591/4591s.jpg"
   },
   {
    "id": "b051",
@@ -1439,25 +1484,29 @@
    "id": "b052",
    "name": "盖世双谐",
    "author": "三天两觉",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19469/19469s.jpg"
   },
   {
    "id": "b053",
    "name": "混沌剑神",
    "author": "心星逍遥",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/788/788s.jpg"
   },
   {
    "id": "b054",
    "name": "太荒吞天诀",
    "author": "铁马飞桥",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23373/23373s.jpg"
   },
   {
    "id": "b055",
    "name": "修罗武神",
    "author": "善良的蜜蜂",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/492/492s.jpg"
   },
   {
    "id": "b056",
@@ -1465,7 +1514,7 @@
    "author": "寿比南山",
    "category": "科幻",
    "intro": "十三岁那年我丢了一次魂，爷爷给我招魂的时候招来了一个不属于我的魂魄，至此我的人生开始发生了翻天覆地的变化……",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23376/23376s.jpg"
   },
   {
    "id": "b057",
@@ -1479,7 +1528,8 @@
    "id": "b058",
    "name": "怪物被杀就会死",
    "author": "阴天神隐",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18970/18970s.jpg"
   },
   {
    "id": "b059",
@@ -1487,28 +1537,38 @@
    "author": "吨吨吨吨吨",
    "category": "网游",
    "intro": "［玩家姓名：秦淮已解锁图鉴：0/12技能：发面（中级）：您的发面技术已击败全国99%的早餐店师傅。（0/10000）调馅（高级）：您的调馅水平已击败全国100%的早餐店师傅（0/100000）……评价：一个初出茅庐的新手］踏进食堂的那一刻，美食文主角迎来了他加载成功的系...",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23766/23766s.jpg"
   },
   {
    "id": "b060",
    "name": "问镜",
    "author": "减肥专家",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2406/2406s.jpg"
   },
   {
    "id": "b061",
    "name": "摊牌了我真是封号斗罗",
    "author": "昀瞳",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20494/20494s.jpg"
   },
   {
    "id": "b062",
-   "name": "我的谍战岁月",
-   "author": "猪头七",
-   "category": "穿越"
+   "name": "九龙归一诀",
+   "author": "魔风烈",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20961/20961s.jpg"
   },
   {
    "id": "b063",
+   "name": "我的谍战岁月",
+   "author": "猪头七",
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23362/23362s.jpg"
+  },
+  {
+   "id": "b064",
    "name": "鸿蒙霸体诀",
    "author": "鱼初见",
    "category": "玄幻",
@@ -1516,71 +1576,74 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23492/23492s.jpg"
   },
   {
-   "id": "b064",
-   "name": "九龙归一诀",
-   "author": "魔风烈",
-   "category": "玄幻"
-  },
-  {
    "id": "b065",
    "name": "黄昏分界",
    "author": "黑山老鬼",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23692/23692s.jpg"
   },
   {
    "id": "b066",
    "name": "超神机械师",
    "author": "齐佩甲",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17318/17318s.jpg"
   },
   {
    "id": "b067",
    "name": "宿命之环",
    "author": "爱潜水的乌贼",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23351/23351s.jpg"
   },
   {
    "id": "b068",
    "name": "龙渊剑神",
    "author": "夜辰寒",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23555/23555s.jpg"
   },
   {
    "id": "b069",
    "name": "机战：从高达OO开始",
    "author": "梦幻礼赞",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23686/23686s.jpg"
   },
   {
    "id": "b070",
    "name": "元始法则",
    "author": "飞天鱼",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23799/23799s.jpg"
   },
   {
    "id": "b071",
    "name": "我在凡人科学修仙",
    "author": "洛青子",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21870/21870s.jpg"
   },
   {
    "id": "b072",
    "name": "醉爱",
    "author": "无心魅惑",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3702/3702s.jpg"
   },
   {
    "id": "b073",
    "name": "浴火狂妃",
    "author": "姑苏奶奶",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4099/4099s.jpg"
   },
   {
    "id": "b074",
    "name": "铁血残明",
    "author": "柯山梦",
    "category": "穿越",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18378/18378s.jpg"
   },
   {
    "id": "b075",
@@ -1588,13 +1651,14 @@
    "author": "吾即正道",
    "category": "科幻",
    "intro": "游魂彷徨，蠕虫四散。 不可见之物身边环绕，耳畔窃窃私语从何而来。 可憎之物在深渊中等待。 死寂无风，吹不动衣角发梢。 牧苏注视着深渊，深渊也在注视着他。 直到开始牧苏脱下裤子—— 深渊才不得不尴尬地移开视线。 起点 恶搞...",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19266/19266s.jpg"
   },
   {
    "id": "b076",
    "name": "北宋穿越指南",
    "author": "王梓钧",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23661/23661s.jpg"
   },
   {
    "id": "b077",
@@ -1602,97 +1666,112 @@
    "author": "季越人",
    "category": "修真",
    "intro": "陆江仙熬夜猝死，残魂却附在了一面满是裂痕的青灰色铜镜上，飘落到了浩瀚无垠的修仙世界。 凶险难测的大黎山，眉尺河旁小小的村落，一个小家族拾到了这枚镜子，于是传仙道授仙法，开启波澜壮阔的新时代。 (家族修仙，不圣母，种田，无系统，群像文)",
-   "coverUrl": "https://www.mayiwsk.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23755/23755s.jpg"
   },
   {
    "id": "b078",
    "name": "仙逆",
    "author": "耳根",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2876/2876s.jpg"
   },
   {
    "id": "b079",
    "name": "最初进化",
    "author": "卷土",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19170/19170s.jpg"
   },
   {
    "id": "b080",
    "name": "万族之劫",
    "author": "老鹰吃小鸡",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19399/19399s.jpg"
   },
   {
    "id": "b081",
    "name": "青葫剑仙",
    "author": "竹林剑隐",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23326/23326s.jpg"
   },
   {
    "id": "b082",
    "name": "谁让他修仙的！",
    "author": "最白的乌鸦",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23416/23416s.jpg"
   },
   {
    "id": "b083",
-   "name": "重生之都市修仙",
-   "author": "十里剑神",
-   "category": "都市"
+   "name": "吕布",
+   "author": "明日边缘",
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2882/2882s.jpg"
   },
   {
    "id": "b084",
-   "name": "牧神记",
-   "author": "宅猪",
-   "category": "玄幻"
+   "name": "重生之都市修仙",
+   "author": "十里剑神",
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16378/16378s.jpg"
   },
   {
    "id": "b085",
-   "name": "不科学御兽",
-   "author": "轻泉流响",
-   "category": "玄幻"
+   "name": "牧神记",
+   "author": "宅猪",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16935/16935s.jpg"
   },
   {
    "id": "b086",
-   "name": "港片：你洪兴仔，慈善大王什么鬼",
-   "author": "皮皮树",
-   "category": "都市"
+   "name": "不科学御兽",
+   "author": "轻泉流响",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21998/21998s.jpg"
   },
   {
    "id": "b087",
-   "name": "吕布",
-   "author": "明日边缘",
-   "category": "穿越"
+   "name": "港片：你洪兴仔，慈善大王什么鬼",
+   "author": "皮皮树",
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23801/23801s.jpg"
   },
   {
    "id": "b088",
    "name": "寒门宰相",
    "author": "幸福来敲门",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20750/20750s.jpg"
   },
   {
    "id": "b089",
    "name": "叩问仙道",
    "author": "雨打青石",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21866/21866s.jpg"
   },
   {
    "id": "b090",
    "name": "苟在女魔头身边偷偷修炼",
    "author": "怕辣的红椒",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23783/23783s.jpg"
   },
   {
    "id": "b091",
    "name": "唐砖",
    "author": "孑与2",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/166/166s.jpg"
   },
   {
    "id": "b092",
    "name": "将夜",
    "author": "猫腻",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3114/3114s.jpg"
   },
   {
    "id": "b093",
@@ -1706,49 +1785,57 @@
    "id": "b094",
    "name": "盖世神医",
    "author": "狐颜乱语",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23701/23701s.jpg"
   },
   {
    "id": "b095",
    "name": "光阴之外",
    "author": "耳根",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23308/23308s.jpg"
   },
   {
    "id": "b096",
    "name": "我们反派才不想当踏脚石",
    "author": "孤山有狸",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23428/23428s.jpg"
   },
   {
    "id": "b097",
    "name": "轮回乐园",
    "author": "那一只蚊子",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17285/17285s.jpg"
   },
   {
    "id": "b098",
    "name": "八十年代渔猎日常",
    "author": "周记的九命病猫",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23792/23792s.jpg"
   },
   {
    "id": "b099",
    "name": "我从末世开始无敌",
    "author": "水晶脑袋",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20976/20976s.jpg"
   },
   {
    "id": "b100",
    "name": "唐人的餐桌",
    "author": "孑与2",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23226/23226s.jpg"
   },
   {
    "id": "b101",
    "name": "全职法师",
    "author": "乱(书坊)",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13415/13415s.jpg"
   },
   {
    "id": "b102",
@@ -1762,7 +1849,8 @@
    "id": "b103",
    "name": "刚准备高考，离婚逆袭系统来了",
    "author": "七月封阳",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23788/23788s.jpg"
   },
   {
    "id": "b104",
@@ -1770,493 +1858,574 @@
    "author": "远瞳",
    "category": "科幻",
    "intro": "在日常之下，在理性尽头，在你所熟悉的世界之外——是你从未想象过的风景。当于生第一次打开那扇门的时候，他所熟悉的世界便轰然倒塌。而那直抵世界根源的“真相”，扑面而来。",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23753/23753s.jpg"
   },
   {
    "id": "b105",
    "name": "大王饶命",
    "author": "会说话的肘子",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17089/17089s.jpg"
   },
   {
    "id": "b106",
    "name": "盗墓笔记",
    "author": "南派三叔",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10280/10280s.jpg"
   },
   {
    "id": "b107",
    "name": "仙界独尊",
    "author": "蛇吞鲸",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/12/12510/12510s.jpg"
   },
   {
    "id": "b108",
    "name": "一剑飞仙",
    "author": "流浪的蛤蟆",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15765/15765s.jpg"
   },
   {
    "id": "b109",
    "name": "从零开始",
    "author": "雷云风暴",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/922/922s.jpg"
   },
   {
    "id": "b110",
    "name": "异能小农民",
    "author": "楚田",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4871/4871s.jpg"
   },
   {
    "id": "b111",
    "name": "完美世界",
    "author": "辰东",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/163/163s.jpg"
   },
   {
    "id": "b112",
    "name": "打工巫师生活录",
    "author": "断桥残雪",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/210/210s.jpg"
   },
   {
    "id": "b113",
    "name": "赘婿",
    "author": "愤怒的香蕉",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/550/550s.jpg"
   },
   {
    "id": "b114",
    "name": "苍穹龙骑",
    "author": "华表",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/197/197s.jpg"
   },
   {
    "id": "b115",
    "name": "圣墟",
    "author": "辰东",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16444/16444s.jpg"
   },
   {
    "id": "b116",
    "name": "迷失在地球的外星综合舰",
    "author": "冷雪冰川",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/78/78s.jpg"
   },
   {
    "id": "b117",
    "name": "逍遥梦路",
    "author": "文抄公",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16958/16958s.jpg"
   },
   {
    "id": "b118",
    "name": "神藏",
    "author": "打眼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15883/15883s.jpg"
   },
   {
    "id": "b119",
    "name": "莽荒纪",
    "author": "我吃西红柿",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/164/164s.jpg"
   },
   {
    "id": "b120",
    "name": "神医高手在都市",
    "author": "复仇",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4693/4693s.jpg"
   },
   {
    "id": "b121",
    "name": "武神空间",
    "author": "傅啸尘",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/192/192s.jpg"
   },
   {
    "id": "b122",
    "name": "宝鉴",
    "author": "打眼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/55/55s.jpg"
   },
   {
    "id": "b123",
    "name": "俗人回档",
    "author": "庚不让",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4247/4247s.jpg"
   },
   {
    "id": "b124",
    "name": "官道无疆",
    "author": "瑞根",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/501/501s.jpg"
   },
   {
    "id": "b125",
    "name": "我要做皇帝",
    "author": "要离刺荆轲",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4658/4658s.jpg"
   },
   {
    "id": "b126",
    "name": "末世魔神游戏",
    "author": "石闻",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4386/4386s.jpg"
   },
   {
    "id": "b127",
    "name": "武极天下",
    "author": "蚕茧里的牛",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/189/189s.jpg"
   },
   {
    "id": "b128",
    "name": "万界天尊",
    "author": "血红",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16772/16772s.jpg"
   },
   {
    "id": "b129",
    "name": "魔天记",
    "author": "忘语",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/170/170s.jpg"
   },
   {
    "id": "b130",
    "name": "斩仙",
    "author": "任怨",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/536/536s.jpg"
   },
   {
    "id": "b131",
    "name": "百炼成仙",
    "author": "幻雨",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/471/471s.jpg"
   },
   {
    "id": "b132",
    "name": "全能奇才",
    "author": "九指仙尊",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/626/626s.jpg"
   },
   {
    "id": "b133",
    "name": "星战风暴",
    "author": "骷髅精灵",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/99/99s.jpg"
   },
   {
    "id": "b134",
    "name": "破灭天道",
    "author": "赤虎",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13406/13406s.jpg"
   },
   {
    "id": "b135",
    "name": "三界超市",
    "author": "房产大亨",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/5/5314/5314s.jpg"
   },
   {
    "id": "b136",
    "name": "氪金魔主",
    "author": "凰中鲤",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17459/17459s.jpg"
   },
   {
    "id": "b137",
    "name": "龙神决",
    "author": "流浪的蛤蟆",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/5/5028/5028s.jpg"
   },
   {
    "id": "b138",
    "name": "都市回收霸主",
    "author": "傻小四",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10688/10688s.jpg"
   },
   {
    "id": "b139",
    "name": "永夜君王",
    "author": "烟雨江南",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1061/1061s.jpg"
   },
   {
    "id": "b140",
    "name": "风骚重生传",
    "author": "橘子奏鸣曲",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4207/4207s.jpg"
   },
   {
    "id": "b141",
    "name": "穿越民国大商人",
    "author": "昨夜大雨",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10983/10983s.jpg"
   },
   {
    "id": "b142",
    "name": "无尽武装",
    "author": "缘分0",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2390/2390s.jpg"
   },
   {
    "id": "b143",
    "name": "噬天仙皇",
    "author": "烁土",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11586/11586s.jpg"
   },
   {
    "id": "b144",
    "name": "怒瀚",
    "author": "新兵扛老枪",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16063/16063s.jpg"
   },
   {
    "id": "b145",
    "name": "太浩",
    "author": "无极书虫",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4484/4484s.jpg"
   },
   {
    "id": "b146",
    "name": "神纹战记",
    "author": "雨水",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16150/16150s.jpg"
   },
   {
    "id": "b147",
    "name": "星河霸血",
    "author": "王袍",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/14/14372/14372s.jpg"
   },
   {
    "id": "b148",
    "name": "大主宰",
    "author": "天蚕土豆",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/186/186s.jpg"
   },
   {
    "id": "b149",
    "name": "超品相师",
    "author": "九灯和善",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/543/543s.jpg"
   },
   {
    "id": "b150",
    "name": "化神戒",
    "author": "有时有点邪",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3316/3316s.jpg"
   },
   {
    "id": "b151",
    "name": "儒道至圣",
    "author": "永恒之火",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2903/2903s.jpg"
   },
   {
    "id": "b152",
    "name": "择天记",
    "author": "猫腻",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/168/168s.jpg"
   },
   {
    "id": "b153",
    "name": "雪鹰领主",
    "author": "我吃西红柿",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/14/14296/14296s.jpg"
   },
   {
    "id": "b154",
    "name": "最强小叔",
    "author": "左刀",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/171/171s.jpg"
   },
   {
    "id": "b155",
    "name": "大宋的智慧",
    "author": "孑与2",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/198/198s.jpg"
   },
   {
    "id": "b156",
    "name": "天相神医",
    "author": "童羊阳",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3952/3952s.jpg"
   },
   {
    "id": "b157",
    "name": "修真研究生生活录",
    "author": "断桥残雪",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2662/2662s.jpg"
   },
   {
    "id": "b158",
    "name": "红色权力",
    "author": "录事参军",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/201/201s.jpg"
   },
   {
    "id": "b159",
    "name": "渔色人生",
    "author": "钓鱼1哥",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1446/1446s.jpg"
   },
   {
    "id": "b160",
    "name": "首席御医",
    "author": "银河九天",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/167/167s.jpg"
   },
   {
    "id": "b161",
    "name": "星河大帝",
    "author": "梦入神机",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/196/196s.jpg"
   },
   {
    "id": "b162",
    "name": "剑道独神",
    "author": "六道沉沦",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/193/193s.jpg"
   },
   {
    "id": "b163",
    "name": "我真是大明星",
    "author": "尝谕",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4363/4363s.jpg"
   },
   {
    "id": "b164",
    "name": "都市之修仙高手",
    "author": "关关公子",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23816/23816s.jpg"
   },
   {
    "id": "b165",
    "name": "我刷短视频被古人看见了",
    "author": "今日清风",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23815/23815s.jpg"
   },
   {
    "id": "b166",
    "name": "全球武道：我有修仙世界",
    "author": "蒙面和尚",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23814/23814s.jpg"
   },
   {
    "id": "b167",
    "name": "重生之朕要打下一个大大的江山",
    "author": "吹个大气球9",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23813/23813s.jpg"
   },
   {
    "id": "b168",
    "name": "教练，我还不想退役啊",
    "author": "临河羡鱼翁",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23812/23812s.jpg"
   },
   {
    "id": "b169",
    "name": "宝妈靠古武带爆红全星际",
    "author": "峋言",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23811/23811s.jpg"
   },
   {
    "id": "b170",
    "name": "东京房东",
    "author": "八鸽子",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23810/23810s.jpg"
   },
   {
    "id": "b171",
    "name": "反派大师兄，师妹们全是病娇",
    "author": "就爱吃话梅",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23809/23809s.jpg"
   },
   {
    "id": "b172",
    "name": "剑啸灵霄",
    "author": "流浪的蛤蟆",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23808/23808s.jpg"
   },
   {
    "id": "b173",
    "name": "长生从炼丹宗师开始",
    "author": "雨去欲续",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23807/23807s.jpg"
   },
   {
    "id": "b174",
    "name": "那年花开1981",
    "author": "风随流云",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23806/23806s.jpg"
   },
   {
    "id": "b175",
    "name": "鸣龙",
    "author": "关关公子",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23805/23805s.jpg"
   },
   {
    "id": "b176",
    "name": "华娱从男模开始",
    "author": "河马不会叫",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23804/23804s.jpg"
   },
   {
    "id": "b177",
    "name": "满级悟性：我以升格下界成就道祖",
    "author": "爆炒螺丝椒",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23802/23802s.jpg"
   },
   {
    "id": "b178",
    "name": "割鹿记",
    "author": "无罪",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23800/23800s.jpg"
   },
   {
    "id": "b179",
    "name": "现代世界的武道人仙",
    "author": "乘风御剑",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23798/23798s.jpg"
   },
   {
    "id": "b180",
    "name": "别再催眠我了，反派皇女！",
    "author": "鱼香起司",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23797/23797s.jpg"
   },
   {
    "id": "b181",
    "name": "噩梦之门",
    "author": "大白之主",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23796/23796s.jpg"
   },
   {
    "id": "b182",
    "name": "巅峰学霸",
    "author": "一桶布丁",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23795/23795s.jpg"
   },
   {
    "id": "b183",
    "name": "皇修",
    "author": "萧舒",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23794/23794s.jpg"
   },
   {
    "id": "b184",
    "name": "大清要完",
    "author": "大罗罗",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23793/23793s.jpg"
   },
   {
    "id": "b185",
    "name": "武圣！",
    "author": "田隶",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23791/23791s.jpg"
   },
   {
    "id": "b186",
@@ -2270,91 +2439,106 @@
    "id": "b187",
    "name": "吞噬星空2起源大陆",
    "author": "我吃西红柿",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23789/23789s.jpg"
   },
   {
    "id": "b188",
    "name": "文豪1978",
    "author": "坐望敬亭",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23787/23787s.jpg"
   },
   {
    "id": "b189",
    "name": "我是仙",
    "author": "历史里吹吹风",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23786/23786s.jpg"
   },
   {
    "id": "b190",
    "name": "绝境黑夜",
    "author": "滚开",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23785/23785s.jpg"
   },
   {
    "id": "b191",
    "name": "混在末日，独自成仙",
    "author": "言归正传",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23784/23784s.jpg"
   },
   {
    "id": "b192",
    "name": "故障乌托邦",
    "author": "狐尾的笔",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23782/23782s.jpg"
   },
   {
    "id": "b193",
    "name": "妖尾：我才不要当会长",
    "author": "想吃冰棒",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23781/23781s.jpg"
   },
   {
    "id": "b194",
    "name": "石破天穿越令狐冲",
    "author": "子如珩",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23780/23780s.jpg"
   },
   {
    "id": "b195",
    "name": "重燃青葱时代",
    "author": "蜜汁姬",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23779/23779s.jpg"
   },
   {
    "id": "b196",
    "name": "都重生了谁考公务员啊",
    "author": "柳岸花又明",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23778/23778s.jpg"
   },
   {
    "id": "b197",
    "name": "提前登陆五百年，我靠挖宝成神",
    "author": "最终永恒",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23777/23777s.jpg"
   },
   {
    "id": "b198",
    "name": "星空职业者",
    "author": "文抄公",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23776/23776s.jpg"
   },
   {
    "id": "b199",
    "name": "深空之影",
    "author": "虚伪王庭",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23775/23775s.jpg"
   },
   {
    "id": "b200",
    "name": "天倾之后",
    "author": "佛前献花",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23774/23774s.jpg"
   },
   {
    "id": "b201",
    "name": "1987我的年代",
    "author": "三月麻竹",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23773/23773s.jpg"
   },
   {
    "id": "b202",
@@ -2368,36 +2552,48 @@
    "id": "b203",
    "name": "炮火弧线",
    "author": "康斯坦丁伯爵",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23771/23771s.jpg"
   },
   {
    "id": "b204",
    "name": "长夜君主",
    "author": "风凌天下",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23770/23770s.jpg"
   },
   {
    "id": "b205",
    "name": "从斩妖除魔开始长生不死",
    "author": "陆月十九",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23768/23768s.jpg"
   },
   {
    "id": "b206",
    "name": "天人图谱",
    "author": "误道者",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23767/23767s.jpg"
   },
   {
    "id": "b207",
+   "name": "重生都市仙帝",
+   "author": "万鲤鱼",
+   "category": "玄幻",
+   "intro": "修仙者都市重生，成为落败的富二代大学生张逸风，从此开启逆袭之路。脚踩高富帅，拳打各类大师。凭借修真秘术，睥睨天下，横扫世间一切对手。“在我面前，无人敢嚣张，因为敢对我嚣张的人，都不会有以后。”“在我面前，哪怕是高高在上的女王也要低下头颅。不然，...",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23389/23389s.jpg"
+  },
+  {
+   "id": "b208",
    "name": "灰烬领主",
    "author": "我爱小豆",
    "category": "玄幻",
    "intro": "他来自被放逐的地下世界，遵从弱肉强食的生存法则。他是真理的探索者，是行走在理智与疯狂边缘的巫师。当神话被终结，秩序不再，力量便是世界的唯一规则。并不是所有",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23725/23725s.jpg"
   },
   {
-   "id": "b208",
+   "id": "b209",
    "name": "国潮1980",
    "author": "镶黄旗",
    "category": "都市",
@@ -2405,15 +2601,15 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/19/19573/19573s.jpg"
   },
   {
-   "id": "b209",
+   "id": "b210",
    "name": "万神主宰",
    "author": "风云再起",
    "category": "玄幻",
    "intro": "热血少年百折不挠，一朝血脉觉醒，号令万界诸神。修神级功法，成无上霸体，与众天骄争锋。屠妖除魔，碾压万界，威震诸天。",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23732/23732s.jpg"
   },
   {
-   "id": "b210",
+   "id": "b211",
    "name": "太古神尊",
    "author": "楚长歌",
    "category": "玄幻",
@@ -2421,7 +2617,7 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23463/23463s.jpg"
   },
   {
-   "id": "b211",
+   "id": "b212",
    "name": "至尊战王",
    "author": "小龙鱼",
    "category": "都市",
@@ -2429,23 +2625,23 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23556/23556s.jpg"
   },
   {
-   "id": "b212",
+   "id": "b213",
    "name": "武逆焚天",
    "author": "疯橘子",
    "category": "穿越",
    "intro": "小说武逆焚天简介： 神奇的大陆，因神兽而支离破碎，又因神兽而得以重生！！各方势力追寻多年的重宝出世，一场腥风血雨正... 各位书友要是觉得《武逆焚天》还不错的话请不要忘记向您QQ群和微博里的朋友推荐哦！关键词：武逆焚天最新章节,武逆焚天无弹窗,...",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13107/13107s.jpg"
   },
   {
-   "id": "b213",
+   "id": "b214",
    "name": "混沌天帝诀",
    "author": "随风漫步",
    "category": "都市",
    "intro": "太古异兽利爪捏碎诸天星辰，域外邪族发出惑乱众生的嘶鸣，黑暗深渊中的妖魔睁开了邪异的血瞳，远古诸神从沉睡中苏醒！这是一个大争之世！人族强者以利剑问鼎苍穹，在诸天万族中挺起不屈脊梁！ 楚剑秋偶得混沌天帝诀，从微末中崛起，踏上万界征程！ 一念崩星海，一...",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23358/23358s.jpg"
   },
   {
-   "id": "b214",
+   "id": "b215",
    "name": "吞噬古帝",
    "author": "黑白仙鹤",
    "category": "玄幻",
@@ -2453,7 +2649,7 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23542/23542s.jpg"
   },
   {
-   "id": "b215",
+   "id": "b216",
    "name": "五仙门",
    "author": "看得两叁言",
    "category": "修真",
@@ -2461,21 +2657,21 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23390/23390s.jpg"
   },
   {
-   "id": "b216",
+   "id": "b217",
    "name": "天域丹尊",
    "author": "新月弯弓",
    "category": "玄幻",
-   "intro": "一代丹帝重返十五岁，这一世，不仅要弥补前世所有遗憾，更要成就武道至尊！比功法？我的小弟人手一本神级功法。比丹药？我的极品丹药拿来喂狗。天才？凡是遇到我的天才，全是被碾压的命！顺我者昌，逆我者死！",
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23552/23552s.jpg"
   },
   {
-   "id": "b217",
+   "id": "b218",
    "name": "极道剑尊",
    "author": "人间又污秽了",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23429/23429s.jpg"
   },
   {
-   "id": "b218",
+   "id": "b219",
    "name": "女总裁的全能兵王",
    "author": "寂寞的舞者",
    "category": "都市",
@@ -2483,7 +2679,7 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/17/17113/17113s.jpg"
   },
   {
-   "id": "b219",
+   "id": "b220",
    "name": "龙王令",
    "author": "韩三千",
    "category": "都市",
@@ -2491,21 +2687,22 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23459/23459s.jpg"
   },
   {
-   "id": "b220",
+   "id": "b221",
    "name": "网游之剑刃舞者",
    "author": "不是闻人",
    "category": "穿越",
    "intro": "小说网游之剑刃舞者简介： 各位书友要是觉得《网游之剑刃舞者》还不错的话请不要忘记向您QQ群和微博里的朋友推荐哦！关键词：网游之剑刃舞者最新章节,网游之剑刃舞者无弹窗,网游之剑刃舞者全文阅读.",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
-  },
-  {
-   "id": "b221",
-   "name": "九星神龙诀",
-   "author": "逐风",
-   "category": "玄幻"
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6474/6474s.jpg"
   },
   {
    "id": "b222",
+   "name": "九星神龙诀",
+   "author": "逐风",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23470/23470s.jpg"
+  },
+  {
+   "id": "b223",
    "name": "超级修真弃少",
    "author": "木木鱼猫",
    "category": "修真",
@@ -2513,33 +2710,36 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/23/23561/23561s.jpg"
   },
   {
-   "id": "b223",
+   "id": "b224",
    "name": "逆剑狂神",
    "author": "一剑清新",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17084/17084s.jpg"
   },
   {
-   "id": "b224",
+   "id": "b225",
    "name": "超品渔夫",
    "author": "季小爵爷",
    "category": "修真",
    "intro": "重生在妻离子散时，藏身小渔村，看殷东修炼带娃两不误，纵横花间，搅动海上风云……",
-   "coverUrl": "http://www.biquge001.com/modules/article/images/nocover.jpg"
-  },
-  {
-   "id": "b225",
-   "name": "假太监：我乃大明九千岁",
-   "author": "初九元十",
-   "category": "玄幻"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23727/23727s.jpg"
   },
   {
    "id": "b226",
-   "name": "美漫地狱之主",
-   "author": "范氏之魂",
-   "category": "玄幻"
+   "name": "假太监：我乃大明九千岁",
+   "author": "初九元十",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23460/23460s.jpg"
   },
   {
    "id": "b227",
+   "name": "美漫地狱之主",
+   "author": "范氏之魂",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23386/23386s.jpg"
+  },
+  {
+   "id": "b228",
    "name": "神话版三国",
    "author": "坟土荒草",
    "category": "穿越",
@@ -2547,72 +2747,75 @@
    "coverUrl": "http://www.biquge001.com/files/article/image/4/4874/4874s.jpg"
   },
   {
-   "id": "b228",
+   "id": "b229",
    "name": "一剑霸天",
    "author": "永夜星河",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23384/23384s.jpg"
   },
   {
-   "id": "b229",
+   "id": "b230",
    "name": "仙工开物",
    "author": "蛊真人",
    "category": "玄幻",
    "intro": "火山中，先贤大能遗留的机关仙宫，渴望着后继者。母亲舍命争取，获得仙宫宝印，临死前留给了宁拙。 我佛心魔印！渡己为佛，渡人成魔。执掌此印，能刻下心印，指挥机关造物，负担极低。 常人指挥机关，心神负担极重。但宁拙却能以一御万，游刃有余。宁拙：“娘，孩儿一定不负您的嘱托，取得那仙宫！”正是：仙偶通灵秘，工巧合至理。 开宇出新境，物华与天齐。古钟传法度，月下舞清辉。真身具万象，人间谁与敌！ ……蛊真人下山",
-   "coverUrl": "https://www.mayiwsk.com/files/article/image/15/15233/15233s.jpg"
-  },
-  {
-   "id": "b230",
-   "name": "1979黄金时代",
-   "author": "睡觉会变白",
-   "category": "都市"
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23758/23758s.jpg"
   },
   {
    "id": "b231",
-   "name": "从水猴子开始成神",
-   "author": "甲壳蚁",
-   "category": "玄幻"
+   "name": "1979黄金时代",
+   "author": "睡觉会变白",
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23754/23754s.jpg"
   },
   {
    "id": "b232",
-   "name": "龙藏",
-   "author": "烟雨江南",
-   "category": "玄幻"
+   "name": "从水猴子开始成神",
+   "author": "甲壳蚁",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23738/23738s.jpg"
   },
   {
    "id": "b233",
-   "name": "战神狂飙",
-   "author": "一念汪洋",
-   "category": "玄幻"
+   "name": "龙藏",
+   "author": "烟雨江南",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23749/23749s.jpg"
   },
   {
    "id": "b234",
-   "name": "奶爸学园",
-   "author": "剑沉黄海",
-   "category": "都市"
+   "name": "战神狂飙",
+   "author": "一念汪洋",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17164/17164s.jpg"
   },
   {
    "id": "b235",
-   "name": "星辰之主",
-   "author": "减肥专家",
-   "category": "玄幻"
+   "name": "奶爸学园",
+   "author": "剑沉黄海",
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20283/20283s.jpg"
   },
   {
    "id": "b236",
-   "name": "重生都市仙帝",
-   "author": "万鲤鱼",
-   "category": "玄幻"
+   "name": "星辰之主",
+   "author": "减肥专家",
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16372/16372s.jpg"
   },
   {
    "id": "b237",
    "name": "万妖圣祖",
    "author": "十月流年",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21227/21227s.jpg"
   },
   {
    "id": "b238",
    "name": "舔狗反派只想苟，女主不按套路走！",
    "author": "我是愤怒",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23611/23611s.jpg"
   },
   {
    "id": "b239",
@@ -2626,336 +2829,392 @@
    "id": "b240",
    "name": "呢喃诗章",
    "author": "咸鱼飞行家",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23377/23377s.jpg"
   },
   {
    "id": "b241",
    "name": "重生之妖孽人生",
    "author": "黄金战士",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1279/1279s.jpg"
   },
   {
    "id": "b242",
    "name": "带着农场混异界",
    "author": "明宇",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/475/475s.jpg"
   },
   {
    "id": "b243",
    "name": "超级兵王",
    "author": "步千帆",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1903/1903s.jpg"
   },
   {
    "id": "b244",
    "name": "重生之资源大亨",
    "author": "月下的孤狼",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4456/4456s.jpg"
   },
   {
    "id": "b245",
    "name": "极品女仙",
    "author": "金铃动",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4362/4362s.jpg"
   },
   {
    "id": "b246",
    "name": "早安，老公大人",
    "author": "怡芊芊",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3455/3455s.jpg"
   },
   {
    "id": "b247",
    "name": "战气凌霄",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4167/4167s.jpg"
   },
   {
    "id": "b248",
    "name": "道神",
    "author": "凌乱的小道",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/17/17s.jpg"
   },
   {
    "id": "b249",
    "name": "圣皇",
    "author": "枫落忆痕",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6109/6109s.jpg"
   },
   {
    "id": "b250",
    "name": "命之途",
    "author": "莫若梦兮",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3598/3598s.jpg"
   },
   {
    "id": "b251",
    "name": "三界独尊",
    "author": "犁天",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4256/4256s.jpg"
   },
   {
    "id": "b252",
    "name": "武灵天下",
    "author": "颓废的烟121",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4219/4219s.jpg"
   },
   {
    "id": "b253",
    "name": "能源集团",
    "author": "忧郁的失恋人",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4303/4303s.jpg"
   },
   {
    "id": "b254",
    "name": "我的贴身校花",
    "author": "带玉",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/56/56s.jpg"
   },
   {
    "id": "b255",
    "name": "移动藏经阁",
    "author": "汉宝",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/145/145s.jpg"
   },
   {
    "id": "b256",
    "name": "绝品邪少",
    "author": "陨落星辰",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/399/399s.jpg"
   },
   {
    "id": "b257",
    "name": "社长天下",
    "author": "风雪天心",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4488/4488s.jpg"
   },
   {
    "id": "b258",
    "name": "武道至尊",
    "author": "暗夜幽殇",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1117/1117s.jpg"
   },
   {
    "id": "b259",
    "name": "特种教师",
    "author": "黑暗崛起",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2380/2380s.jpg"
   },
   {
    "id": "b260",
    "name": "都市之最强纨绔",
    "author": "左耳思念",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4364/4364s.jpg"
   },
   {
    "id": "b261",
    "name": "焚天之怒",
    "author": "妖夜",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4557/4557s.jpg"
   },
   {
    "id": "b262",
    "name": "公子风流",
    "author": "上山打老虎额",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/105/105s.jpg"
   },
   {
    "id": "b263",
    "name": "网游之诡影盗贼",
    "author": "尘缘暗殇",
-   "category": "女生"
+   "category": "女生",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3437/3437s.jpg"
   },
   {
    "id": "b264",
    "name": "都市藏真",
    "author": "疯神狂想",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/619/619s.jpg"
   },
   {
    "id": "b265",
    "name": "校园全能高手",
    "author": "安山狐狸",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/931/931s.jpg"
   },
   {
    "id": "b266",
    "name": "大豪门",
    "author": "不信天上掉馅饼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1068/1068s.jpg"
   },
   {
    "id": "b267",
    "name": "帝霸",
    "author": "厌笔萧生",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4906/4906s.jpg"
   },
   {
    "id": "b268",
    "name": "时空情缘之唯爱今生",
    "author": "三生凌月",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11499/11499s.jpg"
   },
   {
    "id": "b269",
    "name": "雷武",
    "author": "中下马笃",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3452/3452s.jpg"
   },
   {
    "id": "b270",
    "name": "霸天武魂",
    "author": "千里牧尘",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23355/23355s.jpg"
   },
   {
    "id": "b271",
    "name": "太古龙象诀",
    "author": "旺仔老馒头",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17200/17200s.jpg"
   },
   {
    "id": "b272",
    "name": "重生之都市枭雄",
    "author": "鱼龙",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4265/4265s.jpg"
   },
   {
    "id": "b273",
    "name": "都市无上仙医",
    "author": "断桥残雪",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/5/5113/5113s.jpg"
   },
   {
    "id": "b274",
    "name": "云的抗日",
    "author": "欧阳锋",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3523/3523s.jpg"
   },
   {
    "id": "b275",
    "name": "冠军之光",
    "author": "林海听涛",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/88/88s.jpg"
   },
   {
    "id": "b276",
    "name": "人道大圣",
    "author": "莫默",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22389/22389s.jpg"
   },
   {
    "id": "b277",
    "name": "死亡开端",
    "author": "zhttty",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1625/1625s.jpg"
   },
   {
    "id": "b278",
    "name": "星河炼",
    "author": "罗霸道",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20842/20842s.jpg"
   },
   {
    "id": "b279",
    "name": "异世邪君",
    "author": "风凌天下",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2500/2500s.jpg"
   },
   {
    "id": "b280",
    "name": "桃运双修",
    "author": "左妻右妾",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6197/6197s.jpg"
   },
   {
    "id": "b281",
    "name": "傲世九重天",
    "author": "风凌天下",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/191/191s.jpg"
   },
   {
    "id": "b282",
    "name": "奥术之主",
    "author": "姑苏献芹人",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20397/20397s.jpg"
   },
   {
    "id": "b283",
    "name": "一世独尊",
    "author": "月如火",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17042/17042s.jpg"
   },
   {
    "id": "b284",
    "name": "全民领主：我的亡灵会裂变",
    "author": "星殒落",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22770/22770s.jpg"
   },
   {
    "id": "b285",
    "name": "间客",
    "author": "猫腻",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2398/2398s.jpg"
   },
   {
    "id": "b286",
    "name": "血税",
    "author": "大瓜熊",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20736/20736s.jpg"
   },
   {
    "id": "b287",
    "name": "名侦探世界的警探",
    "author": "壬生若梦",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23203/23203s.jpg"
   },
   {
    "id": "b288",
    "name": "太古神王",
    "author": "净无痕",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11635/11635s.jpg"
   },
   {
    "id": "b289",
    "name": "沧元图",
    "author": "我吃西红柿",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18557/18557s.jpg"
   },
   {
    "id": "b290",
    "name": "魔门败类",
    "author": "惊涛骇浪",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13116/13116s.jpg"
   },
   {
    "id": "b291",
    "name": "万道龙皇",
    "author": "牧童听竹",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18136/18136s.jpg"
   },
   {
    "id": "b292",
    "name": "流氓艳遇记",
    "author": "夜十三",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6699/6699s.jpg"
   },
   {
    "id": "b293",
    "name": "盖世",
    "author": "逆苍天",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18534/18534s.jpg"
   },
   {
    "id": "b294",
    "name": "星门",
    "author": "老鹰吃小鸡",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22089/22089s.jpg"
   },
   {
    "id": "b295",
    "name": "混沌天帝",
    "author": "娶猫的老鼠",
-   "category": "玄幻"
+   "category": "玄幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/7/7275/7275s.jpg"
   },
   {
    "id": "b296",
@@ -2969,367 +3228,428 @@
    "id": "b297",
    "name": "第一薅神",
    "author": "芊舟",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21412/21412s.jpg"
   },
   {
    "id": "b298",
    "name": "星辰变",
    "author": "我吃西红柿",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2489/2489s.jpg"
   },
   {
    "id": "b299",
    "name": "逆天仙尊",
    "author": "手机是三鸡",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/7/7206/7206s.jpg"
   },
   {
    "id": "b300",
    "name": "仙界修仙",
    "author": "莫默",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2670/2670s.jpg"
   },
   {
    "id": "b301",
    "name": "偷香高手",
    "author": "六如和尚",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11412/11412s.jpg"
   },
   {
    "id": "b302",
    "name": "大奉打更人",
    "author": "卖报小郎君",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19548/19548s.jpg"
   },
   {
    "id": "b303",
    "name": "剑徒之路",
    "author": "惰堕",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17969/17969s.jpg"
   },
   {
    "id": "b304",
    "name": "我的美女老师",
    "author": "黑夜de白羊",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2375/2375s.jpg"
   },
   {
    "id": "b305",
    "name": "仙宫",
    "author": "打眼",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18275/18275s.jpg"
   },
   {
    "id": "b306",
    "name": "剑卒过河",
    "author": "惰堕",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19869/19869s.jpg"
   },
   {
    "id": "b307",
    "name": "我在镇妖司里吃妖怪",
    "author": "五志",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22018/22018s.jpg"
   },
   {
    "id": "b308",
    "name": "灭运图录",
    "author": "爱潜水的乌贼",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3282/3282s.jpg"
   },
   {
    "id": "b309",
    "name": "玄浑道章",
    "author": "误道者",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18547/18547s.jpg"
   },
   {
    "id": "b310",
    "name": "烂柯棋缘",
    "author": "真费事",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18597/18597s.jpg"
   },
   {
    "id": "b311",
    "name": "天下第九",
    "author": "鹅是老五",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17598/17598s.jpg"
   },
   {
    "id": "b312",
    "name": "顶级气运，悄悄修炼千年",
    "author": "任我笑",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21404/21404s.jpg"
   },
   {
    "id": "b313",
    "name": "山河志异",
    "author": "瑞根",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23707/23707s.jpg"
   },
   {
    "id": "b314",
    "name": "横推诸天从风云开始",
    "author": "天帝大人",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21991/21991s.jpg"
   },
   {
    "id": "b315",
    "name": "半仙",
    "author": "跃千愁",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21358/21358s.jpg"
   },
   {
    "id": "b316",
    "name": "仙子请自重",
    "author": "姬叉",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18316/18316s.jpg"
   },
   {
    "id": "b317",
    "name": "修仙高手混花都",
    "author": "叶清明",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17511/17511s.jpg"
   },
   {
    "id": "b318",
    "name": "大乾长生",
    "author": "萧舒",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22094/22094s.jpg"
   },
   {
    "id": "b319",
    "name": "大夏纪",
    "author": "博耀",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17346/17346s.jpg"
   },
   {
    "id": "b320",
    "name": "修仙就是这么科学",
    "author": "吃瓜子群众",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23173/23173s.jpg"
   },
   {
    "id": "b321",
    "name": "金刚不坏大寨主",
    "author": "请叫我小佳佳",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20424/20424s.jpg"
   },
   {
    "id": "b322",
    "name": "宝典",
    "author": "录事参军",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16165/16165s.jpg"
   },
   {
    "id": "b323",
    "name": "符皇",
    "author": "萧瑾瑜",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4290/4290s.jpg"
   },
   {
    "id": "b324",
    "name": "我师兄实在太稳健了",
    "author": "言归正传",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19112/19112s.jpg"
   },
   {
    "id": "b325",
    "name": "不朽丹神",
    "author": "胜己",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2976/2976s.jpg"
   },
   {
    "id": "b326",
    "name": "大至尊",
    "author": "苏月夕",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4166/4166s.jpg"
   },
   {
    "id": "b327",
    "name": "掠天记",
    "author": "黑山老鬼",
-   "category": "修真"
+   "category": "修真",
+   "coverUrl": "http://www.biquge001.com/files/article/image/12/12528/12528s.jpg"
   },
   {
    "id": "b328",
    "name": "第一序列",
    "author": "会说话的肘子",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18333/18333s.jpg"
   },
   {
    "id": "b329",
    "name": "修真归来",
    "author": "TV帝、",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16846/16846s.jpg"
   },
   {
    "id": "b330",
    "name": "一世兵王",
    "author": "我本疯狂",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17148/17148s.jpg"
   },
   {
    "id": "b331",
    "name": "豪婿",
    "author": "绝人",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20557/20557s.jpg"
   },
   {
    "id": "b332",
    "name": "狩猎好莱坞",
    "author": "贾思特杜",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17436/17436s.jpg"
   },
   {
    "id": "b333",
    "name": "重生军工子弟",
    "author": "葫芦村人",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17178/17178s.jpg"
   },
   {
    "id": "b334",
    "name": "首富从盲盒开始",
    "author": "吃一口布丁",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22000/22000s.jpg"
   },
   {
    "id": "b335",
    "name": "我的庄园",
    "author": "终级BOSS飞",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15943/15943s.jpg"
   },
   {
    "id": "b336",
    "name": "大医无疆",
    "author": "石章鱼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23312/23312s.jpg"
   },
   {
    "id": "b337",
    "name": "天眼人生",
    "author": "微笑面对世界",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17524/17524s.jpg"
   },
   {
    "id": "b338",
    "name": "重生买它几百斤房产证",
    "author": "精品马甲",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22508/22508s.jpg"
   },
   {
    "id": "b339",
    "name": "重生火红岁月，我在空间里种田",
    "author": "闲庭数蚂蚁",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23087/23087s.jpg"
   },
   {
    "id": "b340",
    "name": "娱乐：我捐千亿被曝光，全民泪崩",
    "author": "过浮云",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23176/23176s.jpg"
   },
   {
    "id": "b341",
    "name": "娱乐玩童",
    "author": "金色火烧云",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16425/16425s.jpg"
   },
   {
    "id": "b342",
    "name": "开局绑定：高品质男神系统",
    "author": "寒城爱北",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22795/22795s.jpg"
   },
   {
    "id": "b343",
    "name": "重生之神级败家子",
    "author": "辰机唐红豆",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/618/618s.jpg"
   },
   {
    "id": "b344",
    "name": "弄潮",
    "author": "瑞根",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3160/3160s.jpg"
   },
   {
    "id": "b345",
    "name": "布衣官道",
    "author": "寂寞读南华",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2875/2875s.jpg"
   },
   {
    "id": "b346",
    "name": "开局地摊卖大力",
    "author": "弈青锋",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21318/21318s.jpg"
   },
   {
    "id": "b347",
    "name": "修真聊天群",
    "author": "骑士的传说(书坊)",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15818/15818s.jpg"
   },
   {
    "id": "b348",
    "name": "全球高武",
    "author": "老鹰吃小鸡",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17646/17646s.jpg"
   },
   {
    "id": "b349",
    "name": "掏宝王",
    "author": "有一眼",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2260/2260s.jpg"
   },
   {
    "id": "b350",
    "name": "养你只为吃掉你",
    "author": "有只小受叫天真",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3514/3514s.jpg"
   },
   {
    "id": "b351",
    "name": "巅峰狂少",
    "author": "菠萝哥哥",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/19/19s.jpg"
   },
   {
    "id": "b352",
    "name": "空速星痕",
    "author": "唐家三少",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2468/2468s.jpg"
   },
   {
    "id": "b353",
    "name": "生肖守护神",
    "author": "唐家三少",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2471/2471s.jpg"
   },
   {
    "id": "b354",
    "name": "护花高手在都市",
    "author": "心在流浪",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13355/13355s.jpg"
   },
   {
    "id": "b355",
    "name": "最强狂兵",
    "author": "烈焰滔滔",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11975/11975s.jpg"
   },
   {
    "id": "b356",
    "name": "和表姐同居的日子",
    "author": "苏派",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10763/10763s.jpg"
   },
   {
    "id": "b357",
    "name": "退下，让朕来",
    "author": "油爆香菇",
-   "category": "都市"
+   "category": "都市",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23422/23422s.jpg"
   },
   {
    "id": "b358",
@@ -3351,247 +3671,288 @@
    "id": "b360",
    "name": "长安之上",
    "author": "迪巴拉爵士",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22589/22589s.jpg"
   },
   {
    "id": "b361",
    "name": "三国之无上至尊",
    "author": "绿茶包子",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19039/19039s.jpg"
   },
   {
    "id": "b362",
    "name": "红楼如此多骄",
    "author": "嗷世巅锋",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22168/22168s.jpg"
   },
   {
    "id": "b363",
    "name": "步步生莲",
    "author": "月关",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2490/2490s.jpg"
   },
   {
    "id": "b364",
    "name": "重生之吴霸春秋",
    "author": "迷惘的小羊羔",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22934/22934s.jpg"
   },
   {
    "id": "b365",
    "name": "我的公公叫康熙",
    "author": "雁九",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23214/23214s.jpg"
   },
   {
    "id": "b366",
    "name": "天唐锦绣",
    "author": "公子許",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18051/18051s.jpg"
   },
   {
    "id": "b367",
    "name": "我娘子天下第一",
    "author": "小小一蚍蜉",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18994/18994s.jpg"
   },
   {
    "id": "b368",
    "name": "篡清",
    "author": "天使奥斯卡",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2537/2537s.jpg"
   },
   {
    "id": "b369",
    "name": "邪御天娇",
    "author": "纯情犀利哥",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4191/4191s.jpg"
   },
   {
    "id": "b370",
    "name": "东晋北府一丘八",
    "author": "指云笑天道1",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17035/17035s.jpg"
   },
   {
    "id": "b371",
    "name": "无敌升级王",
    "author": "可爱内内",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4281/4281s.jpg"
   },
   {
    "id": "b372",
    "name": "万历明君",
    "author": "鹤招",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23752/23752s.jpg"
   },
   {
    "id": "b373",
    "name": "梦回大明春",
    "author": "王梓钧",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19547/19547s.jpg"
   },
   {
    "id": "b374",
    "name": "长乐歌",
    "author": "三戒大师",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16615/16615s.jpg"
   },
   {
    "id": "b375",
    "name": "晚明",
    "author": "柯山梦",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2889/2889s.jpg"
   },
   {
    "id": "b376",
    "name": "重生之民国元帅",
    "author": "宝哥",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19046/19046s.jpg"
   },
   {
    "id": "b377",
    "name": "大唐技师",
    "author": "扬镳",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17751/17751s.jpg"
   },
   {
    "id": "b378",
    "name": "数风流人物",
    "author": "瑞根",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19454/19454s.jpg"
   },
   {
    "id": "b379",
    "name": "三国从单骑入荆州开始",
    "author": "臊眉耷目",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21104/21104s.jpg"
   },
   {
    "id": "b380",
    "name": "极品家丁",
    "author": "禹岩",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2449/2449s.jpg"
   },
   {
    "id": "b381",
    "name": "不许没收我的人籍",
    "author": "可怜的夕夕",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23664/23664s.jpg"
   },
   {
    "id": "b382",
    "name": "重生南非当警察",
    "author": "鲇鱼头",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18656/18656s.jpg"
   },
   {
    "id": "b383",
    "name": "骗了康熙",
    "author": "大司空",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22679/22679s.jpg"
   },
   {
    "id": "b384",
    "name": "九阳丹神",
    "author": "一骑绝尘",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/8/8160/8160s.jpg"
   },
   {
    "id": "b385",
    "name": "大明镇海王",
    "author": "中华田园牛",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20684/20684s.jpg"
   },
   {
    "id": "b386",
    "name": "唐朝好地主",
    "author": "木子蓝色",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16480/16480s.jpg"
   },
   {
    "id": "b387",
    "name": "小阁老",
    "author": "三戒大师",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19356/19356s.jpg"
   },
   {
    "id": "b388",
    "name": "红楼之挽天倾",
    "author": "林悦南兮",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22753/22753s.jpg"
   },
   {
    "id": "b389",
    "name": "带着仓库到大明",
    "author": "迪巴拉爵士",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16673/16673s.jpg"
   },
   {
    "id": "b390",
    "name": "活埋大清朝",
    "author": "大罗罗",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22396/22396s.jpg"
   },
   {
    "id": "b391",
    "name": "草根仕途",
    "author": "瑞生",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/9/9840/9840s.jpg"
   },
   {
    "id": "b392",
    "name": "大明第一臣",
    "author": "青史尽成灰",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22583/22583s.jpg"
   },
   {
    "id": "b393",
    "name": "红色官途",
    "author": "鹅城知县",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/8/8973/8973s.jpg"
   },
   {
    "id": "b394",
    "name": "启明1158",
    "author": "御炎",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21326/21326s.jpg"
   },
   {
    "id": "b395",
    "name": "抢救大明朝",
    "author": "大罗罗",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18324/18324s.jpg"
   },
   {
    "id": "b396",
    "name": "大英公务员",
    "author": "青山铁杉",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20625/20625s.jpg"
   },
   {
    "id": "b397",
    "name": "带着系统来大唐",
    "author": "农家一锅出",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19884/19884s.jpg"
   },
   {
    "id": "b398",
    "name": "隋末之大夏龙雀",
    "author": "堕落的狼崽",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18525/18525s.jpg"
   },
   {
    "id": "b399",
    "name": "大宋安乐侯",
    "author": "马来福",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20304/20304s.jpg"
   },
   {
    "id": "b400",
    "name": "三国之最风流",
    "author": "赵子曰",
-   "category": "穿越"
+   "category": "穿越",
+   "coverUrl": "http://www.biquge001.com/files/article/image/1/1088/1088s.jpg"
   },
   {
    "id": "b401",
@@ -3621,283 +3982,330 @@
    "id": "b404",
    "name": "重生从世界杯前开始",
    "author": "重开吧",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23291/23291s.jpg"
   },
   {
    "id": "b405",
    "name": "余下的，只有噪音",
    "author": "沉默的爱",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22013/22013s.jpg"
   },
   {
    "id": "b406",
    "name": "仙魔三国大玩家",
    "author": "大烟缸",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21101/21101s.jpg"
   },
   {
    "id": "b407",
    "name": "在第四天灾中幸存",
    "author": "纳西利亚",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21567/21567s.jpg"
   },
   {
    "id": "b408",
    "name": "禁区之狐",
    "author": "林海听涛",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19636/19636s.jpg"
   },
   {
    "id": "b409",
    "name": "疯狂进化的虫子",
    "author": "咱的小刀",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/15/15849/15849s.jpg"
   },
   {
    "id": "b410",
    "name": "综网的巫：从艾泽拉斯吃到山海经",
    "author": "易伤秋者",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22147/22147s.jpg"
   },
   {
    "id": "b411",
    "name": "网游之近战法师",
    "author": "蝴蝶蓝",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2648/2648s.jpg"
   },
   {
    "id": "b412",
    "name": "次元法典",
    "author": "西贝猫",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17401/17401s.jpg"
   },
   {
    "id": "b413",
    "name": "艾泽拉斯奥术轨迹",
    "author": "会飞的银子",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20940/20940s.jpg"
   },
   {
    "id": "b414",
    "name": "这个外援强到离谱",
    "author": "街区转角",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20855/20855s.jpg"
   },
   {
    "id": "b415",
    "name": "神秘之劫",
    "author": "文抄公",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22361/22361s.jpg"
   },
   {
    "id": "b416",
    "name": "机甲圣域",
    "author": "智圆杰",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10135/10135s.jpg"
   },
   {
    "id": "b417",
    "name": "我有一群地球玩家",
    "author": "第七个魔方",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18603/18603s.jpg"
   },
   {
    "id": "b418",
    "name": "斯坦索姆神豪",
    "author": "余云飞",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20501/20501s.jpg"
   },
   {
    "id": "b419",
    "name": "现代诡异录",
    "author": "叶莫1983",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11266/11266s.jpg"
   },
   {
    "id": "b420",
    "name": "网游之枭傲天下",
    "author": "半步沧桑",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2404/2404s.jpg"
   },
   {
    "id": "b421",
    "name": "末世霸主之龙魂武帝",
    "author": "贫僧要吃猪肉",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10249/10249s.jpg"
   },
   {
    "id": "b422",
    "name": "网游之天谴修罗",
    "author": "火星引力",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/395/395s.jpg"
   },
   {
    "id": "b423",
    "name": "尸身尖叫",
    "author": "邱杰",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10137/10137s.jpg"
   },
   {
    "id": "b424",
    "name": "无限之剧本杀",
    "author": "过水看娇",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21595/21595s.jpg"
   },
   {
    "id": "b425",
    "name": "法爷永远是你大爷",
    "author": "翔炎",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18591/18591s.jpg"
   },
   {
    "id": "b426",
    "name": "亏成首富从游戏开始",
    "author": "青衫取醉",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18929/18929s.jpg"
   },
   {
    "id": "b427",
    "name": "我真的控制不住自己",
    "author": "张扬的五月",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20611/20611s.jpg"
   },
   {
    "id": "b428",
    "name": "网游之开局觉醒超神天赋",
    "author": "尘缘暗殇",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21427/21427s.jpg"
   },
   {
    "id": "b429",
    "name": "恐怖高校",
    "author": "大宋福红坊",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2405/2405s.jpg"
   },
   {
    "id": "b430",
    "name": "我真的只是想打铁",
    "author": "静悄悄地写",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19406/19406s.jpg"
   },
   {
    "id": "b431",
    "name": "这个剑修有点稳",
    "author": "暴走叉烧包",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20456/20456s.jpg"
   },
   {
    "id": "b432",
    "name": "超级锋暴",
    "author": "陈爱庭",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17935/17935s.jpg"
   },
   {
    "id": "b433",
    "name": "我真是最强中单",
    "author": "迷茫的群众",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21626/21626s.jpg"
   },
   {
    "id": "b434",
    "name": "重生从狼堡开始",
    "author": "我不是山丘",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20350/20350s.jpg"
   },
   {
    "id": "b435",
    "name": "超凡黎明",
    "author": "文抄公",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18384/18384s.jpg"
   },
   {
    "id": "b436",
    "name": "重生之最强剑神",
    "author": "天运老猫",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/14/14849/14849s.jpg"
   },
   {
    "id": "b437",
    "name": "我快亏成麻瓜了",
    "author": "江公子阿宝",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19357/19357s.jpg"
   },
   {
    "id": "b438",
    "name": "泡面首富",
    "author": "吃一口布丁",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19432/19432s.jpg"
   },
   {
    "id": "b439",
    "name": "重生之贼行天下",
    "author": "发飙的蜗牛",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2844/2844s.jpg"
   },
   {
    "id": "b440",
    "name": "NBA之开局抽到暮年奥尼尔",
    "author": "会发光的金仔",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21683/21683s.jpg"
   },
   {
    "id": "b441",
    "name": "身为领主的我只想好好种田",
    "author": "大汉护卫",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22453/22453s.jpg"
   },
   {
    "id": "b442",
    "name": "魔兽之炉石传说",
    "author": "游戏苦手",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4607/4607s.jpg"
   },
   {
    "id": "b443",
    "name": "死神逃学日记",
    "author": "不可沽名学霸王",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4599/4599s.jpg"
   },
   {
    "id": "b444",
    "name": "世家再醮记",
    "author": "华飞白",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/10/10956/10956s.jpg"
   },
   {
    "id": "b445",
    "name": "我的玩家都是演技派",
    "author": "青衫取醉",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22955/22955s.jpg"
   },
   {
    "id": "b446",
    "name": "丹武天尊",
    "author": "嘟嘟嘟嘟嘟",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/11/11017/11017s.jpg"
   },
   {
    "id": "b447",
    "name": "英雄联盟之谁与争锋",
    "author": "乱",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/251/251s.jpg"
   },
   {
    "id": "b448",
    "name": "我若修仙法力齐天",
    "author": "一只辣椒精",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20044/20044s.jpg"
   },
   {
    "id": "b449",
    "name": "我真的在打篮球",
    "author": "临河羡鱼翁",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20856/20856s.jpg"
   },
   {
    "id": "b450",
    "name": "加一个，我不太会打",
    "author": "葛洛夫街兄弟",
-   "category": "网游"
+   "category": "网游",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22024/22024s.jpg"
   },
   {
    "id": "b451",
@@ -3919,55 +4327,64 @@
    "id": "b453",
    "name": "猩红降临",
    "author": "黑山老鬼",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23188/23188s.jpg"
   },
   {
    "id": "b454",
    "name": "踏星",
    "author": "随散飘风",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18138/18138s.jpg"
   },
   {
    "id": "b455",
    "name": "武侠仙侠穿越系统",
    "author": "六虚剑魂",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/8/8668/8668s.jpg"
   },
   {
    "id": "b456",
    "name": "穿越之异界造高达",
    "author": "豪豪写小说",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23255/23255s.jpg"
   },
   {
    "id": "b457",
    "name": "从伦敦开始的诡异剧场",
    "author": "神秘的行星",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21187/21187s.jpg"
   },
   {
    "id": "b458",
    "name": "我的时空穿梭手机",
    "author": "金色茉莉花",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16126/16126s.jpg"
   },
   {
    "id": "b459",
    "name": "两界搬运工",
    "author": "石闻",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16398/16398s.jpg"
   },
   {
    "id": "b460",
    "name": "我给予世界毁灭与新生",
    "author": "阡之陌一",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22464/22464s.jpg"
   },
   {
    "id": "b461",
    "name": "我的细胞监狱",
    "author": "穿黄衣的阿肥",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18637/18637s.jpg"
   },
   {
    "id": "b462",
@@ -3975,217 +4392,252 @@
    "author": "卖报小郎君",
    "category": "科幻",
    "intro": "亘古通今，传闻世有灵境。关于灵境的说法，历朝历代的名人雅士众说纷纭，诗中记载：“自齐至唐，兹山濅荒，灵境寂寥，罕有人游。”“灵境不可状，鬼工谅难求。”申城大学一年级新生张元清， 在一次机缘巧合之下，得到了一张会所vip至尊卡，哦不，是灵境通行卡。 ...",
-   "coverUrl": "https://www.56yz.com/files/article/image/3/3149/3149s.jpg"
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22982/22982s.jpg"
   },
   {
    "id": "b463",
    "name": "我的治愈系游戏",
    "author": "我会修空调",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21274/21274s.jpg"
   },
   {
    "id": "b464",
    "name": "黑暗血时代",
    "author": "天下飘火",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2884/2884s.jpg"
   },
   {
    "id": "b465",
    "name": "黎明之剑",
    "author": "远瞳",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17516/17516s.jpg"
   },
   {
    "id": "b466",
    "name": "小兵传奇",
    "author": "玄雨",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2424/2424s.jpg"
   },
   {
    "id": "b467",
    "name": "星战文明",
    "author": "李雪夜",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6146/6146s.jpg"
   },
   {
    "id": "b468",
    "name": "宝藏猎人",
    "author": "厄夜怪客",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21471/21471s.jpg"
   },
   {
    "id": "b469",
    "name": "消逝的魔环",
    "author": "金寻者",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21970/21970s.jpg"
   },
   {
    "id": "b470",
    "name": "成神风暴",
    "author": "衣食无忧",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16365/16365s.jpg"
   },
   {
    "id": "b471",
    "name": "我有一座恐怖屋",
    "author": "我会修空调",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17878/17878s.jpg"
   },
   {
    "id": "b472",
    "name": "养鬼为祸",
    "author": "浮梦流年",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/12/12093/12093s.jpg"
   },
   {
    "id": "b473",
    "name": "北派盗墓笔记",
    "author": "云峰",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23504/23504s.jpg"
   },
   {
    "id": "b474",
    "name": "最强剑仙",
    "author": "左刀",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/6/6617/6617s.jpg"
   },
   {
    "id": "b475",
    "name": "地球人实在太凶猛了",
    "author": "卧牛真人",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19640/19640s.jpg"
   },
   {
    "id": "b476",
    "name": "诸天尽头",
    "author": "凤嘲凰",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18542/18542s.jpg"
   },
   {
    "id": "b477",
    "name": "寂灭天骄",
    "author": "高楼大厦",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/2/2655/2655s.jpg"
   },
   {
    "id": "b478",
    "name": "猛鬼收容系统",
    "author": "南斗昆仑",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16944/16944s.jpg"
   },
   {
    "id": "b479",
    "name": "影视世界当神探",
    "author": "冰原三雅",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17801/17801s.jpg"
   },
   {
    "id": "b480",
    "name": "电影世界私人订制",
    "author": "昨夜大雨",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17802/17802s.jpg"
   },
   {
    "id": "b481",
    "name": "电影世界我为王",
    "author": "湛蓝海岸线",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17509/17509s.jpg"
   },
   {
    "id": "b482",
    "name": "黑雾之下",
    "author": "辰燃",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20059/20059s.jpg"
   },
   {
    "id": "b483",
    "name": "深夜书屋",
    "author": "纯洁滴小龙",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17348/17348s.jpg"
   },
   {
    "id": "b484",
    "name": "我的一天有48小时",
    "author": "小呆昭",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17869/17869s.jpg"
   },
   {
    "id": "b485",
    "name": "人间苦",
    "author": "甲六一",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20177/20177s.jpg"
   },
   {
    "id": "b486",
    "name": "降临诸天世界",
    "author": "龙升云霄",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16694/16694s.jpg"
   },
   {
    "id": "b487",
    "name": "赛博英雄传",
    "author": "吾道长不孤",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19471/19471s.jpg"
   },
   {
    "id": "b488",
    "name": "学霸的黑科技系统",
    "author": "晨星LL",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17403/17403s.jpg"
   },
   {
    "id": "b489",
    "name": "一拳歼星",
    "author": "剑走偏锋",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19385/19385s.jpg"
   },
   {
    "id": "b490",
    "name": "主神大道",
    "author": "古月居士",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16399/16399s.jpg"
   },
   {
    "id": "b491",
    "name": "极品捉鬼系统",
    "author": "解三千",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17350/17350s.jpg"
   },
   {
    "id": "b492",
    "name": "我家水库真没巨蟒啊",
    "author": "执笔追梦",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21766/21766s.jpg"
   },
   {
    "id": "b493",
    "name": "无尽债务",
    "author": "Andlao",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23402/23402s.jpg"
   },
   {
    "id": "b494",
    "name": "深海余烬",
    "author": "远瞳",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23285/23285s.jpg"
   },
   {
    "id": "b495",
    "name": "灾厄纪元",
    "author": "妖的境界",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4510/4510s.jpg"
   },
   {
    "id": "b496",
    "name": "宇宙职业选手",
    "author": "我吃西红柿",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22599/22599s.jpg"
   },
   {
    "id": "b497",
    "name": "星临诸天",
    "author": "暗狱领主",
-   "category": "科幻"
+   "category": "科幻",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17571/17571s.jpg"
   },
   {
    "id": "b498",
@@ -4231,271 +4683,316 @@
    "id": "b503",
    "name": "我在木叶肝经验",
    "author": "咖喱宅牛",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23238/23238s.jpg"
   },
   {
    "id": "b504",
    "name": "斗破：我和美杜莎女王共生了",
    "author": "熊包先生",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23262/23262s.jpg"
   },
   {
    "id": "b505",
    "name": "木叶：开局融合富江模板",
    "author": "炉中烈焰",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/23/23313/23313s.jpg"
   },
   {
    "id": "b506",
    "name": "花豹突击队",
    "author": "竹香书屋",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3375/3375s.jpg"
   },
   {
    "id": "b507",
    "name": "御鬼者传奇",
    "author": "沙之愚者",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18120/18120s.jpg"
   },
   {
    "id": "b508",
    "name": "一胎三宝：总裁老公，甜蜜宠",
    "author": "紫夏沐",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18898/18898s.jpg"
   },
   {
    "id": "b509",
    "name": "美漫丧钟",
    "author": "混沌文工团",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17885/17885s.jpg"
   },
   {
    "id": "b510",
    "name": "转生眼中的火影世界",
    "author": "空想之龙",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17943/17943s.jpg"
   },
   {
    "id": "b511",
    "name": "学姐快住口！",
    "author": "蜜汁姬",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22261/22261s.jpg"
   },
   {
    "id": "b512",
    "name": "DC家的骑士",
    "author": "英雄骑士",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18000/18000s.jpg"
   },
   {
    "id": "b513",
    "name": "独步成仙",
    "author": "搞个锤子",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18123/18123s.jpg"
   },
   {
    "id": "b514",
    "name": "花颜策",
    "author": "西子情",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18130/18130s.jpg"
   },
   {
    "id": "b515",
    "name": "术师手册",
    "author": "听日",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21732/21732s.jpg"
   },
   {
    "id": "b516",
    "name": "我修的可能是假仙",
    "author": "明月地上霜",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17781/17781s.jpg"
   },
   {
    "id": "b517",
    "name": "火影之活久见",
    "author": "李四羊",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17052/17052s.jpg"
   },
   {
    "id": "b518",
    "name": "浮世绘卷",
    "author": "lamento",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3927/3927s.jpg"
   },
   {
    "id": "b519",
    "name": "腐烂国度之活下去",
    "author": "奇异果008",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/12/12717/12717s.jpg"
   },
   {
    "id": "b520",
    "name": "丹武",
    "author": "寒香寂寞",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3971/3971s.jpg"
   },
   {
    "id": "b521",
    "name": "玩家超正义",
    "author": "不祈十弦",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19167/19167s.jpg"
   },
   {
    "id": "b522",
    "name": "这游戏也太真实了",
    "author": "晨星LL",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22093/22093s.jpg"
   },
   {
    "id": "b523",
    "name": "诱爱成婚",
    "author": "我不想懂",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3476/3476s.jpg"
   },
   {
    "id": "b524",
    "name": "芝加哥1990",
    "author": "齐可休",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18362/18362s.jpg"
   },
   {
    "id": "b525",
    "name": "沈家有女",
    "author": "雨雪其霏",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13270/13270s.jpg"
   },
   {
    "id": "b526",
    "name": "神冥屠虐",
    "author": "虐心不知心",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/12/12994/12994s.jpg"
   },
   {
    "id": "b527",
    "name": "第九特区",
    "author": "伪戒",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/19/19040/19040s.jpg"
   },
   {
    "id": "b528",
    "name": "无限历程之玄功北冥",
    "author": "基腐宅",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/7/7527/7527s.jpg"
   },
   {
    "id": "b529",
    "name": "屠龙之前就读过龙族的路明非",
    "author": "诡船",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22606/22606s.jpg"
   },
   {
    "id": "b530",
    "name": "鹿鼎猎美记",
    "author": "若能归去",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/7/7708/7708s.jpg"
   },
   {
    "id": "b531",
    "name": "轮回乐园：遍地是马甲",
    "author": "二两.",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22440/22440s.jpg"
   },
   {
    "id": "b532",
    "name": "柯南之我不是蛇精病",
    "author": "烟火酒颂",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20107/20107s.jpg"
   },
   {
    "id": "b533",
    "name": "神医嫡女",
    "author": "杨十六",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17941/17941s.jpg"
   },
   {
    "id": "b534",
    "name": "重生校园：学霸女神，宠上瘾",
    "author": "晴空希蓝",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/18/18840/18840s.jpg"
   },
   {
    "id": "b535",
    "name": "修真外挂",
    "author": "凌乱紫零落",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3502/3502s.jpg"
   },
   {
    "id": "b536",
    "name": "变身滑稽萝莉",
    "author": "残月黄泉",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17272/17272s.jpg"
   },
   {
    "id": "b537",
    "name": "这个世界什么时候有血条显示了",
    "author": "刹那辉煌",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/22/22536/22536s.jpg"
   },
   {
    "id": "b538",
    "name": "进化的四十六亿重奏",
    "author": "相位行者",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/4/4360/4360s.jpg"
   },
   {
    "id": "b539",
    "name": "驭房有术",
    "author": "铁锁",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/16/16526/16526s.jpg"
   },
   {
    "id": "b540",
    "name": "聊天群里的萌新神祇",
    "author": "很简单de",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/21/21352/21352s.jpg"
   },
   {
    "id": "b541",
    "name": "把反派养歪了肿么破",
    "author": "湮叶",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/13/13265/13265s.jpg"
   },
   {
    "id": "b542",
    "name": "眷恋调皮妻",
    "author": "忆江",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/0/35/35s.jpg"
   },
   {
    "id": "b543",
    "name": "大剑之最强辅助",
    "author": "历史的尘",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/17/17303/17303s.jpg"
   },
   {
    "id": "b544",
    "name": "我在古代日本当剑豪",
    "author": "漱梦实",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20692/20692s.jpg"
   },
   {
    "id": "b545",
    "name": "玄天战尊",
    "author": "妖月夜",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/8/8412/8412s.jpg"
   },
   {
    "id": "b546",
    "name": "魔王不必被打倒",
    "author": "如倾如诉",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/20/20031/20031s.jpg"
   },
   {
    "id": "b547",
    "name": "网游之霸王传说",
    "author": "名楚",
-   "category": "言情"
+   "category": "言情",
+   "coverUrl": "http://www.biquge001.com/files/article/image/3/3893/3893s.jpg"
   },
   {
    "id": "b548",

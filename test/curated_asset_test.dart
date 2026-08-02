@@ -131,6 +131,20 @@ void main() {
     }
   });
 
+  test('书几乎都自带封面，否则运行时会为每本无封面的书发起一次多源搜索', () {
+    // 无封面的书会走 CuratedCoverResolver：为一张缩略图向书源站点真发搜索请求。
+    // 真机实测 497/551 无封面时，切一个 Tab 就排队约 50 本，把网络与 UI isolate
+    // 长期占满，点书打开一本要等 31 秒。封面 URL 可由站点详情页链接推导，
+    // 所以这里要求覆盖率必须高，防止重新生成 asset 时静默退回去。
+    final books = data.booksById.values.toList();
+    final withCover = books.where((b) => b.hasCover).length;
+    expect(
+      withCover / books.length,
+      greaterThanOrEqualTo(0.95),
+      reason: '带封面 $withCover/${books.length}，无封面的书会触发实时搜索',
+    );
+  });
+
   test('作者不等于书名，否则搜索关键词会变成「书名 书名」', () {
     for (final book in data.booksById.values) {
       if (book.author.isEmpty) continue;
