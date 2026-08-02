@@ -430,6 +430,11 @@ class _ProfilePageState extends State<ProfilePage>
                 paragraphIndent: provider.paragraphIndent,
                 fontWeightIndex: provider.fontWeightIndex,
                 fontFamily: provider.fontFamily,
+                localFonts: provider.localFonts,
+                onImportLocalFont: provider.importLocalFontFile,
+                onRemoveLocalFont: (id) {
+                  provider.removeLocalFont(id);
+                },
                 backgroundColor: provider.backgroundColor,
                 backgroundImagePath: provider.backgroundImagePath,
                 showReadingInfo: provider.showReadingInfo,

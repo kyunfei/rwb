@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+
 import '../models/highlight.dart';
+import '../pages/reader/reader_font_options.dart';
 import '../pages/reader/reader_text_cleaner.dart';
 import '../services/storage_service.dart';
 import '../services/reader_bookmark_service.dart';
@@ -122,6 +127,7 @@ class ReaderProvider extends ChangeNotifier {
   String _fontFamily = '';
   bool _loadEpubFonts = true;
   Map<String, String> _fontOverrides = {};
+  List<LocalReaderFont> _localFonts = [];
   TapZoneAction _centerTapAction = TapZoneAction.showMenu;
   List<List<TapZoneAction>> _tapZoneActions = defaultTapZoneActions();
 
@@ -216,6 +222,7 @@ class ReaderProvider extends ChangeNotifier {
   String get fontFamily => _fontFamily;
   bool get loadEpubFonts => _loadEpubFonts;
   Map<String, String> get fontOverrides => Map.unmodifiable(_fontOverrides);
+  List<LocalReaderFont> get localFonts => List.unmodifiable(_localFonts);
   TapZoneAction get centerTapAction => _centerTapAction;
   List<List<TapZoneAction>> get tapZoneActions => _tapZoneActions;
   double get letterSpacing => _letterSpacing;
@@ -252,6 +259,14 @@ class ReaderProvider extends ChangeNotifier {
       final overrides = config['fontOverrides'] as Map?;
       if (overrides != null) {
         _fontOverrides = Map<String, String>.from(overrides);
+      }
+      final localFontsJson = config['localFonts'] as List?;
+      if (localFontsJson != null) {
+        _localFonts = localFontsJson
+            .whereType<Map>()
+            .map((e) => LocalReaderFont.fromJson(Map<String, dynamic>.from(e)))
+            .where((f) => f.id.isNotEmpty && f.path.isNotEmpty)
+            .toList();
       }
       final centerActionIndex = config['centerTapAction'] as int?;
       if (centerActionIndex != null &&
@@ -379,6 +394,7 @@ class ReaderProvider extends ChangeNotifier {
       'fontFamily': _fontFamily,
       'loadEpubFonts': _loadEpubFonts,
       'fontOverrides': _fontOverrides,
+      'localFonts': _localFonts.map((e) => e.toJson()).toList(),
       'centerTapAction': _centerTapAction.index,
       'tapZoneActions': _tapZoneActions
           .map((row) => row.map((a) => a.index).toList())
@@ -537,6 +553,64 @@ class ReaderProvider extends ChangeNotifier {
 
   void setFontFamily(String family) {
     _fontFamily = family;
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  /// 从本机导入 .ttf/.otf，复制到应用目录并设为当前字体。
+  Future<LocalReaderFont?> importLocalFontFile(String sourcePath) async {
+    final src = File(sourcePath);
+    if (!await src.exists()) return null;
+    final lower = sourcePath.toLowerCase();
+    String ext = '';
+    for (final e in ['.ttf', '.otf', '.ttc', '.otc']) {
+      if (lower.endsWith(e)) {
+        ext = e;
+        break;
+      }
+    }
+    if (ext.isEmpty) return null;
+    final docs = await getApplicationDocumentsDirectory();
+    final sep = Platform.pathSeparator;
+    final dir = Directory('${docs.path}${sep}reader_fonts');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    final id = DateTime.now().millisecondsSinceEpoch.toRadixString(16);
+    final destPath = '${dir.path}$sep$id$ext';
+    await src.copy(destPath);
+    final base = sourcePath.replaceAll('\\', '/').split('/').last;
+    var name = base.contains('.')
+        ? base.substring(0, base.lastIndexOf('.'))
+        : base;
+    if (name.isEmpty) name = '本地字体';
+    final font = LocalReaderFont(id: id, name: name, path: destPath);
+    _localFonts = [..._localFonts, font];
+    _fontFamily = font.cssFamily;
+    _saveToStorage();
+    notifyListeners();
+    return font;
+  }
+
+  Future<void> removeLocalFont(String id) async {
+    LocalReaderFont? removed;
+    final next = <LocalReaderFont>[];
+    for (final f in _localFonts) {
+      if (f.id == id) {
+        removed = f;
+      } else {
+        next.add(f);
+      }
+    }
+    if (removed == null) return;
+    _localFonts = next;
+    if (_fontFamily == removed.cssFamily) {
+      _fontFamily = '';
+    }
+    try {
+      final file = File(removed.path);
+      if (await file.exists()) await file.delete();
+    } catch (_) {}
     _saveToStorage();
     notifyListeners();
   }

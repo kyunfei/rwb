@@ -14,6 +14,9 @@ class ReaderSettingsSheet extends StatefulWidget {
   final String paragraphIndent;
   final int fontWeightIndex;
   final String fontFamily;
+  final List<LocalReaderFont> localFonts;
+  final Future<LocalReaderFont?> Function(String path)? onImportLocalFont;
+  final ValueChanged<String>? onRemoveLocalFont;
   final Color backgroundColor;
   final String? backgroundImagePath;
   final bool showReadingInfo;
@@ -123,6 +126,9 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.paragraphIndent,
     required this.fontWeightIndex,
     required this.fontFamily,
+    this.localFonts = const [],
+    this.onImportLocalFont,
+    this.onRemoveLocalFont,
     required this.backgroundColor,
     this.backgroundImagePath,
     required this.showReadingInfo,
@@ -852,28 +858,222 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   }
 
   void _showFontDialog() {
+    var localFonts = List<LocalReaderFont>.from(widget.localFonts);
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: _panelColor,
       isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              for (final opt in kReaderFontOptions)
-                _sheetOption(
-                  opt.label,
-                  _fontFamily == opt.cssFamily,
-                  () => _setFont(opt.cssFamily),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final options = <ReaderFontOption>[
+              ...kReaderFontOptions,
+              ...localFonts.map((f) => f.toOption()),
+            ];
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.72,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.keyboard_arrow_down,
+                                color: _textColor),
+                            onPressed: () => Navigator.pop(sheetContext),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '更多字体',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _textColor,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Text(
+                        '内置为系统字体风格映射；商业字库请自行导入 .ttf/.otf',
+                        style: TextStyle(color: _subColor, fontSize: 12),
+                      ),
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 2.35,
+                        ),
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final opt = options[index];
+                          final selected = _fontFamily == opt.cssFamily;
+                          final isLocal = opt.subtitle == '本地';
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () => _setFont(opt.cssFamily),
+                              onLongPress: isLocal &&
+                                      widget.onRemoveLocalFont != null
+                                  ? () async {
+                                      final ok = await showDialog<bool>(
+                                        context: sheetContext,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('删除本地字体'),
+                                          content: Text('确定删除「${opt.label}」？'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: const Text('取消'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: const Text('删除'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (ok == true) {
+                                        widget.onRemoveLocalFont!(opt.id);
+                                        setSheetState(() {
+                                          localFonts = localFonts
+                                              .where((f) => f.id != opt.id)
+                                              .toList();
+                                          if (_fontFamily == opt.cssFamily) {
+                                            _fontFamily = '';
+                                          }
+                                        });
+                                        setState(() {});
+                                      }
+                                    }
+                                  : null,
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  color: _controlColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: selected
+                                        ? Theme.of(context).colorScheme.primary
+                                        : _subColor.withValues(alpha: 0.16),
+                                    width: selected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        opt.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: selected
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : _textColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: opt.isSystemDefault
+                                              ? null
+                                              : opt.previewFamily
+                                                  .split(',')
+                                                  .first
+                                                  .replaceAll('"', '')
+                                                  .trim(),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        selected ? '使用中' : opt.subtitle,
+                                        style: TextStyle(
+                                          color: selected
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : _subColor,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (widget.onImportLocalFont != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.platform.pickFiles(
+                                type: FileType.any,
+                                allowMultiple: false,
+                              );
+                              final path = result?.files.single.path;
+                              if (path == null) return;
+                              final font =
+                                  await widget.onImportLocalFont!(path);
+                              if (font == null) {
+                                if (sheetContext.mounted) {
+                                  ScaffoldMessenger.of(sheetContext)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        '导入失败：请选择 .ttf / .otf 字体文件',
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+                              setSheetState(() {
+                                localFonts = [...localFonts, font];
+                                _fontFamily = font.cssFamily;
+                              });
+                              setState(() => _fontFamily = font.cssFamily);
+                              if (sheetContext.mounted) {
+                                Navigator.pop(sheetContext);
+                              }
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('导入本地字体'),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-        ),
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

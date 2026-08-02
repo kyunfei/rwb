@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/highlight.dart';
 import '../../../providers/reader_provider.dart';
+import '../reader_font_options.dart';
 import '../reader_text_cleaner.dart';
 import '../reader_typography.dart';
 
@@ -235,6 +236,7 @@ class ReaderHtmlTemplate {
     final textColor = _colorToHex(provider.textColor);
     final bgColor = _colorToHex(provider.backgroundColor);
     final fontFamily = provider.fontFamily.isEmpty ? 'inherit' : provider.fontFamily;
+    final localFontFaceCss = _localFontFaceCss(provider.localFonts);
     final indentEm = ReaderTypography.effectiveIndentEm(
       configuredEm: provider.paragraphIndent.length.toDouble(),
       latinDominant: latinDominant,
@@ -257,6 +259,8 @@ class ReaderHtmlTemplate {
         : '0 6px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.10)';
 
     return '''
+/* 用户导入的本地字体（对照 QQ 阅读「已下载」） */
+$localFontFaceCss
 :root {
   --reader-font-size: ${provider.fontSize}px;
   --reader-line-height: ${provider.lineHeight};
@@ -931,6 +935,28 @@ ${ReaderTypography.paragraphWrapCss}
   static String _colorToHex(Color color) {
     final argb = color.toARGB32();
     return '#${argb.toRadixString(16).padLeft(8, '0').substring(2)}';
+  }
+
+  /// 为用户导入的本地字体生成 @font-face（file:// URL）。
+  static String _localFontFaceCss(List<LocalReaderFont> fonts) {
+    if (fonts.isEmpty) return '';
+    final buf = StringBuffer();
+    for (final font in fonts) {
+      if (font.id.isEmpty || font.path.isEmpty) continue;
+      final uri = Uri.file(font.path).toString();
+      final lower = font.path.toLowerCase();
+      final format = lower.endsWith('.otf') || lower.endsWith('.otc')
+          ? 'opentype'
+          : 'truetype';
+      buf.writeln('''
+@font-face {
+  font-family: 'rwb-local-${font.id}';
+  src: url('$uri') format('$format');
+  font-display: swap;
+}
+''');
+    }
+    return buf.toString();
   }
 
   /// JavaScript 脚本：分页计算 + 双层翻页动画 + 交互检测
