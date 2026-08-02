@@ -603,8 +603,9 @@ class _DetailPageState extends State<DetailPage> {
 
   Widget _buildIntroContent(Color color) {
     final intro = _book!.displayIntro;
-    if (intro.isEmpty) {
-      return Text('暂无简介', style: TextStyle(color: color));
+    if (intro.trim().isEmpty) {
+      // 缺简介时收起整块，不写「暂无简介」——那行字下面还跟着整段留白
+      return const SizedBox.shrink();
     }
     return _buildFullIntro(intro);
   }

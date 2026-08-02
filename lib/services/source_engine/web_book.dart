@@ -1382,7 +1382,10 @@ class WebBook {
       final parsedBook = Book(
         bookUrl: bookUrl,
         name: name ?? '',
-        author: author ?? '',
+        // 与搜索结果一样洗掉「作者：」这类站点标签：详情页此前直接用原值，
+        // 真机上就显示成「作者： 作  者：会说话的肘子」，且脏值会进库、
+        // 拖累按书名+作者做的换源与封面缓存匹配
+        author: _formatBookAuthor(author ?? ''),
         coverUrl: resolvedCoverUrl,
         intro: intro ?? '',
         mediaType: source.bookSourceType.mediaType,
@@ -2624,13 +2627,23 @@ class WebBook {
   }
 
   /// 作者格式化（借鉴 legado 的 BookHelp.formatBookAuthor）
+  @visibleForTesting
+  static String formatBookAuthorForTest(String author) =>
+      _formatBookAuthor(author);
+
   static String _formatBookAuthor(String author) {
     var result = author.trim();
-    // 去除常见前缀
-    for (final prefix in ['作者：', '作者:', '著：', '著:', '文：', '文:']) {
-      if (result.startsWith(prefix)) {
-        result = result.substring(prefix.length);
-      }
+    // 去除常见前缀。用正则而不是逐个字面量匹配：站点常写成「作　者：」
+    // （标签内部塞全角空格或多个空格排版），字面量比对一个都对不上。
+    // 冒号是必需的：允许无冒号会把「文心」这种真作者名削成「心」
+    final prefixPattern = RegExp(
+      r'^\s*(作\s*者|著\s*者|译\s*者|文|著)\s*[：:]\s*',
+    );
+    for (var i = 0; i < 2; i++) {
+      final stripped = result.replaceFirst(prefixPattern, '');
+      if (stripped == result) break;
+      // 整个字段只有标签时留空：把「作者：」当作者名显示比没有作者更糟
+      result = stripped;
     }
     // 去除常见后缀
     for (final suffix in [' 著', '著', ' 编', '编', ' 撰', '撰']) {
