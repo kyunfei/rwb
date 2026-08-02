@@ -1007,10 +1007,14 @@ class _BookSourceManagePageState extends State<BookSourceManagePage> {
 
   void _showImportResult(BookSourceImportResult result) {
     final total = result.added + result.updated + result.unchanged;
+    final convertedHint = result.myBookshelf2Converted > 0
+        ? '识别为 阅读2.0 格式并已转换 ${result.myBookshelf2Converted} 个；'
+        : '';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '导入成功：共 $total 条（新增 ${result.added}，更新 ${result.updated}，跳过 ${result.unchanged}）',
+          '导入成功：$convertedHint'
+          '共 $total 条（新增 ${result.added}，更新 ${result.updated}，跳过 ${result.unchanged}）',
         ),
       ),
     );
