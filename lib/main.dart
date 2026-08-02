@@ -102,7 +102,16 @@ Future<void> main() async {
       }
     }
 
-    runApp(const DanShenqiApp());
+    // 阅读器界面设置必须在 runApp 前从 Hive 装回内存。
+    // 以前只写不读：进程被杀（OPPO 很常见）后再进阅读器就会全回默认。
+    final readerProvider = ReaderProvider();
+    try {
+      await readerProvider.loadFromStorage();
+    } catch (e, st) {
+      debugPrint('ReaderProvider.loadFromStorage error: $e\n$st');
+    }
+
+    runApp(DanShenqiApp(readerProvider: readerProvider));
   }, (error, stack) {
     // Zone 级未捕获错误
     CrashLogService.instance.recordError(error, stack, type: 'zone');
@@ -122,7 +131,9 @@ Future<void> main() async {
 }
 
 class DanShenqiApp extends StatelessWidget {
-  const DanShenqiApp({super.key});
+  const DanShenqiApp({super.key, required this.readerProvider});
+
+  final ReaderProvider readerProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +144,7 @@ class DanShenqiApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DiscoveryProvider()),
         ChangeNotifierProvider(create: (_) => CuratedBookstoreProvider()),
         ChangeNotifierProvider(create: (_) => ExploreShowProvider()),
-        ChangeNotifierProvider(create: (_) => ReaderProvider()),
+        ChangeNotifierProvider.value(value: readerProvider),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
         ChangeNotifierProvider.value(value: ShelfUpdateService.instance),
         ChangeNotifierProvider.value(value: ShelfDownloadQueueService.instance),

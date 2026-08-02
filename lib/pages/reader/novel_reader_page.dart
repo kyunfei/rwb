@@ -372,18 +372,6 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     }
   }
 
-  Future<void> _ensureTtsReady(ReaderProvider provider) async {
-    await provider.ensureTtsInitialized(
-      rate: _ttsSpeed,
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-      onParagraphChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
-  }
-
   Future<int> _estimateTtsStartOffset(String cleanedPlain) async {
     if (cleanedPlain.isEmpty) return 0;
     final provider = context.read<ReaderProvider>();
@@ -459,15 +447,54 @@ class _NovelReaderPageState extends State<NovelReaderPage>
 
   Future<void> _startTtsAsync() async {
     final provider = context.read<ReaderProvider>();
-    await _ensureTtsReady(provider);
+    provider.setTtsChapterCompleteHandler(_onTtsChapterComplete);
+    provider.setTtsSegmentHandler(_onTtsSegmentChanged);
+    final ready = await provider.ensureTtsInitialized(
+      rate: _ttsSpeed,
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
+      onParagraphChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
+    if (!mounted) return;
+    if (!ready) {
+      _showTtsFailure(
+        provider.ttsLastError ??
+            '朗读引擎不可用。请检查系统是否已安装中文语音包。',
+      );
+      return;
+    }
     final converted = ChineseConverter.convert(
       _processedContent(_content),
       provider.chineseConverterType,
     );
     final cleaned = ReaderTextCleaner.cleanForTts(converted);
+    if (cleaned.trim().isEmpty) {
+      _showTtsFailure('当前章节没有可朗读的正文');
+      return;
+    }
     final startOffset = await _estimateTtsStartOffset(cleaned);
+    if (!mounted) return;
     provider.setTtsChapterContent(converted, startOffset: startOffset);
-    await provider.startTts(fromParagraphIndex: provider.ttsParagraphIndex);
+    final started =
+        await provider.startTts(fromParagraphIndex: provider.ttsParagraphIndex);
+    if (!mounted) return;
+    if (!started) {
+      _showTtsFailure(
+        provider.ttsLastError ?? '无法开始朗读，请稍后重试或检查系统语音设置',
+      );
+    }
+  }
+
+  void _showTtsFailure(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   Future<void> _checkBookmark() async {

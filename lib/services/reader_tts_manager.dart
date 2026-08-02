@@ -16,6 +16,8 @@ class ReaderTtsManager {
 
   bool get isSpeaking => _service.isSpeaking;
   bool get isPaused => _service.isPaused;
+  bool get isInitialized => _service.isInitialized;
+  String? get lastError => _service.lastError;
   int get paragraphIndex => _service.segmentIndex;
   int get paragraphCount => _service.segmentCount;
   double get rate => _service.rate;
@@ -24,7 +26,7 @@ class ReaderTtsManager {
 
   ReaderTtsSegment? get currentSegment => _service.currentSegment;
 
-  Future<void> init({
+  Future<bool> init({
     double rate = 0.5,
     VoidCallback? onStateChanged,
     VoidCallback? onParagraphChanged,
@@ -35,7 +37,7 @@ class ReaderTtsManager {
     _onParagraphChanged = onParagraphChanged;
     _onSegmentChanged = onSegmentChanged;
     _onChapterComplete = onChapterComplete;
-    await _service.ensureInitialized(
+    return _service.ensureInitialized(
       rate: rate,
       onStateChanged: () {
         _onStateChanged?.call();
@@ -54,8 +56,8 @@ class ReaderTtsManager {
     _service.setChapterPlainText(plain, startOffset: startOffset);
   }
 
-  Future<void> start({int? fromParagraphIndex}) async {
-    await _service.start(fromSegmentIndex: fromParagraphIndex);
+  Future<bool> start({int? fromParagraphIndex}) async {
+    return _service.start(fromSegmentIndex: fromParagraphIndex);
   }
 
   void pause() => _service.pause();

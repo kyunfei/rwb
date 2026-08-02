@@ -236,6 +236,13 @@ class ReaderProvider extends ChangeNotifier {
           config['nightModeFollowSystem'] as bool? ?? true;
       final bgValue = config['backgroundColor'] as int?;
       if (bgValue != null) _backgroundColor = Color(bgValue);
+      final textValue = config['textColor'] as int?;
+      if (textValue != null) {
+        _textColor = Color(textValue);
+      } else if (bgValue != null) {
+        // 旧存档只有背景色：按亮度推文字色，不要再用夜间硬编码盖掉用户背景
+        _autoAdaptTextColor(_backgroundColor);
+      }
       final modeIndex = config['pageMode'] as int?;
       if (modeIndex != null && modeIndex < PageMode.values.length) {
         _pageMode = PageMode.values[modeIndex];
@@ -253,9 +260,14 @@ class ReaderProvider extends ChangeNotifier {
       }
       _tapZoneActions =
           normalizeTapZoneActions(config['tapZoneActions'] as List?);
-      if (_isNightMode) {
-        _backgroundColor = const Color(0xFF1A1A1A);
-        _textColor = Colors.white70;
+      // 阅读页亮度（界面滑条）与旧字段 brightness 分开存；兼容旧存档
+      _screenBrightness =
+          (config['screenBrightness'] as num?)?.toDouble() ??
+          (config['brightness'] as num?)?.toDouble() ??
+          -1.0;
+      if (_screenBrightness > 1.0) {
+        // 旧 brightness 曾是 0~1 显示亮度，不是「跟随系统」语义
+        _screenBrightness = _screenBrightness.clamp(0.0, 1.0);
       }
       _letterSpacing = (config['letterSpacing'] as num?)?.toDouble() ?? 0.1;
       _paragraphSpacing =
@@ -358,9 +370,11 @@ class ReaderProvider extends ChangeNotifier {
       'fontSize': _fontSize,
       'lineHeight': _lineHeight,
       'brightness': _brightness,
+      'screenBrightness': _screenBrightness,
       'isNightMode': _isNightMode,
       'nightModeFollowSystem': _nightModeFollowSystem,
       'backgroundColor': _backgroundColor.toARGB32(),
+      'textColor': _textColor.toARGB32(),
       'pageMode': _pageMode.index,
       'fontFamily': _fontFamily,
       'loadEpubFonts': _loadEpubFonts,
@@ -447,6 +461,8 @@ class ReaderProvider extends ChangeNotifier {
 
   void setBackgroundColor(Color color) {
     _backgroundColor = color;
+    // 用户手选背景 = 不再跟随系统夜间去硬改配色
+    _nightModeFollowSystem = false;
     // 根据背景色亮度自动适应文字色
     _autoAdaptTextColor(color);
     _saveToStorage();
@@ -455,6 +471,7 @@ class ReaderProvider extends ChangeNotifier {
 
   void setTextColor(Color color) {
     _textColor = color;
+    _nightModeFollowSystem = false;
     _saveToStorage();
     notifyListeners();
   }
@@ -710,27 +727,30 @@ class ReaderProvider extends ChangeNotifier {
     _ttsSegmentHandler = handler;
   }
 
-  Future<void> ensureTtsInitialized({
+  Future<bool> ensureTtsInitialized({
     double rate = 0.5,
     VoidCallback? onStateChanged,
     VoidCallback? onParagraphChanged,
   }) async {
-    if (_ttsManager != null) return;
-    await initTts(
+    // 上次初始化失败时 manager 可能已存在但引擎未就绪，必须允许重试
+    if (_ttsManager != null && _ttsManager!.isInitialized) {
+      return true;
+    }
+    return initTts(
       rate: rate,
       onStateChanged: onStateChanged,
       onParagraphChanged: onParagraphChanged,
     );
   }
 
-  Future<void> initTts({
+  Future<bool> initTts({
     double rate = 0.5,
     VoidCallback? onStateChanged,
     VoidCallback? onParagraphChanged,
   }) async {
-    _ttsManager = ReaderTtsManager();
+    _ttsManager ??= ReaderTtsManager();
     _ttsRate = rate;
-    await _ttsManager!.init(
+    final ok = await _ttsManager!.init(
       rate: rate,
       onStateChanged: () {
         // 防护：disposeTts() 可能在回调队列中置 null，导致 _ttsManager! 崩溃
@@ -760,6 +780,7 @@ class ReaderProvider extends ChangeNotifier {
         return handler();
       },
     );
+    if (!ok) return false;
     if (_ttsVoiceName != null) {
       await _ttsManager!.setVoice(_ttsVoiceName);
     }
@@ -767,7 +788,10 @@ class ReaderProvider extends ChangeNotifier {
     if (_ttsSleepTimerMinutes > 0) {
       _ttsManager!.setSleepTimerMinutes(_ttsSleepTimerMinutes);
     }
+    return true;
   }
+
+  String? get ttsLastError => _ttsManager?.lastError;
 
   void setTtsChapterContent(String content, {int startOffset = 0}) {
     _ttsManager?.setChapterContent(content, startOffset: startOffset);
@@ -779,8 +803,14 @@ class ReaderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startTts({int? fromParagraphIndex}) async {
-    await _ttsManager?.start(fromParagraphIndex: fromParagraphIndex);
+  Future<bool> startTts({int? fromParagraphIndex}) async {
+    final manager = _ttsManager;
+    if (manager == null) return false;
+    final ok = await manager.start(fromParagraphIndex: fromParagraphIndex);
+    _isTtsPlaying = manager.isSpeaking;
+    _isTtsPaused = manager.isPaused;
+    notifyListeners();
+    return ok;
   }
 
   void pauseTts() {
@@ -1032,6 +1062,7 @@ class ReaderProvider extends ChangeNotifier {
 
   void setBackgroundImagePath(String? value) {
     _backgroundImagePath = value;
+    _nightModeFollowSystem = false;
     _saveToStorage();
     notifyListeners();
   }

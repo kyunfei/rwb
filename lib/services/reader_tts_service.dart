@@ -42,6 +42,7 @@ class ReaderTtsService {
   double _pitch = 1.0;
   String? _voiceName;
   Timer? _sleepTimer;
+  String? _lastError;
 
   List<ReaderTtsSegment> _segments = const [];
 
@@ -52,6 +53,8 @@ class ReaderTtsService {
   bool get isInitialized => _initialized;
   bool get isSpeaking => _isSpeaking;
   bool get isPaused => _isPaused;
+  /// 最近一次初始化/发声失败原因（给 UI 提示用）。
+  String? get lastError => _lastError;
   int get segmentIndex => _segmentIndex;
   int get segmentCount => _segments.length;
   double get rate => _rate;
@@ -63,8 +66,8 @@ class ReaderTtsService {
     return _segments[_segmentIndex];
   }
 
-  /// 首次朗读时调用；重复调用无副作用。
-  Future<void> ensureInitialized({
+  /// 首次朗读时调用；失败返回 false（可重试，不会把失败状态永久钉死）。
+  Future<bool> ensureInitialized({
     double rate = 0.5,
     VoidCallback? onStateChanged,
     ReaderTtsSegmentCallback? onSegmentChanged,
@@ -74,7 +77,7 @@ class ReaderTtsService {
     _onSegmentChanged = onSegmentChanged;
     _onChapterComplete = onChapterComplete;
     _rate = rate;
-    if (_initialized) return;
+    if (_initialized) return true;
 
     try {
       await ReaderTtsNotificationBridge.instance.attachHandlers(
@@ -85,13 +88,45 @@ class ReaderTtsService {
         onAudioFocusGained: onAudioFocusGained,
       );
 
-      for (final code in ['zh-CN', 'zh', 'cmn', 'zh-Hans']) {
-        final ok = await _tts.setLanguage(code);
-        if (ok == 1) break;
+      var languageOk = false;
+      for (final code in ['zh-CN', 'zh_CN', 'zh', 'cmn-Hans-CN', 'cmn', 'zh-Hans']) {
+        try {
+          final dynamic available = await _tts.isLanguageAvailable(code);
+          if (available == 1 || available == true) {
+            final ok = await _tts.setLanguage(code);
+            if (ok == 1 || ok == true) {
+              languageOk = true;
+              debugPrint('[TTS] language set: $code');
+              break;
+            }
+          }
+        } catch (e) {
+          debugPrint('[TTS] language probe $code failed: $e');
+        }
+      }
+      if (!languageOk) {
+        // 仍尝试强设 zh-CN：部分 OEM 的 isLanguageAvailable 不可靠
+        try {
+          await _tts.setLanguage('zh-CN');
+          languageOk = true;
+        } catch (_) {}
+      }
+      if (!languageOk) {
+        _lastError = '未找到中文语音引擎。请到系统设置里安装「语音识别与合成 / Google 语音服务」，并下载中文语音包。';
+        debugPrint('[TTS] $_lastError');
+        return false;
       }
 
       await _tts.setSpeechRate(_rate);
       await _tts.setPitch(_pitch);
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          await _tts.setSharedInstance(true);
+        } catch (_) {}
+        try {
+          await _tts.setVolume(1.0);
+        } catch (_) {}
+      }
       if (_voiceName != null && _voiceName!.isNotEmpty) {
         await _tts.setVoice(<String, String>{
           'name': _voiceName!,
@@ -102,6 +137,7 @@ class ReaderTtsService {
       _tts.setCompletionHandler(_onUtteranceComplete);
       _tts.setErrorHandler((msg) {
         debugPrint('[TTS] error: $msg');
+        _lastError = '朗读出错: $msg';
         if (_isSpeaking && !_isPaused) {
           unawaited(_advanceSegment());
         }
@@ -120,8 +156,12 @@ class ReaderTtsService {
       }
 
       _initialized = true;
+      _lastError = null;
+      return true;
     } catch (e, st) {
+      _lastError = '朗读引擎初始化失败: $e';
       debugPrint('[TTS] ensureInitialized failed: $e\n$st');
+      return false;
     }
   }
 
@@ -131,19 +171,28 @@ class ReaderTtsService {
     _notifySegment();
   }
 
-  Future<void> start({int? fromSegmentIndex}) async {
-    if (!_initialized) return;
+  Future<bool> start({int? fromSegmentIndex}) async {
+    if (!_initialized) {
+      final ok = await ensureInitialized(rate: _rate);
+      if (!ok) return false;
+    }
+    if (_segments.isEmpty) {
+      _lastError = '当前章节没有可朗读的正文';
+      return false;
+    }
     if (fromSegmentIndex != null) {
-      _segmentIndex = fromSegmentIndex.clamp(0, _segments.length);
+      _segmentIndex = fromSegmentIndex.clamp(0, _segments.length - 1);
     }
     _isSpeaking = true;
     _isPaused = false;
+    _lastError = null;
     await _enableKeepAwake(true);
     _notifyState();
     await _tts.stop();
     // 先拉起前台服务并申请音频焦点，再发声
     await _syncNotification();
     await _speakCurrent();
+    return _isSpeaking;
   }
 
   void pause() {

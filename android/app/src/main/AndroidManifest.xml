@@ -119,6 +119,13 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Android 11+ 包可见性：不声明则 flutter_tts 找不到系统 TTS 引擎，朗读无声 -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
+        <package android:name="com.google.android.tts"/>
+        <package android:name="com.iflytek.speechcloud"/>
+        <package android:name="com.baidu.duersdk.opensdk"/>
         <!-- 允许查询浏览器（WebView登录） -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
