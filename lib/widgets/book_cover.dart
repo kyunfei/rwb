@@ -25,6 +25,7 @@ class BookCover extends StatelessWidget {
     this.height = double.infinity,
     this.borderRadius,
     this.forceDefault = false,
+    this.placeholderShowsTitle = true,
   });
 
   final Book book;
@@ -35,6 +36,13 @@ class BookCover extends StatelessWidget {
 
   /// 调用方强制使用默认封面（书架的网格/列表模式会用到）
   final bool forceDefault;
+
+  /// 缺封面时，占位图里是否写书名与作者。
+  ///
+  /// 书架网格封面下面没有文字，占位图必须自己写书名。但列表行里书名就在封面右边，
+  /// 占位图再写一遍会在 52px 宽的方块里把书名挤成竖排（「百 炼 飞」），
+  /// 反而比留白难看。这种场合传 false。
+  final bool placeholderShowsTitle;
 
   static BookSource? _resolveSource(Book book) {
     final sourceUrl = book.sourceUrl;
@@ -57,14 +65,29 @@ class BookCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final coverConfig = CoverConfigService.instance;
-    final placeholder = coverConfig.buildDefaultCoverPlaceholder(
-      bookName: book.displayName,
-      bookAuthor: book.displayAuthor,
+    final basePlaceholder = coverConfig.buildDefaultCoverPlaceholder(
+      bookName: placeholderShowsTitle ? book.displayName : '',
+      bookAuthor: placeholderShowsTitle ? book.displayAuthor : '',
       isDark: isDark,
       width: width,
       height: height,
       borderRadius: borderRadius,
     );
+    // 不写书名时会剩一个纯色方块，看着像加载失败，补一个淡书本图标
+    final placeholder = placeholderShowsTitle
+        ? basePlaceholder
+        : Stack(
+            alignment: Alignment.center,
+            children: [
+              basePlaceholder,
+              Icon(
+                Icons.menu_book_outlined,
+                size: width.isFinite ? width * 0.4 : 24,
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.18),
+              ),
+            ],
+          );
 
     final coverUrl = book.displayCoverUrl;
     if (forceDefault || coverConfig.useDefaultCover || coverUrl.isEmpty) {

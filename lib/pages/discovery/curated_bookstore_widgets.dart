@@ -370,6 +370,7 @@ class CuratedBookListTile extends StatelessWidget {
                     isDark: isDark,
                     width: 64,
                     height: 86,
+                    placeholderShowsTitle: false,
                   ),
                 ),
               ),
@@ -391,17 +392,22 @@ class CuratedBookListTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
+                      // 策展清单里只有少部分书带简介（站点分类页不给），
+                      // 缺简介时留白比写「暂无简介」干净——那行字每条都出现一遍，
+                      // 整屏读下来只剩噪声。
                       Expanded(
-                        child: Text(
-                          book.intro.isNotEmpty ? book.intro : '暂无简介',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: DesignTokens.fontCaption,
-                            height: 1.35,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                        child: book.intro.isEmpty
+                            ? const SizedBox.shrink()
+                            : Text(
+                                book.intro,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: DesignTokens.fontCaption,
+                                  height: 1.35,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                       ),
                       Row(
                         children: [
@@ -577,6 +583,7 @@ class CuratedListCard extends StatelessWidget {
                               isDark: isDark,
                               width: 52,
                               height: 72,
+                              placeholderShowsTitle: false,
                             ),
                           ),
                         ),

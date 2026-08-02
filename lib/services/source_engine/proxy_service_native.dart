@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 HttpServer? _server;
 
-/// 启动 CORS 代理服务，返回实际端�?
+/// 启动 CORS 代理服务，返回实际端�?
 Future<int> startProxy(int port) async {
   _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
   final actualPort = _server!.port;
@@ -23,7 +23,7 @@ Future<void> stopProxy() async {
 void _handleRequest(HttpRequest request) {
   final response = request.response;
 
-  // ===== 始终注入跨域�?=====
+  // ===== 始终注入跨域�?=====
   response.headers.set('Access-Control-Allow-Origin', '*');
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Target-Url, Accept, X-Requested-With, Cache-Control');
@@ -37,7 +37,7 @@ void _handleRequest(HttpRequest request) {
     return;
   }
 
-  // �?URL 路径获取目标 URL
+  // �?URL 路径获取目标 URL
   String targetUrl = request.uri.path.substring(1);
   final headerTargetUrl = request.headers.value('x-target-url');
   if (headerTargetUrl != null && headerTargetUrl != 'undefined') {
@@ -55,7 +55,7 @@ void _handleRequest(HttpRequest request) {
   _forwardRequest(request, targetUrl);
 }
 
-/// 转发请求到目�?URL
+/// 转发请求到目�?URL
 Future<void> _forwardRequest(HttpRequest request, String targetUrl) async {
   final response = request.response;
   try {
@@ -63,7 +63,7 @@ Future<void> _forwardRequest(HttpRequest request, String targetUrl) async {
     final client = HttpClient();
     final proxyReq = await client.openUrl(request.method, uri);
 
-    // 复制请求�?
+    // 复制请求�?
     request.headers.forEach((name, values) {
       final lower = name.toLowerCase();
       if (lower != 'host' && lower != 'x-target-url' && lower != 'origin' && lower != 'referer') {
@@ -72,7 +72,7 @@ Future<void> _forwardRequest(HttpRequest request, String targetUrl) async {
     });
     proxyReq.headers.set('Host', uri.host);
 
-    // 复制请求�?
+    // 复制请求�?
     final body = await request.fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
     if (body.isNotEmpty) {
       proxyReq.add(body);
@@ -80,14 +80,14 @@ Future<void> _forwardRequest(HttpRequest request, String targetUrl) async {
 
     final proxyRes = await proxyReq.close();
 
-    // 复制响应头，但不覆盖 CORS �?
+    // 复制响应头，但不覆盖 CORS �?
     proxyRes.headers.forEach((name, values) {
       if (!name.toLowerCase().startsWith('access-control-')) {
         response.headers.set(name, values);
       }
     });
 
-    // 再次确保跨域头（防止源站覆盖�?
+    // 再次确保跨域头（防止源站覆盖�?
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Target-Url, Accept, X-Requested-With, Cache-Control');
