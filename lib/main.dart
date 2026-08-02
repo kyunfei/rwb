@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'providers/app_provider.dart';
 import 'providers/bookshelf_provider.dart';
+import 'providers/curated_bookstore_provider.dart';
 import 'providers/discovery_provider.dart';
 import 'providers/explore_show_provider.dart';
 import 'providers/reader_provider.dart';
@@ -123,6 +124,7 @@ class DanShenqiApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppProvider()),
         ChangeNotifierProvider(create: (_) => BookshelfProvider()),
         ChangeNotifierProvider(create: (_) => DiscoveryProvider()),
+        ChangeNotifierProvider(create: (_) => CuratedBookstoreProvider()),
         ChangeNotifierProvider(create: (_) => ExploreShowProvider()),
         ChangeNotifierProvider(create: (_) => ReaderProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),

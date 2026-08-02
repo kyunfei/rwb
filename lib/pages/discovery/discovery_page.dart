@@ -1,21 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/book.dart';
-import '../../models/book_source.dart';
+import '../../models/curated_bookstore.dart';
 import '../../providers/bookshelf_provider.dart';
+import '../../providers/curated_bookstore_provider.dart';
 import '../../providers/discovery_provider.dart';
 import '../../routes/app_routes.dart';
-import '../../services/discovery_source_selection_logic.dart';
-import '../../services/storage_service.dart';
+import '../../services/bookstore/curated_book_opener.dart';
+import '../../services/bookstore/curated_match.dart';
 import '../../utils/continue_reading.dart';
 import '../../utils/design_tokens.dart';
-import '../../utils/explore_category_parser.dart';
 import '../../widgets/book_cover.dart';
+import 'curated_bookstore_widgets.dart';
 
-/// 书城页：分类网格 + 搜书 + 继续阅读
+/// 书城页：笔趣阁式「精选 / 分类 / 榜单 / 书单」，内容由本地策展清单驱动。
 ///
-/// 对普通读者隐藏「书源」概念：进页即展示可用书源的分类；
-/// 书源切换入口放在 AppBar 右侧，保持低调。
+/// 点击书籍走多源搜索拿真数据；保留顶部搜索框与「继续阅读」。
 class DiscoveryPage extends StatefulWidget {
   const DiscoveryPage({super.key});
 
@@ -24,79 +27,43 @@ class DiscoveryPage extends StatefulWidget {
 }
 
 class _DiscoveryPageState extends State<DiscoveryPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   @override
   bool get wantKeepAlive => true;
 
-  /// 当前选中的可发现书源 URL；null 表示尚未选定（按默认策略解析）
-  String? _selectedSourceUrl;
+  late final TabController _tabController;
+  final CuratedBookOpener _opener = CuratedBookOpener();
+  bool _openingBook = false;
+
+  int _categoryIndex = 0;
+  int _rankingIndex = 0;
+  String? _focusedListId;
 
   @override
   void initState() {
     super.initState();
-    final saved = StorageService.instance
-        .getSetting(discoveryLastSelectedSourceUrlKey);
-    if (saved is String && saved.isNotEmpty) {
-      _selectedSourceUrl = saved;
-    }
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      // 离开「书单」详情时清焦点，回到书单列表
+      if (_tabController.index != 3) {
+        setState(() => _focusedListId = null);
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CuratedBookstoreProvider>().load();
+      context.read<DiscoveryProvider>().loadBookSources();
+    });
   }
 
-  /// 按书源 URL 缓存分类解析结果
-  final Map<String, List<ExploreCategory>> _cachedCategories = {};
-
-  /// 已启用且开启发现、并能解析出分类的书源
-  List<BookSource> _discoverableSources(List<BookSource> all) {
-    return all.where((s) {
-      if (!s.enabled || !s.enabledExplore) return false;
-      return _categoriesFor(s).isNotEmpty;
-    }).toList();
-  }
-
-  List<ExploreCategory> _categoriesFor(BookSource source) {
-    final key = source.bookSourceUrl;
-    final cached = _cachedCategories[key];
-    if (cached != null) return cached;
-    final parsed = flattenExploreCategories(
-      parseExploreKinds(source.exploreUrl),
-    );
-    _cachedCategories[key] = parsed;
-    return parsed;
-  }
-
-  BookSource? _resolveSelectedSource(List<BookSource> discoverable) {
-    final url = resolveDiscoverySelectedSourceUrl(
-      discoverable: discoverable,
-      lastSelectedUrl: _selectedSourceUrl,
-    );
-    if (url == null) return null;
-    for (final source in discoverable) {
-      if (source.bookSourceUrl == url) return source;
-    }
-    return null;
-  }
-
-  void _persistDiscoverySourceChoice(String url) {
-    StorageService.instance.setSetting(
-      discoveryLastSelectedSourceUrlKey,
-      url,
-    );
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _openSearch() {
     Navigator.pushNamed(context, AppRoutes.search);
-  }
-
-  void _openExplore(BookSource source, ExploreCategory category) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.exploreShow,
-      arguments: {
-        'sourceUrl': source.bookSourceUrl,
-        'sourceName': source.bookSourceName,
-        'exploreName': category.title,
-        'exploreUrl': category.url,
-      },
-    );
   }
 
   Future<void> _continueReading(Book book) async {
@@ -112,12 +79,134 @@ class _DiscoveryPageState extends State<DiscoveryPage>
         'bookUrl': book.bookUrl,
         'bookId': book.bookUrl,
         'bookData': book,
-        // 与书架页一致：由阅读器从 Book.durChapterIndex / durChapterPos 恢复
         'resumeProgress': true,
       },
     );
     if (!mounted) return;
     await context.read<BookshelfProvider>().loadBooks();
+  }
+
+  Future<void> _onCuratedBookTap(CuratedBook book) async {
+    if (_openingBook) return;
+    setState(() => _openingBook = true);
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: DesignTokens.spacingLg),
+                Expanded(
+                  child: Text('正在多源搜索「${book.name}」…'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final sources = context.read<DiscoveryProvider>().bookSources;
+      final result = await _opener.open(book, sources: sources);
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // 关 loading
+
+      if (result.isError ||
+          result.decision.action == CuratedOpenAction.notFound) {
+        await _showNotFoundDialog(
+          book,
+          result.errorMessage ??
+              '所有书源都没有找到「${book.name}」，请稍后重试或手动搜索。',
+        );
+        return;
+      }
+
+      if (result.decision.action == CuratedOpenAction.openDetail &&
+          result.decision.bestResult != null) {
+        final bookData =
+            CuratedBookOpener.toDetailBookData(result.decision.bestResult!);
+        await Navigator.pushNamed(
+          context,
+          AppRoutes.detail,
+          arguments: {
+            'bookUrl': bookData['bookUrl'],
+            'bookData': bookData,
+          },
+        );
+        return;
+      }
+
+      // 不确定 / 多候选 → 打开现有搜索页让用户选
+      await Navigator.pushNamed(
+        context,
+        AppRoutes.search,
+        arguments: {'keyword': result.decision.searchKeyword},
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      await _showNotFoundDialog(
+        book,
+        '搜索「${book.name}」时出错，请检查网络后重试。',
+      );
+    } finally {
+      if (mounted) setState(() => _openingBook = false);
+    }
+  }
+
+  Future<void> _showNotFoundDialog(CuratedBook book, String message) async {
+    final retry = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('未找到书籍'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx, false);
+              Navigator.pushNamed(
+                context,
+                AppRoutes.search,
+                arguments: {
+                  'keyword': buildCuratedSearchKeyword(book.name, book.author),
+                },
+              );
+            },
+            child: const Text('手动搜索'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('重试'),
+          ),
+        ],
+      ),
+    );
+    if (retry == true && mounted) {
+      await _onCuratedBookTap(book);
+    }
+  }
+
+  void _openShortcut(CuratedShortcut shortcut) {
+    setState(() {
+      _focusedListId = shortcut.listId;
+      _tabController.animateTo(3);
+    });
+  }
+
+  void _requestCoversFor(Iterable<CuratedBook> books) {
+    final curated = context.read<CuratedBookstoreProvider>();
+    final sources = context.read<DiscoveryProvider>().bookSources;
+    curated.requestCovers(books, sources: sources);
   }
 
   @override
@@ -129,93 +218,113 @@ class _DiscoveryPageState extends State<DiscoveryPage>
       body: Column(
         children: [
           _buildTopBar(colorScheme),
+          Material(
+            color: colorScheme.surface,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: colorScheme.primary,
+              unselectedLabelColor:
+                  colorScheme.onSurface.withValues(alpha: 0.55),
+              indicatorColor: colorScheme.primary,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelStyle: const TextStyle(
+                fontSize: DesignTokens.fontBody,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: DesignTokens.fontBody,
+                fontWeight: FontWeight.w400,
+              ),
+              tabs: const [
+                Tab(text: '精选'),
+                Tab(text: '分类'),
+                Tab(text: '榜单'),
+                Tab(text: '书单'),
+              ],
+            ),
+          ),
           Expanded(
-            child: Consumer2<DiscoveryProvider, BookshelfProvider>(
-              builder: (context, discovery, bookshelf, _) {
-                if (discovery.isLoading) {
+            child: Consumer3<CuratedBookstoreProvider, BookshelfProvider,
+                DiscoveryProvider>(
+              builder: (context, curated, bookshelf, discovery, _) {
+                if (curated.isLoading && !curated.isLoaded) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final allSources = discovery.bookSources;
-                // 书源列表变化时清缓存，避免 exploreUrl 更新后仍用旧解析
-                if (_cachedCategories.isNotEmpty &&
-                    !_cachedCategories.keys.every(
-                      (url) => allSources.any((s) => s.bookSourceUrl == url),
-                    )) {
-                  _cachedCategories.clear();
-                }
-
-                final hasAnySource = allSources.isNotEmpty;
-                final discoverable = _discoverableSources(allSources);
-                final selected = _resolveSelectedSource(discoverable);
                 final continueBook =
                     pickLatestReadingBook(bookshelf.allBooks);
+                final data = curated.data;
 
-                if (!hasAnySource) {
-                  return _buildEmptyState(
-                    icon: Icons.cloud_download_outlined,
-                    message: '还没有书源，去导入后就能逛书城',
-                    colorScheme: colorScheme,
-                    actionText: '去导入书源',
-                    onAction: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.bookSourceImport,
-                    ),
+                if (curated.loadError != null && data.isEmpty) {
+                  return _buildFatalEmpty(
+                    colorScheme,
+                    curated.loadError!,
+                    onRetry: () => curated.load(force: true),
                   );
                 }
 
-                if (discoverable.isEmpty || selected == null) {
-                  return _buildEmptyState(
-                    icon: Icons.explore_outlined,
-                    message: '已有书源暂无分类，试试导入带发现页的书源',
-                    colorScheme: colorScheme,
-                    actionText: '去导入书源',
-                    onAction: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.bookSourceImport,
-                    ),
-                    secondaryText: '或到「我的 → 书源管理」检查是否已启用发现',
-                    secondaryActionText: '打开书源管理',
-                    onSecondaryAction: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.bookSourceManage,
-                    ),
-                  );
-                }
-
-                final categories = _categoriesFor(selected);
-
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    DesignTokens.spacingLg,
-                    DesignTokens.spacingSm,
-                    DesignTokens.spacingLg,
-                    DesignTokens.spacingXxl,
-                  ),
+                return Column(
                   children: [
-                    if (continueBook != null) ...[
-                      _ContinueReadingCard(
-                        book: continueBook,
-                        onTap: () => _continueReading(continueBook),
+                    if (continueBook != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          DesignTokens.spacingLg,
+                          DesignTokens.spacingSm,
+                          DesignTokens.spacingLg,
+                          0,
+                        ),
+                        child: _ContinueReadingCard(
+                          book: continueBook,
+                          onTap: () => _continueReading(continueBook),
+                        ),
                       ),
-                      const SizedBox(height: DesignTokens.spacingLg),
-                    ],
-                    Text(
-                      '分类',
-                      style: TextStyle(
-                        fontSize: DesignTokens.fontSubtitle,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildFeaturedTab(curated, data),
+                          _buildCategoryTab(curated, data),
+                          _buildRankingTab(curated, data),
+                          _buildListsTab(curated, data),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: DesignTokens.spacingMd),
-                    _buildCategoryGrid(selected, categories, colorScheme),
                   ],
                 );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFatalEmpty(
+    ColorScheme colorScheme,
+    String message, {
+    required VoidCallback onRetry,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingXxl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.menu_book_outlined,
+              size: DesignTokens.emptyIconSize,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: DesignTokens.spacingLg),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: DesignTokens.spacingMd),
+            FilledButton(onPressed: onRetry, child: const Text('重试')),
+          ],
+        ),
       ),
     );
   }
@@ -228,222 +337,358 @@ class _DiscoveryPageState extends State<DiscoveryPage>
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top,
         left: DesignTokens.spacingLg,
-        right: DesignTokens.spacingXs,
+        right: DesignTokens.spacingLg,
         bottom: DesignTokens.spacingSm,
       ),
       color: colorScheme.surface,
       child: SizedBox(
         height: DesignTokens.tagBarHeight,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: DesignTokens.tagBarHeight,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.searchRadius),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                child: TextField(
-                  readOnly: true,
-                  canRequestFocus: false,
-                  decoration: InputDecoration(
-                    hintText: '搜索书名、作者',
-                    hintStyle: TextStyle(
-                      fontSize: DesignTokens.fontSummary,
-                      color: secondaryTextColor,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      size: 18,
-                      color: secondaryTextColor,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: DesignTokens.spacingSm,
-                      vertical: 0,
-                    ),
-                    isDense: true,
-                  ),
-                  style: TextStyle(
-                    fontSize: DesignTokens.fontSummary,
-                    color: onSurfaceColor,
-                  ),
-                  // 入口跳转到多书源聚合搜索页（SearchPage 自带输入与搜索）
-                  onTap: _openSearch,
-                ),
+        child: Container(
+          height: DesignTokens.tagBarHeight,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(DesignTokens.searchRadius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 3.0),
+          child: TextField(
+            readOnly: true,
+            canRequestFocus: false,
+            decoration: InputDecoration(
+              hintText: '搜索书名、作者',
+              hintStyle: TextStyle(
+                fontSize: DesignTokens.fontSummary,
+                color: secondaryTextColor,
               ),
+              prefixIcon: Icon(
+                Icons.search,
+                size: 18,
+                color: secondaryTextColor,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignTokens.spacingSm,
+                vertical: 0,
+              ),
+              isDense: true,
             ),
-            Consumer<DiscoveryProvider>(
-              builder: (context, provider, _) {
-                final sources = _discoverableSources(provider.bookSources);
-                if (sources.length <= 1) {
-                  return const SizedBox(width: DesignTokens.spacingXs);
-                }
-                final selected = _resolveSelectedSource(sources);
-                final label = selected?.bookSourceName ?? '书源';
-                return PopupMenuButton<String>(
-                  tooltip: '切换书源',
-                  offset: const Offset(0, DesignTokens.topBarHeight),
-                  onSelected: (url) {
-                    setState(() => _selectedSourceUrl = url);
-                    _persistDiscoverySourceChoice(url);
-                  },
-                  itemBuilder: (context) => sources
-                      .map(
-                        (s) => CheckedPopupMenuItem<String>(
-                          value: s.bookSourceUrl,
-                          checked: s.bookSourceUrl == selected?.bookSourceUrl,
-                          child: Text(
-                            s.bookSourceName,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DesignTokens.spacingSm,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 88),
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: DesignTokens.fontCaption,
-                              color: secondaryTextColor,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_drop_down,
-                          size: 18,
-                          color: secondaryTextColor,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            style: TextStyle(
+              fontSize: DesignTokens.fontSummary,
+              color: onSurfaceColor,
             ),
-          ],
+            onTap: _openSearch,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryGrid(
-    BookSource source,
-    List<ExploreCategory> categories,
-    ColorScheme colorScheme,
+  Widget _buildFeaturedTab(
+    CuratedBookstoreProvider curated,
+    CuratedBookstore data,
   ) {
-    // 笔趣阁式分类墙：用 Wrap 保证长分类名完整换行显示、不被截断
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const columns = 3;
-        const gap = DesignTokens.spacingSm;
-        final itemWidth =
-            (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: categories.map((category) {
-            return SizedBox(
-              width: itemWidth,
-              child: Material(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(DesignTokens.panelRadius),
-                child: InkWell(
-                  onTap: () => _openExplore(source, category),
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.panelRadius),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DesignTokens.spacingSm,
-                      vertical: DesignTokens.spacingMd,
+    final sections = data.featuredSections;
+    final booksToCover = <CuratedBook>[
+      for (final b in data.banners)
+        if (data.bookById(b.bookId) != null) data.bookById(b.bookId)!,
+      for (final s in sections) ...data.booksForIds(s.bookIds),
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _requestCoversFor(booksToCover);
+    });
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        DesignTokens.spacingLg,
+        DesignTokens.spacingMd,
+        DesignTokens.spacingLg,
+        DesignTokens.spacingXxl,
+      ),
+      children: [
+        CuratedBannerCarousel(
+          banners: data.banners,
+          data: data,
+          coverUrlFor: curated.coverUrlFor,
+          onBookTap: _onCuratedBookTap,
+        ),
+        if (data.shortcuts.isNotEmpty) ...[
+          const SizedBox(height: DesignTokens.spacingLg),
+          CuratedShortcutRow(
+            shortcuts: data.shortcuts,
+            onTap: _openShortcut,
+          ),
+        ],
+        if (sections.isEmpty && data.banners.isEmpty)
+          const CuratedEmptyHint(message: '精选内容暂未配置，稍后再来看看'),
+        for (final section in sections) ...[
+          const SizedBox(height: DesignTokens.spacingXl),
+          Text(
+            section.title,
+            style: TextStyle(
+              fontSize: DesignTokens.fontSubtitle,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: DesignTokens.spacingSm),
+          Builder(
+            builder: (context) {
+              final books = data.booksForIds(section.bookIds);
+              if (books.isEmpty) {
+                return const CuratedEmptyHint(message: '该栏目暂无书籍');
+              }
+              return Column(
+                children: [
+                  for (final book in books)
+                    CuratedBookListTile(
+                      book: book,
+                      coverUrl: curated.coverUrlFor(book),
+                      onTap: () => _onCuratedBookTap(book),
                     ),
-                    child: Text(
-                      category.title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: DesignTokens.fontBody,
-                        color: colorScheme.onSurface,
+                ],
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCategoryTab(
+    CuratedBookstoreProvider curated,
+    CuratedBookstore data,
+  ) {
+    final cats = data.categories;
+    if (cats.isEmpty) {
+      return const CuratedEmptyHint(message: '暂无分类，策展清单更新后即可浏览');
+    }
+    final safeIndex = _categoryIndex.clamp(0, cats.length - 1);
+    final selected = cats[safeIndex];
+    final books = data.booksForIds(selected.bookIds);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _requestCoversFor(books);
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            DesignTokens.spacingLg,
+            DesignTokens.spacingMd,
+            DesignTokens.spacingLg,
+            DesignTokens.spacingSm,
+          ),
+          child: CuratedChipBar(
+            labels: cats.map((c) => c.title).toList(),
+            selectedIndex: safeIndex,
+            onSelected: (i) => setState(() => _categoryIndex = i),
+          ),
+        ),
+        Expanded(
+          child: books.isEmpty
+              ? const CuratedEmptyHint(message: '该分类下暂无书籍')
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    DesignTokens.spacingLg,
+                    0,
+                    DesignTokens.spacingLg,
+                    DesignTokens.spacingXxl,
+                  ),
+                  itemCount: books.length,
+                  itemBuilder: (context, i) {
+                    final book = books[i];
+                    return CuratedBookListTile(
+                      book: book,
+                      coverUrl: curated.coverUrlFor(book),
+                      onTap: () => _onCuratedBookTap(book),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRankingTab(
+    CuratedBookstoreProvider curated,
+    CuratedBookstore data,
+  ) {
+    final ranks = data.rankings;
+    if (ranks.isEmpty) {
+      return const CuratedEmptyHint(message: '暂无榜单');
+    }
+    final safeIndex = _rankingIndex.clamp(0, ranks.length - 1);
+    final selected = ranks[safeIndex];
+    final books = data.booksForIds(selected.bookIds);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _requestCoversFor(books);
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            DesignTokens.spacingLg,
+            DesignTokens.spacingMd,
+            DesignTokens.spacingLg,
+            DesignTokens.spacingSm,
+          ),
+          child: CuratedChipBar(
+            labels: ranks.map((r) => r.title).toList(),
+            selectedIndex: safeIndex,
+            onSelected: (i) => setState(() => _rankingIndex = i),
+          ),
+        ),
+        Expanded(
+          child: books.isEmpty
+              ? const CuratedEmptyHint(message: '该榜单暂无书籍')
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    DesignTokens.spacingLg,
+                    0,
+                    DesignTokens.spacingLg,
+                    DesignTokens.spacingXxl,
+                  ),
+                  itemCount: books.length,
+                  itemBuilder: (context, i) {
+                    final book = books[i];
+                    return CuratedBookListTile(
+                      book: book,
+                      coverUrl: curated.coverUrlFor(book),
+                      rank: i + 1,
+                      onTap: () => _onCuratedBookTap(book),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListsTab(
+    CuratedBookstoreProvider curated,
+    CuratedBookstore data,
+  ) {
+    final focused = data.listById(_focusedListId);
+    if (focused != null) {
+      final books = data.booksForIds(focused.bookIds);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _requestCoversFor(books);
+      });
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              DesignTokens.spacingSm,
+              DesignTokens.spacingXs,
+              DesignTokens.spacingLg,
+              0,
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: '返回书单列表',
+                  onPressed: () => setState(() => _focusedListId = null),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        focused.title,
+                        style: const TextStyle(
+                          fontSize: DesignTokens.fontSubtitle,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      if (focused.subtitle.isNotEmpty)
+                        Text(
+                          focused.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: DesignTokens.fontCaption,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              ],
+            ),
+          ),
+          Expanded(
+            child: books.isEmpty
+                ? const CuratedEmptyHint(message: '该书单暂无书籍')
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      DesignTokens.spacingLg,
+                      DesignTokens.spacingSm,
+                      DesignTokens.spacingLg,
+                      DesignTokens.spacingXxl,
+                    ),
+                    itemCount: books.length,
+                    itemBuilder: (context, i) {
+                      final book = books[i];
+                      return CuratedBookListTile(
+                        book: book,
+                        coverUrl: curated.coverUrlFor(book),
+                        onTap: () => _onCuratedBookTap(book),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      );
+    }
+
+    final lists = data.lists;
+    if (lists.isEmpty) {
+      return const CuratedEmptyHint(message: '暂无书单');
+    }
+
+    final previewAll = <CuratedBook>[];
+    for (final list in lists) {
+      previewAll.addAll(data.booksForIds(list.bookIds).take(4));
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _requestCoversFor(previewAll);
+    });
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        DesignTokens.spacingLg,
+        DesignTokens.spacingMd,
+        DesignTokens.spacingLg,
+        DesignTokens.spacingXxl,
+      ),
+      itemCount: lists.length,
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: DesignTokens.spacingMd),
+      itemBuilder: (context, i) {
+        final list = lists[i];
+        return CuratedListCard(
+          list: list,
+          previewBooks: data.booksForIds(list.bookIds),
+          coverUrlFor: curated.coverUrlFor,
+          onTap: () => setState(() => _focusedListId = list.id),
         );
       },
     );
   }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String message,
-    required ColorScheme colorScheme,
-    String? actionText,
-    VoidCallback? onAction,
-    String? secondaryText,
-    String? secondaryActionText,
-    VoidCallback? onSecondaryAction,
-  }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingXxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: DesignTokens.emptyIconSize,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: DesignTokens.spacingLg),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            if (actionText != null && onAction != null) ...[
-              const SizedBox(height: DesignTokens.spacingMd),
-              FilledButton(
-                onPressed: onAction,
-                child: Text(actionText),
-              ),
-            ],
-            if (secondaryText != null) ...[
-              const SizedBox(height: DesignTokens.spacingMd),
-              Text(
-                secondaryText,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: DesignTokens.fontCaption,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            if (secondaryActionText != null && onSecondaryAction != null)
-              TextButton(
-                onPressed: onSecondaryAction,
-                child: Text(secondaryActionText),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-/// 「继续阅读」卡片
+/// 「继续阅读」卡片（真机已验证，保持原交互）。
 class _ContinueReadingCard extends StatelessWidget {
   final Book book;
   final VoidCallback onTap;
@@ -476,7 +721,12 @@ class _ContinueReadingCard extends StatelessWidget {
                 child: SizedBox(
                   width: 52,
                   height: 70,
-                  child: _buildCover(isDark),
+                  child: BookCover(
+                    book: book,
+                    isDark: isDark,
+                    width: 52,
+                    height: 70,
+                  ),
                 ),
               ),
               const SizedBox(width: DesignTokens.spacingMd),
@@ -533,17 +783,6 @@ class _ContinueReadingCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildCover(bool isDark) {
-    // 走共享的 BookCover：它带防盗链请求头与加密封面解密，缺了这两样，
-    // 同一本书的封面会「书架显示得出、这里显示不出」。
-    return BookCover(
-      book: book,
-      isDark: isDark,
-      width: 52,
-      height: 70,
     );
   }
 }

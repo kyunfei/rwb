@@ -81,3 +81,4 @@ flutter:
     - assets/templates/
     - assets/book_sources/
     - assets/js_polyfill/
+    - assets/bookstore/
