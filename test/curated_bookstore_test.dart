@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mr/models/book_source.dart';
 import 'package:mr/models/curated_bookstore.dart';
+import 'package:mr/services/bookstore/curated_book_opener.dart';
 import 'package:mr/services/bookstore/curated_cover_resolver.dart';
 import 'package:mr/services/bookstore/curated_match.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('parseCuratedBookstore', () {
@@ -237,6 +242,181 @@ void main() {
       expect(buildCuratedSearchKeyword('三体', '刘慈欣'), '三体 刘慈欣');
       expect(buildCuratedSearchKeyword('三体', ''), '三体');
       expect(buildCuratedSearchKeyword('', '刘慈欣'), '刘慈欣');
+    });
+  });
+
+  group('canStopCuratedOpenSearch', () {
+    test('空结果 / 仅弱相关 → 不能停', () {
+      expect(
+        canStopCuratedOpenSearch(
+          curatedName: '三体',
+          curatedAuthor: '刘慈欣',
+          results: const [],
+        ),
+        isFalse,
+      );
+      expect(
+        canStopCuratedOpenSearch(
+          curatedName: '三体',
+          curatedAuthor: '刘慈欣',
+          results: [
+            {'name': '关于三体的书评', 'author': '他人', 'bookUrl': 'u1'},
+          ],
+        ),
+        isFalse,
+      );
+    });
+
+    test('已能直达详情 → 可以停', () {
+      expect(
+        canStopCuratedOpenSearch(
+          curatedName: '三体',
+          curatedAuthor: '刘慈欣',
+          results: [
+            {'name': '三体', 'author': '刘慈欣', 'bookUrl': 'u1'},
+          ],
+        ),
+        isTrue,
+      );
+      expect(
+        canStopCuratedOpenSearch(
+          curatedName: '凡人修仙传',
+          curatedAuthor: '忘语',
+          results: [
+            {
+              'name': '凡人修仙传_免费阅读',
+              'author': '忘语',
+              'bookUrl': 'u1',
+            },
+          ],
+        ),
+        isTrue,
+      );
+    });
+
+    test('多个不确定候选 → 继续等（可能还有更好命中）', () {
+      expect(
+        canStopCuratedOpenSearch(
+          curatedName: '修真',
+          curatedAuthor: '',
+          results: [
+            {'name': '修真聊天群', 'author': 'A', 'bookUrl': 'u1'},
+            {'name': '修真世界', 'author': 'B', 'bookUrl': 'u2'},
+          ],
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('CuratedBookOpener', () {
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    BookSource src(String url, {int weight = 0}) => BookSource(
+          bookSourceUrl: url,
+          bookSourceName: url,
+          searchUrl: '$url/search?q={{key}}',
+          weight: weight,
+        );
+
+    test('高置信命中后提前结束，不等慢源跑完', () async {
+      final called = <String>[];
+      // 用 Completer 挂起慢源，避免 Future.delayed 在测试结束时留下 pending timer
+      final slowHang = Completer<List<Map<String, dynamic>>>();
+      final opener = CuratedBookOpener(
+        maxConcurrentSearches: 2,
+        sourceLimit: 4,
+        timeBudget: const Duration(seconds: 5),
+        searcher: (source, keyword) async {
+          called.add(source.bookSourceUrl);
+          if (source.bookSourceUrl == 'http://fast') {
+            await Future<void>.delayed(const Duration(milliseconds: 40));
+            return [
+              {
+                'name': '三体',
+                'author': '刘慈欣',
+                'bookUrl': 'http://fast/book',
+              },
+            ];
+          }
+          return slowHang.future;
+        },
+      );
+
+      final sw = Stopwatch()..start();
+      final result = await opener.open(
+        const CuratedBook(id: '1', name: '三体', author: '刘慈欣'),
+        sources: [
+          src('http://slow-a', weight: 1),
+          src('http://fast', weight: 100),
+          src('http://slow-b', weight: 1),
+          src('http://slow-c', weight: 1),
+        ],
+      );
+      sw.stop();
+
+      expect(result.decision.action, CuratedOpenAction.openDetail);
+      expect(result.decision.bestResult?['bookUrl'], 'http://fast/book');
+      expect(sw.elapsed, lessThan(const Duration(seconds: 2)));
+      // 质量排序应先排到 fast；慢源即使被启动，也不应拖住 open()
+      expect(called, contains('http://fast'));
+      if (!slowHang.isCompleted) {
+        slowHang.complete(const []);
+      }
+    });
+
+    test('只向质量排序后的头部源发搜索', () async {
+      final called = <String>[];
+      final opener = CuratedBookOpener(
+        maxConcurrentSearches: 8,
+        sourceLimit: 2,
+        timeBudget: const Duration(seconds: 3),
+        searcher: (source, keyword) async {
+          called.add(source.bookSourceUrl);
+          return const [];
+        },
+      );
+
+      await opener.open(
+        const CuratedBook(id: '1', name: '三体', author: '刘慈欣'),
+        sources: [
+          src('http://worst', weight: 0),
+          src('http://mid', weight: 50),
+          src('http://best', weight: 200),
+        ],
+      );
+
+      expect(called.toSet(), {'http://best', 'http://mid'});
+      expect(called, isNot(contains('http://worst')));
+    });
+
+    test('墙钟预算到点后用已有结果决策，不再干等', () async {
+      final hang = Completer<List<Map<String, dynamic>>>();
+      final opener = CuratedBookOpener(
+        maxConcurrentSearches: 2,
+        sourceLimit: 4,
+        timeBudget: const Duration(milliseconds: 120),
+        searcher: (source, keyword) => hang.future,
+      );
+
+      final sw = Stopwatch()..start();
+      final result = await opener.open(
+        const CuratedBook(id: '1', name: '三体', author: '刘慈欣'),
+        sources: [
+          src('http://a', weight: 3),
+          src('http://b', weight: 2),
+        ],
+      );
+      sw.stop();
+
+      expect(result.decision.action, CuratedOpenAction.notFound);
+      expect(sw.elapsed, lessThan(const Duration(seconds: 2)));
+      if (!hang.isCompleted) {
+        hang.complete(const []);
+      }
     });
   });
 
