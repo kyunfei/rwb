@@ -13,6 +13,7 @@ import '../source_request_failure.dart';
 import 'analyze_rule.dart';
 import 'analyze_url.dart' as legado_url;
 import 'charset_utils.dart';
+import 'content_next_page.dart';
 import 'http_redirect.dart';
 import 'web_proxy.dart';
 import '../native/js_advanced_service.dart';
@@ -2388,6 +2389,80 @@ class WebBook {
             }
           }
           content = sb.toString();
+        }
+      } else if (content != null && content.isNotEmpty) {
+        // ===== 兜底翻页（源规则没写 nextContentUrl）=====
+        // 分页站点把一章切成多页，源没写规则时以前只读第一页，剩下的正文静默丢失。
+        // 这里从 HTML 里推导下一分页 URL，只有过了 content_next_page.dart 的
+        // 锚文本闸门 + URL 形状闸门才翻，推导不出就保持「只有一页」的旧行为。
+        var nextUrl =
+            findNextPageUrlInHtml(html: html, currentUrl: response.url) ?? '';
+        if (nextUrl.isNotEmpty) {
+          final visitedPages = <String>{response.url, chapterUrl};
+          final contentList = <String>[content];
+          int pageCount = 0;
+
+          while (nextUrl.isNotEmpty && !visitedPages.contains(nextUrl)) {
+            if (pageCount >= kMaxDerivedContentPages) {
+              AppLogger.instance.warn(LogCategory.parse,
+                  '正文兜底翻页达到上限 $kMaxDerivedContentPages 页，强制终止',
+                  detail: 'URL: $nextUrl');
+              break;
+            }
+            // 保留下一章熔断：即便形状闸门放行，命中下一章也停
+            if (nextChapterUrl != null && nextChapterUrl.isNotEmpty) {
+              final absNextUrl = resolveUrl(nextUrl, response.url);
+              final absNextChapterUrl = resolveUrl(nextChapterUrl, response.url);
+              if (absNextUrl == absNextChapterUrl) {
+                AppLogger.instance.info(LogCategory.parse,
+                    '正文兜底翻页命中下一章，熔断终止: $nextUrl');
+                break;
+              }
+            }
+            visitedPages.add(nextUrl);
+            pageCount++;
+            try {
+              final nextResponse = await _executeRequest(_parseUrlWithOption(nextUrl));
+              final nextHtml = nextResponse.body;
+              if (nextHtml.isEmpty) break;
+
+              final nextAnalyzer = AnalyzeRule()
+                ..setContent(nextHtml, baseUrl: nextUrl)
+                ..setRedirectUrl(nextResponse.url)
+                ..setSourceEngine(source.engineType)
+                ..setSourceInfo(_sourceToMap(source))
+                ..setBookInfo(book != null ? _bookToMap(book) : null)
+                ..setChapterInfo(chapter != null ? _chapterToMap(chapter) : null);
+
+              var nextContent = await nextAnalyzer
+                  .getStringAsync(contentRule.content ?? '', unescape: false);
+              if (nextContent != null && nextContent.isNotEmpty) {
+                nextContent = _formatContentHtml(nextContent, nextResponse.url);
+                if (nextContent.contains('&')) {
+                  nextContent = _unescapeHtml(nextContent);
+                }
+                contentList.add(nextContent);
+              }
+
+              // 每翻一页都从新页面 HTML 重新推导，不自己猜 _3/_4：
+              // 有的站点最后一页的「下一页」指向下一章，靠闸门拦住
+              nextUrl = findNextPageUrlInHtml(
+                      html: nextHtml, currentUrl: nextResponse.url) ??
+                  '';
+            } catch (e) {
+              AppLogger.instance.warn(LogCategory.parse,
+                  '正文兜底翻页失败 [$nextUrl]: $e');
+              break;
+            }
+          }
+
+          if (contentList.length > 1) {
+            content = contentList.join('\n');
+            AppLogger.instance.info(
+                LogCategory.parse,
+                '正文兜底翻页合并: ${contentList.length}页, ${content.length} chars'
+                '（源规则未写 nextContentUrl，走 HTML 推导兜底路径）');
+          }
         }
       }
 
