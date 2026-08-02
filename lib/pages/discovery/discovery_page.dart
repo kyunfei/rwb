@@ -90,6 +90,11 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     if (_openingBook) return;
     setState(() => _openingBook = true);
 
+    // 点书搜索期间让后台封面解析停手，独占网络：真机上封面请求把源站连接和 UI
+    // isolate 占满，把这里 8s 的墙钟预算拖成了 31s 才出详情页。
+    final curated = context.read<CuratedBookstoreProvider>();
+    curated.pauseCovers();
+
     unawaited(
       showDialog<void>(
         context: context,
@@ -156,6 +161,7 @@ class _DiscoveryPageState extends State<DiscoveryPage>
         '搜索「${book.name}」时出错，请检查网络后重试。',
       );
     } finally {
+      curated.resumeCovers();
       if (mounted) setState(() => _openingBook = false);
     }
   }
@@ -203,10 +209,49 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     });
   }
 
+  /// 非懒加载列表（精选 Tab 是 ListView + Column，所有条目一次性 build 完）
+  /// 只给头部这些本排队。8 ≈ 首屏能看见的条目数。
+  static const int _eagerCoverBudget = 8;
+
+  /// 单帧最多为多少本书排队。ListView.builder 会把视口 + cacheExtent 内的项都
+  /// build 出来，用它兜住「一帧里 itemBuilder 被调用很多次」。
+  static const int _perFrameCoverBudget = 12;
+
+  /// 本帧里真被 build 出来、且还缺封面的书；帧末统一入队。
+  final Map<String, CuratedBook> _pendingCoverBooks = {};
+  bool _coverFlushScheduled = false;
+
   void _requestCoversFor(Iterable<CuratedBook> books) {
     final curated = context.read<CuratedBookstoreProvider>();
     final sources = context.read<DiscoveryProvider>().bookSources;
     curated.requestCovers(books, sources: sources);
+  }
+
+  /// 由懒加载列表的 itemBuilder 调用：这一项真的被 build 出来了（≈ 在视口内或
+  /// 紧邻视口），才值得为它发搜索。原来是每帧把整个 Tab 的 50~57 本全部入队。
+  ///
+  /// 不在这里直接调 [_requestCoversFor]：provider 命中缓存时会同步
+  /// notifyListeners，build 期间改 provider 会撞 setState-during-build 断言。
+  /// 所以攒进 [_pendingCoverBooks]，等本帧画完再刷一次。
+  void _requestCoverForBuiltItem(
+    CuratedBookstoreProvider curated,
+    CuratedBook book,
+  ) {
+    if (curated.coverUrlFor(book).isNotEmpty) return;
+    if (_pendingCoverBooks.length >= _perFrameCoverBudget &&
+        !_pendingCoverBooks.containsKey(book.id)) {
+      return;
+    }
+    _pendingCoverBooks[book.id] = book;
+    if (_coverFlushScheduled) return;
+    _coverFlushScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _coverFlushScheduled = false;
+      final batch = _pendingCoverBooks.values.toList();
+      _pendingCoverBooks.clear();
+      if (!mounted || batch.isEmpty) return;
+      _requestCoversFor(batch);
+    });
   }
 
   @override
@@ -387,11 +432,13 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     CuratedBookstore data,
   ) {
     final sections = data.featuredSections;
+    // 这个 Tab 的条目都是 eager build 的，没法按 index 触发，只取头部若干本；
+    // 轮播排在最前，所以优先拿到封面的正是最显眼的位置。
     final booksToCover = <CuratedBook>[
       for (final b in data.banners)
         if (data.bookById(b.bookId) != null) data.bookById(b.bookId)!,
       for (final s in sections) ...data.booksForIds(s.bookIds),
-    ];
+    ].take(_eagerCoverBudget).toList();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _requestCoversFor(booksToCover);
@@ -465,10 +512,6 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     final safeIndex = _categoryIndex.clamp(0, cats.length - 1);
     final selected = cats[safeIndex];
     final books = data.booksForIds(selected.bookIds);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _requestCoversFor(books);
-    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -499,6 +542,7 @@ class _DiscoveryPageState extends State<DiscoveryPage>
                   itemCount: books.length,
                   itemBuilder: (context, i) {
                     final book = books[i];
+                    _requestCoverForBuiltItem(curated, book);
                     return CuratedBookListTile(
                       book: book,
                       coverUrl: curated.coverUrlFor(book),
@@ -522,10 +566,6 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     final safeIndex = _rankingIndex.clamp(0, ranks.length - 1);
     final selected = ranks[safeIndex];
     final books = data.booksForIds(selected.bookIds);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _requestCoversFor(books);
-    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -556,6 +596,7 @@ class _DiscoveryPageState extends State<DiscoveryPage>
                   itemCount: books.length,
                   itemBuilder: (context, i) {
                     final book = books[i];
+                    _requestCoverForBuiltItem(curated, book);
                     return CuratedBookListTile(
                       book: book,
                       coverUrl: curated.coverUrlFor(book),
@@ -576,10 +617,6 @@ class _DiscoveryPageState extends State<DiscoveryPage>
     final focused = data.listById(_focusedListId);
     if (focused != null) {
       final books = data.booksForIds(focused.bookIds);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _requestCoversFor(books);
-      });
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -639,6 +676,7 @@ class _DiscoveryPageState extends State<DiscoveryPage>
                     itemCount: books.length,
                     itemBuilder: (context, i) {
                       final book = books[i];
+                      _requestCoverForBuiltItem(curated, book);
                       return CuratedBookListTile(
                         book: book,
                         coverUrl: curated.coverUrlFor(book),
@@ -656,15 +694,6 @@ class _DiscoveryPageState extends State<DiscoveryPage>
       return const CuratedEmptyHint(message: '暂无书单');
     }
 
-    final previewAll = <CuratedBook>[];
-    for (final list in lists) {
-      previewAll.addAll(data.booksForIds(list.bookIds).take(4));
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _requestCoversFor(previewAll);
-    });
-
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         DesignTokens.spacingLg,
@@ -677,9 +706,14 @@ class _DiscoveryPageState extends State<DiscoveryPage>
           const SizedBox(height: DesignTokens.spacingMd),
       itemBuilder: (context, i) {
         final list = lists[i];
+        final previewBooks = data.booksForIds(list.bookIds);
+        // CuratedListCard 最多画 4 张预览封面，别为看不见的书排队。
+        for (final book in previewBooks.take(4)) {
+          _requestCoverForBuiltItem(curated, book);
+        }
         return CuratedListCard(
           list: list,
-          previewBooks: data.booksForIds(list.bookIds),
+          previewBooks: previewBooks,
           coverUrlFor: curated.coverUrlFor,
           onTap: () => setState(() => _focusedListId = list.id),
         );

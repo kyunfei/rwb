@@ -67,6 +67,12 @@ class CuratedBookstoreProvider extends ChangeNotifier {
     }
   }
 
+  /// 暂停后台封面解析，让点书这类交互路径独占网络。与 [resumeCovers] 配对，
+  /// 解析器内部按引用计数，重叠调用是安全的。
+  void pauseCovers() => _coverResolver.pause();
+
+  void resumeCovers() => _coverResolver.resume();
+
   /// 为可见书籍排队封面解析。
   void requestCovers(
     Iterable<CuratedBook> books, {
