@@ -19,6 +19,7 @@ import '../native/js_engine.dart';
 import '../native/dio_ssl_helper_stub.dart'
     if (dart.library.io) '../native/dio_ssl_helper_io.dart' as ssl;
 import '../../pages/reader/reader_typography.dart';
+import '../../utils/book_metadata_merge.dart';
 
 /// 每个规则类型只显示一次日志的集合
 final Set<String> _loggedRuleTags = {};
@@ -1116,9 +1117,17 @@ class WebBook {
   }
 
   /// 获取书籍详情
-  Future<Book?> getBookInfo(String bookUrl) async {
+  /// [fallbackBook] 搜索/导航传入的已知元数据；详情规则缺失或解析为空时回退。
+  Future<Book?> getBookInfo(String bookUrl, {Book? fallbackBook}) async {
     final bookInfoRule = source.ruleBookInfo;
-    if (bookInfoRule == null) return null;
+    if (bookInfoRule == null) {
+      if (fallbackBook == null) return null;
+      return mergeBookMetadata(
+        _emptyDetailBook(bookUrl),
+        fallbackBook,
+        tocUrlFallback: bookUrl,
+      );
+    }
 
     // 加载书源 JS 库
     await _loadJsLib();
@@ -1135,7 +1144,12 @@ class WebBook {
         lastBookInfoHtml = '<!-- 详情响应为空 -->\n'
             '<!-- URL: $bookUrl -->\n'
             '<!-- 状态码: ${response.statusCode} -->';
-        return null;
+        if (fallbackBook == null) return null;
+        return mergeBookMetadata(
+          _emptyDetailBook(bookUrl),
+          fallbackBook,
+          tocUrlFallback: bookUrl,
+        );
       }
 
       // 使用 AnalyzeRule 引擎解析
@@ -1191,9 +1205,9 @@ class WebBook {
       AppLogger.instance.info(
           LogCategory.parse, '详情: 书名=$name, 作者=$author, 目录=$resolvedTocUrl');
 
-      return Book(
+      final parsedBook = Book(
         bookUrl: bookUrl,
-        name: name ?? '未知书名',
+        name: name ?? '',
         author: author ?? '',
         coverUrl: resolvedCoverUrl,
         intro: intro ?? '',
@@ -1208,11 +1222,35 @@ class WebBook {
         canUpdate: true,
         addedTime: DateTime.now(),
       );
+
+      return mergeBookMetadata(
+        parsedBook,
+        fallbackBook ?? _emptyDetailBook(bookUrl),
+        tocUrlFallback: bookUrl,
+      );
     } catch (e) {
       AppLogger.instance
           .error(LogCategory.parse, '获取详情失败', detail: e.toString());
-      return null;
+      if (fallbackBook == null) return null;
+      return mergeBookMetadata(
+        _emptyDetailBook(bookUrl),
+        fallbackBook,
+        tocUrlFallback: bookUrl,
+      );
     }
+  }
+
+  Book _emptyDetailBook(String bookUrl) {
+    return Book(
+      bookUrl: bookUrl,
+      name: '',
+      author: '',
+      mediaType: source.bookSourceType.mediaType,
+      originType: BookOriginType.online,
+      sourceUrl: source.bookSourceUrl,
+      sourceName: source.bookSourceName,
+      addedTime: DateTime.now(),
+    );
   }
 
   /// 获取章节目录
