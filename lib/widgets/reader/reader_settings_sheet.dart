@@ -1456,6 +1456,69 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     );
   }
 
+  Widget _brightnessControls() {
+    final followsSystem = _screenBrightness < 0;
+    final sliderValue = followsSystem ? 0.5 : _screenBrightness;
+
+    void setFollowSystem(bool follow) {
+      if (follow) {
+        setState(() => _screenBrightness = -1);
+        widget.onScreenBrightnessChanged(-1);
+      } else {
+        final value = _screenBrightness < 0 ? 0.5 : _screenBrightness;
+        setState(() => _screenBrightness = value);
+        widget.onScreenBrightnessChanged(value);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Text('亮度', style: TextStyle(color: _textColor)),
+        ),
+        SwitchListTile(
+          title: Text('跟随系统亮度', style: TextStyle(color: _textColor)),
+          value: followsSystem,
+          onChanged: setFollowSystem,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              Icon(Icons.brightness_low, color: _subColor, size: 20),
+              Expanded(
+                child: Slider(
+                  value: sliderValue.clamp(0.01, 1.0),
+                  min: 0.01,
+                  max: 1,
+                  onChanged: followsSystem
+                      ? null
+                      : (v) {
+                          setState(() => _screenBrightness = v);
+                          widget.onScreenBrightnessChanged(v);
+                        },
+                ),
+              ),
+              Icon(Icons.brightness_high, color: _subColor, size: 20),
+              SizedBox(
+                width: 44,
+                child: Text(
+                  followsSystem
+                      ? '系统'
+                      : '${(sliderValue * 100).round()}%',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: _subColor, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _switchTile(String title, bool value, ValueChanged<bool> onChanged) {
     final onTrack = _isDark ? const Color(0xFF2E7D32) : null;
     final offTrack = _isDark ? Colors.white.withValues(alpha: 0.18) : null;
@@ -1518,19 +1581,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               setState(() => _enableLongPressMenu = v);
               widget.onEnableLongPressMenuChanged(v);
             }),
-            _dialogSlider(
-              '亮度',
-              _screenBrightness < 0
-                  ? 100
-                  : (_screenBrightness * 100).clamp(0, 100),
-              0,
-              100,
-              (v) {
-                final value = v / 100;
-                setState(() => _screenBrightness = value);
-                widget.onScreenBrightnessChanged(value);
-              },
-            ),
+            _brightnessControls(),
             _dialogSlider('自动滚动', _autoScrollSpeed.toDouble(), 10, 100, (v) {
               final value = v.round();
               setState(() => _autoScrollSpeed = value);

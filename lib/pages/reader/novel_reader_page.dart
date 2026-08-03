@@ -39,6 +39,7 @@ import 'page_turn/reader_page_view.dart';
 import 'page_turn/page_delegate.dart';
 import 'reader_pagination_utils.dart';
 import 'reader_text_cleaner.dart';
+import 'chapter_content_quality.dart';
 import '../../services/reader_tts_service.dart';
 
 class NovelReaderPage extends StatefulWidget {
@@ -78,6 +79,8 @@ class _NovelReaderPageState extends State<NovelReaderPage>
   String _content = '';
   String _chapterTitle = '';
   String? _chapterUrl;
+  ChapterContentQualityResult? _chapterQualityWarning;
+  bool _chapterQualityBannerDismissed = false;
   int _currentChapterIndex = 0;
   int _totalChapters = 0;
   bool _isLoading = true;
@@ -899,6 +902,124 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     );
   }
 
+  void _updateChapterQualityWarning({
+    required String rawContent,
+    required String chapterTitle,
+  }) {
+    final book = _book;
+    if (book == null ||
+        book.originType == BookOriginType.local ||
+        rawContent.isEmpty ||
+        rawContent.startsWith('内容加载失败') ||
+        rawContent.startsWith('加载失败')) {
+      if (mounted) {
+        setState(() {
+          _chapterQualityWarning = null;
+          _chapterQualityBannerDismissed = false;
+        });
+      }
+      return;
+    }
+
+    final provider = context.read<ReaderProvider>();
+    final cleaned = ReaderTextCleaner.cleanForDisplay(
+      ChineseConverter.convert(
+        _processedContent(rawContent),
+        provider.chineseConverterType,
+      ),
+      chapterTitle: ChineseConverter.convert(
+        chapterTitle,
+        provider.chineseConverterType,
+      ),
+    );
+    final result = analyzeChapterContentQuality(
+      cleaned,
+      chapterTitle: chapterTitle,
+    );
+    if (!mounted) return;
+    setState(() {
+      _chapterQualityWarning = result.isOk ? null : result;
+      _chapterQualityBannerDismissed = false;
+    });
+  }
+
+  Widget _buildChapterQualityBanner(ReaderProvider provider) {
+    final warning = _chapterQualityWarning;
+    if (warning == null || _chapterQualityBannerDismissed) {
+      return const SizedBox.shrink();
+    }
+    final onSurface = provider.textColor;
+    final bannerBg = provider.isNightMode
+        ? const Color(0xFF3E2723)
+        : const Color(0xFFFFF3E0);
+    final accent = provider.isNightMode
+        ? const Color(0xFFFFCC80)
+        : const Color(0xFFE65100);
+
+    return Material(
+      elevation: 2,
+      color: bannerBg,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.warning_amber_rounded, color: accent, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '疑似防盗/残缺章节，建议换源获取完整正文。${warning.userMessage}',
+                  style: TextStyle(color: onSurface, fontSize: 12, height: 1.35),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() => _chapterQualityBannerDismissed = true);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: onSurface,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('忽略'),
+              ),
+              TextButton(
+                onPressed: () {
+                  unawaited(_refreshChapterContent());
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: onSurface,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('重载'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() => _chapterQualityBannerDismissed = true);
+                  _showChangeSourceDialog();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: accent,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('换源'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _stopTts() {
     context.read<ReaderProvider>().stopTts();
     unawaited(_readerWebViewController.clearTtsHighlight());
@@ -999,6 +1120,8 @@ class _NovelReaderPageState extends State<NovelReaderPage>
     setState(() {
       _isLoading = true;
       _sliderValue = _currentChapterIndex.toDouble();
+      _chapterQualityWarning = null;
+      _chapterQualityBannerDismissed = false;
     });
 
     final chapter = chapterIndex < _chapters.length
@@ -1064,6 +1187,11 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           _content = content ?? '内容加载失败';
           _isLoading = false;
         });
+
+        _updateChapterQualityWarning(
+          rawContent: content ?? '',
+          chapterTitle: chapter.title,
+        );
 
         // 章节切换时若 TTS 正在播放，先停止再替换内容，避免 paragraphIndex 越界
         final readerProvider = context.read<ReaderProvider>();
@@ -1141,6 +1269,8 @@ class _NovelReaderPageState extends State<NovelReaderPage>
           _content = '加载失败：$e';
           _chapterTitle = '加载失败';
           _isLoading = false;
+          _chapterQualityWarning = null;
+          _chapterQualityBannerDismissed = false;
           // WebView 模式：重置状态，触发 WebView 重新加载错误信息
           _webviewReady = false;
           _webviewCurrentPage = 0;
@@ -2426,6 +2556,14 @@ class _NovelReaderPageState extends State<NovelReaderPage>
                   // WebView 渲染层：文字选择由 WebView 内部 CSS user-select 控制
                   // 旧的 SelectionArea 仅对 flutter_html 生效，对 PlatformView 无效
                   _buildContent(provider),
+              if (_chapterQualityWarning != null &&
+                  !_chapterQualityBannerDismissed)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildChapterQualityBanner(provider),
+                ),
               // TTS 播放控制条
               if (provider.isTtsPlaying)
                 ReaderTtsBar(
@@ -3425,31 +3563,67 @@ class _NovelReaderPageState extends State<NovelReaderPage>
   }
 
   void _showBrightnessDialog(ReaderProvider provider) {
-    // screenBrightness 为 -1 表示跟随系统，clamp 到滑块范围
-    var brightness = provider.screenBrightness < 0
+    var followsSystem = provider.screenBrightness < 0;
+    var brightness = followsSystem
         ? 0.5
-        : provider.screenBrightness.clamp(0.1, 1.0);
+        : provider.screenBrightness.clamp(0.01, 1.0);
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final sliderValue = followsSystem ? 0.5 : brightness;
             return AlertDialog(
               title: const Text('亮度'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Slider(
-                    value: brightness,
-                    min: 0.1,
-                    max: 1.0,
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('跟随系统亮度'),
+                    value: followsSystem,
                     onChanged: (value) {
-                      provider.setScreenBrightness(value);
-                      brightness = value;
+                      followsSystem = value;
+                      if (value) {
+                        provider.setScreenBrightness(-1);
+                      } else {
+                        brightness = 0.5;
+                        provider.setScreenBrightness(brightness);
+                      }
                       setDialogState(() {});
                     },
                   ),
-                  Text('${(brightness * 100).toInt()}%'),
+                  Row(
+                    children: [
+                      const Icon(Icons.brightness_low, size: 20),
+                      Expanded(
+                        child: Slider(
+                          value: sliderValue.clamp(0.01, 1.0),
+                          min: 0.01,
+                          max: 1.0,
+                          onChanged: followsSystem
+                              ? null
+                              : (value) {
+                                  brightness = value;
+                                  provider.setScreenBrightness(value);
+                                  setDialogState(() {});
+                                },
+                        ),
+                      ),
+                      const Icon(Icons.brightness_high, size: 20),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 44,
+                        child: Text(
+                          followsSystem
+                              ? '系统'
+                              : '${(brightness * 100).round()}%',
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               actions: [
@@ -3914,7 +4088,7 @@ class _NovelReaderPageState extends State<NovelReaderPage>
                       provider.setBackgroundColor(const Color(0xFFFFF8E1));
                       // 屏幕亮度需用 setScreenBrightness（写入 _screenBrightness 字段），
                       // 旧代码调用的 setBrightness 写的是另一个未生效字段 _brightness
-                      provider.setScreenBrightness(1.0);
+                      provider.setScreenBrightness(-1);
                       // 当前在夜间模式时需同步退出，否则背景变浅黄但 textColor 仍为白
                       if (provider.isNightMode) {
                         provider.toggleNightMode();
